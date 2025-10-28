@@ -166,7 +166,7 @@ export default function ProjectDetail() {
           if (col.field === 'createdAt' && value) {
             row[col.label] = format(new Date(value as string), "dd.MM.yyyy HH:mm");
           } else if (col.field === 'files' && Array.isArray(value)) {
-            row[col.label] = value.map(f => f.fileName).join(', ');
+            row[col.label] = value.map((f: any) => f.fileName || f.filename || '').join(', ');
           } else {
             row[col.label] = String(value || '');
           }

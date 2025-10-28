@@ -143,19 +143,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Convert FileAnalysisResult to ExtractedProductData
+          const structuredData: Record<string, any> = result.structuredData || {};
           return {
             id: nanoid(),
             fileName: result.fileName,
             fileType: result.fileType,
             extractedText: result.extractedText,
-            productName: result.structuredData?.productName || 'Unbekanntes Produkt',
+            productName: structuredData.productName || 'Unbekanntes Produkt',
             description: result.extractedText.substring(0, 500) + (result.extractedText.length > 500 ? '...' : ''),
-            dimensions: result.structuredData?.dimensions || '',
-            weight: result.structuredData?.weight || '',
-            voltage: result.structuredData?.voltage || '',
-            capacity: result.structuredData?.capacity || '',
-            power: result.structuredData?.power || '',
-            technicalSpecs: result.structuredData || {},
+            dimensions: structuredData.dimensions || '',
+            weight: structuredData.weight || '',
+            voltage: structuredData.voltage || '',
+            capacity: structuredData.capacity || '',
+            power: structuredData.power || '',
+            technicalSpecs: structuredData,
             confidence: result.confidence || 0.5,
             createdAt: new Date().toISOString(),
           };
@@ -245,8 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const response = await fetch(url, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            },
-            timeout: 30000
+            }
           });
           
           if (response.ok) {
@@ -265,8 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const response = await fetch(url, {
               headers: {
                 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-              },
-              timeout: 30000
+              }
             });
             
             if (response.ok) {
@@ -277,14 +276,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
           } catch (googlebotError) {
+            const fcErr = firecrawlError instanceof Error ? firecrawlError.message : String(firecrawlError);
+            const dirErr = directError instanceof Error ? directError.message : String(directError);
+            const gbErr = googlebotError instanceof Error ? googlebotError.message : String(googlebotError);
+            
             console.error('All fetch methods failed:', {
-              firecrawl: firecrawlError.message,
-              direct: directError.message,
-              googlebot: googlebotError.message
+              firecrawl: fcErr,
+              direct: dirErr,
+              googlebot: gbErr
             });
             
             return res.status(500).json({ 
-              error: `Website kann nicht erreicht werden. Alle Versuche fehlgeschlagen:\n- Firecrawl: ${firecrawlError.message}\n- Direkter Zugriff: ${directError.message}\n- Googlebot: ${googlebotError.message}\n\nMögliche Ursachen:\n- Website blockiert Bots\n- Firewall/Proxy blockiert Zugriff\n- Website ist offline\n- CORS-Richtlinien blockieren Zugriff` 
+              error: `Website kann nicht erreicht werden. Alle Versuche fehlgeschlagen:\n- Firecrawl: ${fcErr}\n- Direkter Zugriff: ${dirErr}\n- Googlebot: ${gbErr}\n\nMögliche Ursachen:\n- Website blockiert Bots\n- Firewall/Proxy blockiert Zugriff\n- Website ist offline\n- CORS-Richtlinien blockieren Zugriff` 
             });
           }
         }

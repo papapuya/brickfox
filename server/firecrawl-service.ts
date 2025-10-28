@@ -95,12 +95,13 @@ export async function fetchWithFirecrawl(url: string): Promise<string> {
   } catch (error) {
     clearTimeout(timeoutId);
     
-    if (error.name === 'AbortError' || error.message.includes('timeout') || error.message.includes('408')) {
+    const err = error as Error;
+    if (err.name === 'AbortError' || err.message.includes('timeout') || err.message.includes('408')) {
       console.log('Firecrawl timeout - trying fallback scraper...');
       return await fallbackScraper(url);
     }
     
-    console.log('Firecrawl failed, trying fallback scraper...', error.message);
+    console.log('Firecrawl failed, trying fallback scraper...', err.message);
     return await fallbackScraper(url);
   }
 }
@@ -118,8 +119,7 @@ async function fallbackScraper(url: string): Promise<string> {
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1'
-      },
-      timeout: 30000
+      }
     });
     
     if (!response.ok) {
@@ -138,7 +138,8 @@ async function fallbackScraper(url: string): Promise<string> {
     
   } catch (error) {
     console.error('Fallback scraper also failed:', error);
-    throw new Error(`All scraping methods failed: ${error.message}`);
+    const err = error as Error;
+    throw new Error(`All scraping methods failed: ${err.message}`);
   }
 }
 
@@ -267,7 +268,7 @@ export function extractFromHtml(html: string): ExtractedData {
   }
 
   // 4) Technische Daten extrahieren - 1:1 aus "Technische Details" Tabelle
-  const tech = {
+  const tech: Record<string, string | null> = {
     geeignet: null,
     slots: null,
     ladestrom: null,
@@ -279,7 +280,8 @@ export function extractFromHtml(html: string): ExtractedData {
     size: null,
     gefahrgut: null,
     un: null,
-    zoll: null
+    zoll: null,
+    material: null
   };
 
   // Spezielle Extraktion für Ansmann-Produktseiten
@@ -399,7 +401,7 @@ export function extractFromHtml(html: string): ExtractedData {
   }
   
   // Fallback: Extrahiere technische Daten aus dem Plain-Text
-  const weitereInfoMatch = fullText.match(/Weitere Informationen(.*?)(?:Lieferumfang|Downloads|$)/s);
+  const weitereInfoMatch = fullText.match(/Weitere Informationen([\s\S]*?)(?:Lieferumfang|Downloads|$)/);
   if (weitereInfoMatch) {
     const techSection = weitereInfoMatch[1];
     console.log('Gefundene Weitere Informationen Sektion:', techSection.substring(0, 500));
@@ -466,7 +468,25 @@ export function extractFromHtml(html: string): ExtractedData {
   console.log(`Technical data extracted:`, tech);
   console.log(`Full text sample for debugging:`, fullText.substring(0, 1000));
 
-  return { title, bullets, supplierTableHtml, tech };
+  return { 
+    title, 
+    bullets, 
+    supplierTableHtml, 
+    tech: {
+      geeignet: tech.geeignet,
+      slots: tech.slots,
+      ladestrom: tech.ladestrom,
+      standards: tech.standards,
+      outputs: tech.outputs,
+      inputs: tech.inputs,
+      qi: tech.qi,
+      weight: tech.weight,
+      size: tech.size,
+      gefahrgut: tech.gefahrgut,
+      un: tech.un,
+      zoll: tech.zoll
+    }
+  };
 }
 
 // Alte renderTemplate Funktion entfernt - wird durch generateDynamicDescription ersetzt
@@ -505,7 +525,7 @@ export async function generateDynamicDescription(data: ExtractedData): Promise<s
     }
     
     // Fallback-USPs falls nicht genug generiert werden konnten
-    const fallbackUSPs = [
+    const fallbackUSPs: string[] = [
       'Hochwertige Verarbeitung',
       'Langlebige Konstruktion',
       'Einfache Bedienung',
@@ -514,7 +534,7 @@ export async function generateDynamicDescription(data: ExtractedData): Promise<s
     ];
     
     while (usps.length < 5) {
-      const fallback = fallbackUSPs[usps.length] || fallbackUSPs[0];
+      const fallback: string = fallbackUSPs[usps.length] || fallbackUSPs[0];
       if (!usps.includes(fallback)) {
         usps.push(fallback);
       } else {

@@ -108,9 +108,7 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
 `
     : '';
 
-  return `<ul>
-<li>
-<h2>${data.productName}</h2>
+  return `<h2>${data.productName}</h2>
 <p>${data.narrative}<br /><br />
 ${uspHtml}</p>
 
@@ -125,7 +123,5 @@ ${techTableHtml}<p>${data.productName} steht für Qualität, Zuverlässigkeit un
 <p>${data.safetyNotice}</p>
 
 <h3>Lieferumfang</h3>
-<p>${data.packageContents}</p>
-</li>
-</ul>`;
+<p>${data.packageContents}</p>`;
 }
