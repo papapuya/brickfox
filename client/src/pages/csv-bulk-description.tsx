@@ -361,12 +361,12 @@ export default function CSVBulkDescription() {
                       </Label>
                     </div>
                     <div className="col-span-4">
-                      <Select value={mapping.csvColumn} onValueChange={(value) => updateMapping(mapping.field, value)}>
+                      <Select value={mapping.csvColumn || "__NONE__"} onValueChange={(value) => updateMapping(mapping.field, value === "__NONE__" ? "" : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Nicht zugeordnet" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nicht zugeordnet</SelectItem>
+                          <SelectItem value="__NONE__">Nicht zugeordnet</SelectItem>
                           {csvColumns.map(col => (
                             <SelectItem key={col} value={col}>{col}</SelectItem>
                           ))}
