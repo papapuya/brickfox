@@ -1,13 +1,73 @@
 import OpenAI from 'openai';
 import { ProductCopyPayload } from './types';
 import { ProductCategoryConfig } from './category-config';
+import { createOrchestrator } from '../prompts/orchestrator';
+import type { PromptContext } from '../prompts/types';
 
 export async function generateProductCopy(
   productData: any,
   categoryConfig: ProductCategoryConfig,
   openaiKey: string,
+  openaiBaseUrl?: string,
+  useModularPrompts: boolean = true
+): Promise<ProductCopyPayload> {
+  if (useModularPrompts || categoryConfig.subpromptPreferences?.useModularPrompts) {
+    return await generateProductCopyModular(productData, categoryConfig, openaiKey, openaiBaseUrl);
+  } else {
+    return await generateProductCopyMonolithic(productData, categoryConfig, openaiKey, openaiBaseUrl);
+  }
+}
+
+async function generateProductCopyModular(
+  productData: any,
+  categoryConfig: ProductCategoryConfig,
+  openaiKey: string,
   openaiBaseUrl?: string
 ): Promise<ProductCopyPayload> {
+  console.log('🔧 Using MODULAR subprompt architecture');
+
+  const orchestrator = createOrchestrator({
+    openaiKey,
+    openaiBaseUrl,
+  });
+
+  const context: PromptContext = {
+    categoryName: categoryConfig.name,
+    categoryDescription: categoryConfig.description,
+    productData,
+    availableFields: categoryConfig.technicalFields.map(f => 
+      `${f.label}${f.unit ? ` (${f.unit})` : ''}`
+    ),
+    uspTemplates: categoryConfig.uspTemplates,
+  };
+
+  try {
+    const result = await orchestrator.generateFullProductCopy(context);
+
+    return {
+      narrative: result.narrative,
+      uspBullets: result.uspBullets.length >= 5 
+        ? result.uspBullets.slice(0, 5)
+        : [...result.uspBullets, ...categoryConfig.uspTemplates].slice(0, 5),
+      technicalSpecs: result.technicalSpecs,
+      safetyNotice: result.safetyNotice || categoryConfig.safetyNotice,
+      packageContents: result.packageContents,
+      productHighlights: categoryConfig.productHighlights.slice(0, 5),
+    };
+  } catch (error) {
+    console.error('Modular generation failed, using fallback:', error);
+    return getFallbackCopy(categoryConfig);
+  }
+}
+
+async function generateProductCopyMonolithic(
+  productData: any,
+  categoryConfig: ProductCategoryConfig,
+  openaiKey: string,
+  openaiBaseUrl?: string
+): Promise<ProductCopyPayload> {
+  console.log('📦 Using MONOLITHIC prompt (legacy)');
+
   const openai = new OpenAI({
     apiKey: openaiKey,
     baseURL: openaiBaseUrl,
@@ -104,13 +164,16 @@ Erstelle jetzt das JSON-Objekt mit Produkttexten basierend auf diesen Daten.`;
 
   } catch (error) {
     console.error('AI generation error:', error);
-    
-    return {
-      narrative: 'Hochwertiges Produkt für professionelle Anwendungen. Zeichnet sich durch zuverlässige Leistung und langlebige Qualität aus.',
-      uspBullets: categoryConfig.uspTemplates.slice(0, 5),
-      technicalSpecs: {},
-      packageContents: 'Produkt wie beschrieben',
-      productHighlights: categoryConfig.productHighlights.slice(0, 5),
-    };
+    return getFallbackCopy(categoryConfig);
   }
+}
+
+function getFallbackCopy(categoryConfig: ProductCategoryConfig): ProductCopyPayload {
+  return {
+    narrative: 'Hochwertiges Produkt für professionelle Anwendungen. Zeichnet sich durch zuverlässige Leistung und langlebige Qualität aus.',
+    uspBullets: categoryConfig.uspTemplates.slice(0, 5),
+    technicalSpecs: {},
+    packageContents: 'Produkt wie beschrieben',
+    productHighlights: categoryConfig.productHighlights.slice(0, 5),
+  };
 }

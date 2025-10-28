@@ -6,6 +6,12 @@ export interface TechnicalField {
   fallback?: string;
 }
 
+export interface SubpromptPreferences {
+  useModularPrompts?: boolean;
+  customUSPStyle?: 'benefits' | 'features' | 'mixed';
+  safetyLevel?: 'standard' | 'detailed' | 'minimal';
+}
+
 export interface ProductCategoryConfig {
   id: string;
   name: string;
@@ -15,6 +21,7 @@ export interface ProductCategoryConfig {
   uspTemplates: string[];
   safetyNotice: string;
   productHighlights: string[];
+  subpromptPreferences?: SubpromptPreferences;
 }
 
 export const PRODUCT_CATEGORIES: Record<string, ProductCategoryConfig> = {
