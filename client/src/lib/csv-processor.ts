@@ -38,49 +38,16 @@ function parseCSVLine(line: string, delimiter: string): string[] {
  * Try to read file with different encodings using TextDecoder
  */
 async function readFileWithEncoding(file: File): Promise<string> {
-  const encodings: Array<{ name: string; label: string }> = [
-    { name: 'UTF-8', label: 'utf-8' },
-    { name: 'ISO-8859-1', label: 'iso-8859-1' },
-    { name: 'Windows-1252', label: 'windows-1252' }
-  ];
+  // Read file as text - browser will handle encoding automatically
+  const text = await file.text();
   
-  // Read file as ArrayBuffer
-  const arrayBuffer = await file.arrayBuffer();
-  
-  for (let i = 0; i < encodings.length; i++) {
-    const encoding = encodings[i];
-    try {
-      // Use TextDecoder with the specific encoding
-      const decoder = new TextDecoder(encoding.label, { fatal: false });
-      let content = decoder.decode(arrayBuffer);
-      
-      // Remove BOM if present
-      if (content.charCodeAt(0) === 0xFEFF) {
-        content = content.slice(1);
-      }
-      
-      // Check for replacement characters (�)
-      const hasReplacementChars = content.includes('�');
-      
-      // If this is the last encoding or no replacement characters found, use this
-      if (!hasReplacementChars || i === encodings.length - 1) {
-        console.log('Erfolgreich gelesen mit Encoding:', encoding.name);
-        console.log('Content preview (first 150 chars):', content.substring(0, 150));
-        return content;
-      }
-      
-      console.log(`Encoding ${encoding.name} hat Ersatzzeichen, versuche nächstes...`);
-    } catch (error) {
-      console.error(`Fehler mit Encoding ${encoding.name}:`, error);
-      
-      // If this was the last encoding, throw error
-      if (i === encodings.length - 1) {
-        throw error;
-      }
-    }
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) {
+    return text.slice(1);
   }
   
-  throw new Error('Datei konnte mit keinem Encoding gelesen werden');
+  console.log('File gelesen, first 100 chars:', text.substring(0, 100));
+  return text;
 }
 
 /**
