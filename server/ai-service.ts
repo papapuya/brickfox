@@ -439,7 +439,26 @@ async function analyzeImageWithGPT(base64Image: string, fileName: string): Promi
           content: [
             {
               type: 'text',
-              text: `Du siehst ein Bild mit Produktinformationen. Extrahiere alle sichtbaren Produktdaten und verwende das folgende Format:
+              text: `Du siehst ein Bild mit Produktinformationen. Extrahiere alle sichtbaren Produktdaten.
+
+SCHRITT 1: Erstelle den Produktnamen
+Der Produktname soll EXAKT dem Produktnamen im Bild entsprechen + einen kurzen USP.
+
+Format: [EXAKTER NAME AUS DEM BILD] - [Kurzer USP]
+
+Beispiele:
+- "RCR123A 16340 - 950mAh, 3.6V - 3.7V Li-Ionen-Akku *PCB/BMS - Wiederaufladbar mit Schutzschaltung"
+- "VARTA Power on Demand AAA Micro 1000mAh - Sofort einsatzbereit mit USB-C Ladeport"
+
+WICHTIG: 
+- Übernimm den Produktnamen 1:1 wie er im Bild steht
+- Füge nur einen kurzen, prägnanten USP hinzu (max. 8 Wörter)
+- Der USP sollte einen echten Vorteil des Produkts beschreiben
+
+SCHRITT 2: Extrahiere alle technischen Daten
+Verwende das folgende Format:
+
+PRODUKTNAME: [exakter Name aus Bild] - [USP]
 
 - Modell: [was du siehst]
 - Typ: [was du siehst]  
@@ -453,7 +472,7 @@ WICHTIG für Einheiten:
 - Gewicht: Konvertiere kg zu g (z.B. "0.102 kg" → "102 g")
 - Abmessungen: Konvertiere cm zu mm (z.B. "5.7 × 2 × 6.9 cm" → "57 × 20 × 69 mm")
 
-Extrahiere alle technischen Daten, die du im Bild siehst. Schreibe auch unvollständige Wörter auf, wenn du sie teilweise erkennen kannst.`
+Extrahiere alle technischen Daten, die du im Bild siehst.`
             },
             {
               type: 'image_url',
@@ -471,6 +490,14 @@ Extrahiere alle technischen Daten, die du im Bild siehst. Schreibe auch unvollst
     const extractedText = response.choices[0]?.message?.content || '';
     console.log('GPT Vision response length:', extractedText.length);
     console.log('GPT Vision response preview:', extractedText.substring(0, 200) + '...');
+
+    // Extrahiere den Produktnamen aus der Antwort
+    let productName = 'Unbekanntes Produkt';
+    const productNameMatch = extractedText.match(/PRODUKTNAME:\s*(.+?)(?:\n|$)/i);
+    if (productNameMatch) {
+      productName = productNameMatch[1].trim();
+      console.log('Extracted product name from vision:', productName);
+    }
 
     // If GPT Vision gives up, try a different approach
     if (extractedText.includes('kann den Text nicht') || extractedText.includes('kann nicht lesen') || extractedText.includes('nicht erkennen') || extractedText.includes('Bildqualität') || extractedText.includes('nicht lesen') || extractedText.includes('höher aufgelöstes') || extractedText.includes('unable to provide') || extractedText.includes('cannot read') || extractedText.includes('unable to') || extractedText.includes('cannot see') || extractedText.includes('not readable')) {
@@ -517,6 +544,7 @@ Versuche alle Zahlen, Maße und technischen Daten zu erkennen.`
         fileName,
         fileType: 'image',
         extractedText: cleanExtractedText(alternativeText),
+        structuredData: { productName },
         confidence: 0.85,
       };
     }
@@ -525,6 +553,7 @@ Versuche alle Zahlen, Maße und technischen Daten zu erkennen.`
       fileName,
       fileType: 'image',
       extractedText: cleanExtractedText(extractedText),
+      structuredData: { productName },
       confidence: 0.85,
     };
   } catch (error) {
@@ -891,10 +920,11 @@ export function normalizeProductData(input: any): any {
       if (numbers) {
         const converted = numbers.map(num => {
           const val = parseFloat(num.replace(',', '.'));
-          return isNaN(val) ? num : Math.round(val * 10);
+          return isNaN(val) ? num : String(Math.round(val * 10));
         });
         // Ersetze Zahlen und entferne "cm", füge "mm" hinzu
-        return dimStr.replace(/[\d.,]+/g, (match, index) => converted[index]).replace(/cm/gi, '') + ' mm';
+        let idx = 0;
+        return dimStr.replace(/[\d.,]+/g, () => converted[idx++]).replace(/cm/gi, '') + ' mm';
       }
     }
     
@@ -1143,10 +1173,11 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
         if (numbers) {
           const converted = numbers.map(num => {
             const val = parseFloat(num.replace(',', '.'));
-            return isNaN(val) ? num : Math.round(val * 10);
+            return isNaN(val) ? num : String(Math.round(val * 10));
           });
           // Ersetze Zahlen und entferne "cm", füge "mm" hinzu
-          return dimStr.replace(/[\d.,]+/g, (match, index) => converted[index]).replace(/cm/gi, '') + ' mm';
+          let idx = 0;
+          return dimStr.replace(/[\d.,]+/g, () => converted[idx++]).replace(/cm/gi, '') + ' mm';
         }
       }
       
@@ -1163,6 +1194,7 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
     const dimensions = convertDimensionsToMm(rawDimensions);
     const material = normalizedData.material || 'Nicht angegeben';
     const packageContents = normalizedData.package_contents || 'Produkt wie beschrieben';
+    const safetyNotes = normalizedData.safety_notes || '⚠️ Beachten Sie stets die Bedienungsanleitung des Herstellers. Tragen Sie bei der Nutzung geeignete Schutzkleidung und halten Sie das Werkzeug von Kindern fern.';
     
     const htmlDescription = `<ul>
 <li>
