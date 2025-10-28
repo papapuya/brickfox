@@ -83,16 +83,44 @@ async function readFileWithEncoding(file: File): Promise<string> {
 }
 
 /**
+ * Detect CSV delimiter by analyzing the first few lines
+ */
+function detectDelimiter(text: string): string {
+  const lines = text.split('\n').slice(0, 3); // Check first 3 lines
+  const delimiters = [';', ',', '\t', '|'];
+  
+  const scores = delimiters.map(delimiter => {
+    const counts = lines.map(line => (line.match(new RegExp(`\\${delimiter}`, 'g')) || []).length);
+    const avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
+    const variance = counts.every(c => c === counts[0]) ? 0 : 1; // Prefer consistent counts
+    return { delimiter, score: avgCount, variance };
+  });
+  
+  // Sort by score (highest count) and consistency (lowest variance)
+  scores.sort((a, b) => {
+    if (a.score !== b.score) return b.score - a.score;
+    return a.variance - b.variance;
+  });
+  
+  console.log('Delimiter detection:', scores);
+  return scores[0].score > 0 ? scores[0].delimiter : ',';
+}
+
+/**
  * Parse CSV file and return raw data rows using PapaParse
  */
 export async function parseCSV(file: File): Promise<CSVParseResult> {
   try {
     const text = await readFileWithEncoding(file);
     
-    // Use PapaParse to parse the CSV - auto-detect delimiter
+    // Detect delimiter
+    const delimiter = detectDelimiter(text);
+    console.log('Using delimiter:', delimiter === '\t' ? 'TAB' : delimiter);
+    
+    // Use PapaParse to parse the CSV
     const result = Papa.parse<RawCSVRow>(text, {
       header: true,
-      delimiter: '',  // Auto-detect delimiter (comma, semicolon, tab)
+      delimiter: delimiter,
       skipEmptyLines: true,
       transformHeader: (header: string) => header.trim(),
       transform: (value: string) => value.trim()
