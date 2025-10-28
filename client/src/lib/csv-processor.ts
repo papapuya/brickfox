@@ -39,15 +39,28 @@ function parseCSVLine(line: string, delimiter: string): string[] {
  */
 async function readFileWithEncoding(file: File): Promise<string> {
   // Read file as text - browser will handle encoding automatically
-  const text = await file.text();
+  let text = await file.text();
   
   // Remove BOM if present
   if (text.charCodeAt(0) === 0xFEFF) {
-    return text.slice(1);
+    text = text.slice(1);
   }
   
-  console.log('File gelesen, first 100 chars:', text.substring(0, 100));
-  return text;
+  // Remove surrounding quotes from each line if present
+  // This fixes files where each line is wrapped in quotes
+  const lines = text.split('\n');
+  const cleanedLines = lines.map(line => {
+    line = line.trim();
+    // Remove quotes if line starts and ends with them
+    if (line.startsWith('"') && line.endsWith('"')) {
+      return line.slice(1, -1);
+    }
+    return line;
+  });
+  
+  const cleanedText = cleanedLines.join('\n');
+  console.log('File gelesen, first 100 chars:', cleanedText.substring(0, 100));
+  return cleanedText;
 }
 
 /**
