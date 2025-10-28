@@ -466,7 +466,7 @@ Diese Informationen sind IMMER vorhanden - schaue SEHR GENAU hin!
 
 📋 EXTRAKTIONS-FORMAT:
 
-PRODUKTNAME: [exakter Name aus Bild] - [Kurzer USP max 8 Wörter]
+PRODUKTNAME: [extrahiere den EXAKTEN Namen wie er im Bild steht - OHNE Zusätze]
 
 TECHNISCHE DATEN:
 - Modell: [exakter Wert]
@@ -475,9 +475,9 @@ TECHNISCHE DATEN:
 - Spannung: [mit Einheit, z.B. "3.6V - 3.7V"]
 - Stromstärke: [mit Einheit, z.B. "25A"]
 - Technologie: [z.B. "Li-Ion"]
-- Maße: [IMMER SUCHEN! Format: "70 × 37.5 × 37.5 mm"]
+- Maße: [IMMER SUCHEN! Format: "70 × 37.5 × 37.5 mm" oder "Länge 34,0mm, Durchmesser 16,9mm"]
 - Gewicht: [IMMER SUCHEN! Format: "184 g"]
-- Schutzschaltung: [Ja/Nein]
+- Schutzschaltung: [z.B. "PCB/BMS Schutztechnik" oder "Ja"]
 - Eingang: [falls vorhanden]
 - Ausgang: [falls vorhanden]
 - Besonderheiten: [alle weiteren wichtigen Infos]
@@ -490,9 +490,10 @@ TECHNISCHE DATEN:
 🎯 QUALITÄTSREGELN:
 1. Lies JEDE Zahl und JEDE Einheit im Bild
 2. Maße und Gewicht sind PFLICHT - schaue sehr genau hin!
-3. Wenn du etwas nicht siehst → schreibe "Nicht sichtbar" (nicht "Nicht angegeben")
-4. Extrahiere exakt wie im Bild, keine Vermutungen
-5. Achte besonders auf kleine Schrift in Tabellen
+3. PRODUKTNAME: Extrahiere NUR den Namen, KEINE Marketing-Texte oder USPs!
+4. Wenn du etwas nicht siehst → schreibe "Nicht sichtbar"
+5. Extrahiere exakt wie im Bild, keine Vermutungen
+6. Achte besonders auf kleine Schrift in Tabellen
 
 Beginne jetzt mit der Analyse!`
             },

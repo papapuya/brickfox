@@ -206,46 +206,47 @@ export default function ProductDescriptionCreator() {
     }
   }, [productData]);
 
-  // URL Scraping mutation
+  // URL Scraping mutation - unterstützt jetzt mehrere URLs
   const urlScrapingMutation = useMutation({
-    mutationFn: async (url: string) => {
-      const response = await apiRequest('POST', '/api/scrape-url', {
-        url,
-      });
-      return response.json();
+    mutationFn: async (urls: string[]) => {
+      // Scrape alle URLs parallel
+      const promises = urls.map(url => 
+        apiRequest('POST', '/api/scrape-url', { url }).then(res => res.json())
+      );
+      return Promise.all(promises);
     },
-    onSuccess: async (data) => {
-      const result = data.result;
-      
-      // Add to extracted data
-      const newExtractedDataItem: ExtractedProductData = {
-        id: result.id,
-        fileName: result.fileName,
-        fileType: result.fileType,
-        extractedText: result.extractedText,
-        productName: result.productName,
-        description: result.description,
-        dimensions: result.dimensions,
-        weight: result.weight,
-        voltage: result.voltage,
-        capacity: result.capacity,
-        power: result.power,
-        technicalSpecs: result.technicalSpecs,
-        confidence: result.confidence,
-        createdAt: result.createdAt,
-        url: result.url,
-        supplierTableHtml: result.supplierTableHtml,
-        bullets: result.bullets,
-      };
+    onSuccess: async (dataArray) => {
+      // dataArray ist jetzt ein Array von Ergebnissen (von Promise.all)
+      const newExtractedData: ExtractedProductData[] = dataArray.map(data => {
+        const result = data.result;
+        return {
+          id: result.id,
+          fileName: result.fileName,
+          fileType: result.fileType,
+          extractedText: result.extractedText,
+          productName: result.productName,
+          description: result.description,
+          dimensions: result.dimensions,
+          weight: result.weight,
+          voltage: result.voltage,
+          capacity: result.capacity,
+          power: result.power,
+          technicalSpecs: result.technicalSpecs,
+          confidence: result.confidence,
+          createdAt: result.createdAt,
+          url: result.url,
+          supplierTableHtml: result.supplierTableHtml,
+          bullets: result.bullets,
+        };
+      });
 
       // Ersetze alte Daten komplett mit neuen Daten (keine Mischung!)
-      const newExtractedData = [newExtractedDataItem];
       setExtractedData(newExtractedData);
-      console.log('Replaced all extracted data with new data:', newExtractedData);
+      console.log(`Replaced all extracted data with ${newExtractedData.length} new items:`, newExtractedData);
       
-      // Set product name if not already set
-      if (!productName && result.productName) {
-        setProductName(result.productName);
+      // Set product name if not already set (nimm den ersten)
+      if (!productName && newExtractedData[0]?.productName) {
+        setProductName(newExtractedData[0].productName);
       }
 
       // Auto-generate structured description after URL analysis
@@ -317,8 +318,8 @@ export default function ProductDescriptionCreator() {
       }
 
       toast({
-        title: "URL erfolgreich analysiert",
-        description: `Produkt "${result.productName}" wurde von der Website extrahiert`,
+        title: `${newExtractedData.length} URL${newExtractedData.length > 1 ? 's' : ''} erfolgreich analysiert`,
+        description: `${newExtractedData.length} Produkt${newExtractedData.length > 1 ? 'e wurden' : ' wurde'} von der Website extrahiert`,
       });
     },
     onError: (error) => {
@@ -608,18 +609,33 @@ export default function ProductDescriptionCreator() {
       toast({
         variant: "destructive",
         title: "Keine URL",
-        description: "Bitte geben Sie eine URL ein",
+        description: "Bitte geben Sie mindestens eine URL ein",
+      });
+      return;
+    }
+
+    // Parse mehrere URLs (eine pro Zeile)
+    const urls = productUrl
+      .split('\n')
+      .map(url => url.trim())
+      .filter(url => url.length > 0 && url.startsWith('http'));
+
+    if (urls.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Ungültige URLs",
+        description: "Bitte geben Sie mindestens eine gültige URL ein (muss mit http:// oder https:// beginnen)",
       });
       return;
     }
 
     // Zeige längere Ladezeit an
     toast({
-      title: "URL wird analysiert...",
-      description: "Dies kann bis zu 90 Sekunden dauern. Bitte warten Sie.",
+      title: `${urls.length} URL${urls.length > 1 ? 's werden' : ' wird'} analysiert...`,
+      description: `Dies kann bis zu ${urls.length * 90} Sekunden dauern. Bitte warten Sie.`,
     });
 
-    urlScrapingMutation.mutate(productUrl);
+    urlScrapingMutation.mutate(urls);
   };
 
   // Template-System entfernt für bessere Stabilität
@@ -1859,14 +1875,16 @@ export default function ProductDescriptionCreator() {
                 </CardHeader>
               <CardContent className="space-y-4">
                         <div className="space-y-2">
-                  <Label htmlFor="product-url">Produkt-URL</Label>
-                            <Input
+                  <Label htmlFor="product-url">Produkt-URL(s)</Label>
+                            <Textarea
                     id="product-url"
-                    type="url"
-                    placeholder="https://lieferant.de/produkt/..."
+                    placeholder="https://lieferant.de/produkt/1&#10;https://lieferant.de/produkt/2&#10;https://lieferant.de/produkt/3"
                     value={productUrl}
                     onChange={(e) => setProductUrl(e.target.value)}
+                    rows={4}
+                    className="font-mono text-sm"
                             />
+                  <p className="text-xs text-muted-foreground">💡 Tipp: Mehrere URLs möglich (eine pro Zeile)</p>
                           </div>
                             <Button
                   onClick={handleUrlScrape}
