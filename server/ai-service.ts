@@ -1053,14 +1053,13 @@ VERBOTEN in den Bulletpoints:
 </tbody>
 </table>
 
+<p>PRODUKTNAME steht für Qualität, Zuverlässigkeit und Langlebigkeit – ideal für den täglichen Einsatz.</p>
+
 <h3>Sicherheitshinweise</h3>
-<p>⚠️ Beachten Sie stets die Bedienungsanleitung des Herstellers.  
-Tragen Sie bei der Nutzung geeignete Schutzkleidung und halten Sie das Werkzeug von Kindern fern.</p>
+<p>⚠️ Nicht ins Feuer werfen oder erhitzen. Vor Kurzschluss schützen. Nur mit geeigneten Ladegeräten laden. Von Kindern fernhalten. Bei Beschädigung nicht mehr verwenden.</p>
 
 <h3>Lieferumfang</h3>
 <p>LIEFERUMFANG AUS DATEN</p>
-
-<p>PRODUKTNAME steht für Qualität, Zuverlässigkeit und Langlebigkeit – ideal für den täglichen Einsatz.</p>
 </li>
 </ul>
 
@@ -1214,7 +1213,7 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
     const dimensions = convertDimensionsToMm(rawDimensions);
     const material = normalizedData.material || 'Nicht angegeben';
     const packageContents = normalizedData.package_contents || 'Produkt wie beschrieben';
-    const safetyNotes = normalizedData.safety_notes || '⚠️ Beachten Sie stets die Bedienungsanleitung des Herstellers. Tragen Sie bei der Nutzung geeignete Schutzkleidung und halten Sie das Werkzeug von Kindern fern.';
+    const safetyNotes = normalizedData.safety_notes || '⚠️ Nicht ins Feuer werfen oder erhitzen. Vor Kurzschluss schützen. Nur mit geeigneten Ladegeräten laden. Von Kindern fernhalten. Bei Beschädigung nicht mehr verwenden.';
     
     const htmlDescription = `<ul>
 <li>
@@ -1246,10 +1245,10 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
 </tbody>
 </table>
 
+<p>${productName} steht für Qualität, Zuverlässigkeit und Langlebigkeit – ideal für den täglichen Einsatz.</p>
+
 <h3>Sicherheitshinweise</h3>
 <p>${safetyNotes}</p>
-
-<p>${productName} steht für Qualität, Zuverlässigkeit und Langlebigkeit – ideal für den täglichen Einsatz.</p>
 
 <h3>Lieferumfang</h3>
 <p>${packageContents}</p>
