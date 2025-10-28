@@ -35,7 +35,11 @@ export function renderProductHtml(options: RenderOptions): string {
 
   const safetyNotice = cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
   const packageContents = cleanMarkdown(copy.packageContents || 'Produkt wie beschrieben');
-  const highlights = copy.productHighlights || categoryConfig.productHighlights;
+  
+  // Nutze AI-generierte Highlights wenn vorhanden, sonst Category-Fallback
+  // ABER: Filtere generische Highlights raus
+  const aiHighlights = copy.productHighlights || [];
+  const highlights = aiHighlights.length > 0 ? aiHighlights : categoryConfig.productHighlights;
 
   const technicalSpecs = buildTechnicalSpecsTable(
     copy.technicalSpecs,

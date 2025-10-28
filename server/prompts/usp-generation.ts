@@ -11,37 +11,54 @@ export const uspGenerationConfig: SubpromptConfig = {
 PRODUKTKATEGORIE: ${context.categoryName}
 ${context.categoryDescription}
 
-VERFÜGBARE USP-VORSCHLÄGE:
-${context.uspTemplates?.map((usp, i) => `${i + 1}. ${usp}`).join('\n') || 'Keine Vorlagen verfügbar'}
+⚠️ KRITISCH: Erstelle PRODUKTSPEZIFISCHE USPs basierend auf den ECHTEN Produktdaten!
+NICHT generische Templates verwenden, die auf JEDES Produkt passen!
 
 DEINE AUFGABE:
-Erstelle GENAU 5 verkaufsfördernde USP-Bulletpoints für dieses Produkt.
+Analysiere die Produktdaten und erstelle GENAU 5 USP-Bulletpoints, die:
+1. Auf KONKRETEN Produkteigenschaften basieren
+2. SPEZIFISCH für dieses Produkt sind
+3. Den echten Kundennutzen beschreiben
+4. Format: "Feature/Vorteil - konkreter Nutzen"
+5. Max. 12 Wörter pro USP
 
-REGELN FÜR GUTE USPs:
-✅ Beschreiben VORTEILE für den Kunden, keine technischen Daten
-✅ Sind konkret und spezifisch für das Produkt
-✅ Folgen dem Format: "Vorteil - Erklärung/Nutzen"
-✅ Sind kurz und prägnant (max. 10 Wörter)
-✅ Nutzen die Vorschläge oder erstellen ähnliche
+BEISPIEL-ANALYSE:
 
-VERBOTEN IN USPs:
-❌ Nackte technische Daten ("3,6 V Spannung", "Gewicht: 184 g")
-❌ Maßeinheiten ohne Kontext ("50 mAh", "12 V")
-❌ Abmessungen ("70×37.5×37.5 mm")
+Produkt: RCR123A 950mAh Akku mit PCB
+❌ SCHLECHT (zu generisch):
+- "Wiederaufladbar - spart Kosten" (gilt für ALLE Akkus)
+- "Kompatibel mit vielen Geräten" (RCR123A ist sehr speziell!)
+- "Hohe Leistung bei geringem Gewicht" (zu vage, keine konkreten Werte)
 
-BEISPIELE FÜR GUTE USPs:
-✅ "Wiederaufladbar - spart langfristig Kosten"
-✅ "Integrierte Schutzschaltung - maximale Sicherheit"
-✅ "Langlebige Technologie - zuverlässig im Dauereinsatz"
+✅ GUT (produktspezifisch):
+- "RCR123A Format - perfekt für LED-Taschenlampen und Kameras"
+- "950 mAh Kapazität - lange Betriebszeit für Ihre Geräte"
+- "PCB Schutzschaltung - verhindert Überladung und Tiefentladung"
+- "3,6V konstante Spannung - zuverlässige Leistung"
+- "Bis zu 500 Ladezyklen - langlebig und kosteneffizient"
+
+VERFÜGBARE TEMPLATES (nur als Inspiration, NICHT 1:1 kopieren):
+${context.uspTemplates?.map((usp, i) => `${i + 1}. ${usp}`).join('\n') || 'Keine Vorlagen'}
+
+REGELN:
+✅ Nutze echte Werte (Kapazität, Format, Schutzfunktionen)
+✅ Erkläre, WOFÜR das Produkt konkret verwendet wird
+✅ Zeige spezifische Vorteile (nicht "hochwertig", "zuverlässig")
+✅ Jeder USP sollte NUR für dieses Produkt passen
+
+❌ VERBOTEN:
+- Generische Aussagen ohne Produktbezug
+- USPs, die auf jedes Produkt der Kategorie passen
+- Technische Daten ohne Nutzenerklärung
 
 OUTPUT-FORMAT (JSON):
 {
   "usps": [
-    "USP 1",
-    "USP 2",
-    "USP 3",
-    "USP 4",
-    "USP 5"
+    "Produktspezifischer USP 1",
+    "Produktspezifischer USP 2",
+    "Produktspezifischer USP 3",
+    "Produktspezifischer USP 4",
+    "Produktspezifischer USP 5"
   ]
 }`,
 

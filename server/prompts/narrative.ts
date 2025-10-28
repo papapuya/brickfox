@@ -6,33 +6,50 @@ export const narrativeConfig: SubpromptConfig = {
   maxTokens: 400,
   responseFormat: 'json_object',
   
-  systemPrompt: (context: PromptContext) => `Du schreibst professionelle Produktbeschreibungen.
+  systemPrompt: (context: PromptContext) => `Du schreibst PRODUKTSPEZIFISCHE Produktbeschreibungen.
 
 PRODUKTKATEGORIE: ${context.categoryName}
 ${context.categoryDescription}
 
-DEINE AUFGABE:
-Schreibe eine professionelle Produktbeschreibung in 4-5 Sätzen.
+⚠️ KRITISCH: Schreibe eine Beschreibung, die NUR auf DIESES Produkt passt!
+NICHT generische Texte, die auf jedes Produkt der Kategorie passen!
 
-INHALT DER BESCHREIBUNG:
-1. Was ist das Produkt? (1 Satz)
-2. Hauptvorteile und Einsatzmöglichkeiten (2-3 Sätze)
-3. Für wen ist es geeignet? (1 Satz)
+DEINE AUFGABE:
+Schreibe eine professionelle, produktspezifische Beschreibung in 4-5 Sätzen.
+
+INHALT (produktspezifisch):
+1. Was ist das Produkt KONKRET? Nenne Modell/Format (z.B. "Der RCR123A...")
+2. Welche SPEZIFISCHEN Vorteile hat es? (nutze echte Werte: 950mAh, PCB, etc.)
+3. WOFÜR wird es verwendet? (konkrete Anwendungen: Taschenlampen, Kameras)
+4. Für wen ist ES geeignet? (spezifische Zielgruppe)
+
+BEISPIEL:
+
+❌ SCHLECHT (generisch):
+"Dieser Akku ist ein hochwertiger und zuverlässiger Energiespeicher. Er bietet langanhaltende Leistung und ist ideal für professionelle Anwendungen. Die integrierte Schutzschaltung gewährleistet maximale Sicherheit."
+
+✅ GUT (produktspezifisch):
+"Der Keeppower RCR123A ist ein wiederaufladbarer Li-Ion-Akku im kompakten 16340 Format, ideal für LED-Taschenlampen, Fotokameras und Sicherheitstechnik. Mit 950 mAh Kapazität bietet er lange Betriebszeiten, während die PCB/BMS Schutzschaltung zuverlässig vor Überladung und Tiefentladung schützt. Die konstante Spannung von 3,6V-3,7V gewährleistet eine stabile Leistung in allen Anwendungen."
 
 STIL:
-- Professionell und sachlich
-- Kundennutzen im Vordergrund
-- Keine Superlative ohne Begründung
-- Fließtext, keine Stichpunkte
+- Nutze konkrete Produktdaten (Modell, Kapazität, Format)
+- Nenne spezifische Anwendungen
+- Erkläre echte Vorteile (nicht "hochwertig", "zuverlässig")
 - Der Produktname wird separat behandelt - nicht wiederholen
 
 OUTPUT-FORMAT (JSON):
 {
-  "narrative": "Die professionelle Produktbeschreibung in 4-5 Sätzen."
+  "narrative": "Die produktspezifische Beschreibung in 4-5 Sätzen."
 }`,
 
   userPrompt: (context: PromptContext) => `Produktdaten:
 ${JSON.stringify(context.productData, null, 2)}
 
-Schreibe die Produktbeschreibung als JSON.`
+Schreibe jetzt eine PRODUKTSPEZIFISCHE Beschreibung als JSON.
+
+WICHTIG:
+- Nutze konkrete Werte (Modell, Kapazität, Format)
+- Erkläre, WOFÜR dieses spezielle Produkt verwendet wird
+- Vermeide generische Phrasen ohne Kontext
+- Zeige den konkreten Kundennutzen auf`
 };
