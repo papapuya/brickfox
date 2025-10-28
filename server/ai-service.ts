@@ -439,52 +439,75 @@ async function analyzeImageWithGPT(base64Image: string, fileName: string): Promi
           content: [
             {
               type: 'text',
-              text: `Du siehst ein Bild mit Produktinformationen. Extrahiere alle sichtbaren Produktdaten.
+              text: `Du bist ein Experte für das Extrahieren von Produktspezifikationen aus Bildern.
 
-SCHRITT 1: Erstelle den Produktnamen
-Der Produktname soll EXAKT dem Produktnamen im Bild entsprechen + einen kurzen USP.
+AUFGABE: Analysiere dieses Produktbild im Detail und extrahiere ALLE sichtbaren technischen Daten.
 
-Format: [EXAKTER NAME AUS DEM BILD] - [Kurzer USP]
+🔍 WO DU SUCHEN SOLLST:
+1. Produkttitel/Überschrift (oft groß oben)
+2. Technische Tabelle (meistens rechts oder unten)
+3. Produktbeschreibung (Fließtext)
+4. Verpackungsaufdrucke (Labels, Etiketten)
+5. Kleine Schrift (Maße, Gewicht oft klein gedruckt!)
 
-Beispiele:
-- "RCR123A 16340 - 950mAh, 3.6V - 3.7V Li-Ionen-Akku *PCB/BMS - Wiederaufladbar mit Schutzschaltung"
-- "VARTA Power on Demand AAA Micro 1000mAh - Sofort einsatzbereit mit USB-C Ladeport"
+📊 KRITISCH WICHTIG - MASZE UND GEWICHT:
+Diese Informationen sind IMMER vorhanden - schaue SEHR GENAU hin!
+- **Maße/Abmessungen**: Suche nach Patterns wie:
+  - "70 × 37.5 × 37.5 mm" oder "70×37.5×37.5mm"
+  - "Ø 21mm × 70mm" (Durchmesser × Höhe)
+  - "5.7 × 2 × 6.9 cm" (konvertiere zu mm!)
+  - "21700" (oft Bauform = Ø 21mm × 70mm)
+  - "Dimensions:", "Abmessungen:", "Size:", "Größe:"
+  
+- **Gewicht**: Suche nach:
+  - "184 g" oder "184g"
+  - "0.102 kg" (konvertiere zu g = 102 g)
+  - "Weight:", "Gewicht:", "Mass:"
 
-WICHTIG: 
-- Übernimm den Produktnamen 1:1 wie er im Bild steht
-- Füge nur einen kurzen, prägnanten USP hinzu (max. 8 Wörter)
-- Der USP sollte einen echten Vorteil des Produkts beschreiben
+📋 EXTRAKTIONS-FORMAT:
 
-SCHRITT 2: Extrahiere alle technischen Daten
-Verwende das folgende Format:
+PRODUKTNAME: [exakter Name aus Bild] - [Kurzer USP max 8 Wörter]
 
-PRODUKTNAME: [exakter Name aus Bild] - [USP]
+TECHNISCHE DATEN:
+- Modell: [exakter Wert]
+- Typ: [exakter Wert]
+- Kapazität: [mit Einheit, z.B. "5000 mAh"]
+- Spannung: [mit Einheit, z.B. "3.6V - 3.7V"]
+- Stromstärke: [mit Einheit, z.B. "25A"]
+- Technologie: [z.B. "Li-Ion"]
+- Maße: [IMMER SUCHEN! Format: "70 × 37.5 × 37.5 mm"]
+- Gewicht: [IMMER SUCHEN! Format: "184 g"]
+- Schutzschaltung: [Ja/Nein]
+- Eingang: [falls vorhanden]
+- Ausgang: [falls vorhanden]
+- Besonderheiten: [alle weiteren wichtigen Infos]
 
-- Modell: [was du siehst]
-- Typ: [was du siehst]  
-- Spannung: [was du siehst]
-- Kapazität: [was du siehst]
-- Eingang: [was du siehst]
-- Ausgang: [was du siehst]
-- Besonderheiten: [was du siehst]
+⚡ EINHEITEN-KONVERTIERUNG:
+- Gewicht: kg → g (z.B. "0.102 kg" → "102 g")
+- Maße: cm → mm (z.B. "5.7 × 2 × 6.9 cm" → "57 × 20 × 69 mm")
+- Alle anderen Einheiten 1:1 übernehmen
 
-WICHTIG für Einheiten:
-- Gewicht: Konvertiere kg zu g (z.B. "0.102 kg" → "102 g")
-- Abmessungen: Konvertiere cm zu mm (z.B. "5.7 × 2 × 6.9 cm" → "57 × 20 × 69 mm")
+🎯 QUALITÄTSREGELN:
+1. Lies JEDE Zahl und JEDE Einheit im Bild
+2. Maße und Gewicht sind PFLICHT - schaue sehr genau hin!
+3. Wenn du etwas nicht siehst → schreibe "Nicht sichtbar" (nicht "Nicht angegeben")
+4. Extrahiere exakt wie im Bild, keine Vermutungen
+5. Achte besonders auf kleine Schrift in Tabellen
 
-Extrahiere alle technischen Daten, die du im Bild siehst.`
+Beginne jetzt mit der Analyse!`
             },
             {
               type: 'image_url',
               image_url: {
                 url: base64Image,
-                detail: 'high' // Höchste Auflösung für bessere Erkennung
+                detail: 'high' // Höchste Auflösung für kleine Texte
               },
             },
           ],
         },
       ],
-      max_tokens: 1000,
+      temperature: 0.0, // Deterministische Ausgabe
+      max_tokens: 1500, // Mehr Tokens für detaillierte Extraktion
     });
 
     const extractedText = response.choices[0]?.message?.content || '';
