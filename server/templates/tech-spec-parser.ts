@@ -12,6 +12,7 @@ export interface ParsedTechSpecs {
 
 /**
  * Extrahiert Tech Specs 1:1 aus Vision-extrahiertem Text
+ * DYNAMISCH: Extrahiert ALLE "Feld: Wert" Paare, nicht nur vordefinierte
  */
 export function parseTechSpecsFromText(
   extractedText: string,
@@ -27,28 +28,34 @@ export function parseTechSpecsFromText(
     if (!trimmed) continue;
     
     // Pattern: "- Kapazität: 3800mAh" oder "Kapazität: 3800mAh"
-    const match = trimmed.match(/^-?\s*([^:]+):\s*(.+)$/);
+    const match = trimmed.match(/^-?\s*\*?\*?\s*([^:]+):\s*(.+)$/);
     if (!match) continue;
     
-    const fieldName = match[1].trim();
+    let fieldName = match[1].trim();
     const value = match[2].trim();
     
-    // Mappe auf Kategorie-Felder
+    // Skip invalide Werte
+    if (!isValidValue(value)) continue;
+    
+    // Bereinige Feldnamen (entferne **, etc.)
+    fieldName = fieldName.replace(/\*\*/g, '').trim();
+    
+    // Mappe auf bekannte Kategorie-Felder (für konsistente Labels)
+    let mappedFieldName = fieldName;
     for (const field of categoryConfig.technicalFields) {
-      // Exakte Match oder ähnliche Varianten
       const normalizedFieldName = normalizeFieldName(fieldName);
       const normalizedLabel = normalizeFieldName(field.label);
       const normalizedKey = normalizeFieldName(field.key);
       
       if (normalizedFieldName === normalizedLabel || normalizedFieldName === normalizedKey) {
-        // Skip "Nicht spezifiziert", "Nicht angegeben", etc.
-        if (isValidValue(value)) {
-          specs[field.label] = value;
-          console.log(`✅ 1:1 Text-Parse: ${field.label} = ${value}`);
-        }
+        mappedFieldName = field.label; // Nutze konsistenten Label
         break;
       }
     }
+    
+    // Speichere ALLE Specs (auch unbekannte)
+    specs[mappedFieldName] = value;
+    console.log(`✅ 1:1 Text-Parse: ${mappedFieldName} = ${value}`);
   }
   
   return {
