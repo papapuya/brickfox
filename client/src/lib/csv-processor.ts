@@ -65,6 +65,7 @@ async function readFileWithEncoding(file: File): Promise<string> {
       // If this is the last encoding or no replacement characters found, use this
       if (!hasReplacementChars || i === encodings.length - 1) {
         console.log('Erfolgreich gelesen mit Encoding:', encoding.name);
+        console.log('Content preview (first 150 chars):', content.substring(0, 150));
         return content;
       }
       
@@ -116,15 +117,20 @@ export async function parseCSV(file: File): Promise<CSVParseResult> {
     // Detect delimiter
     const delimiter = detectDelimiter(text);
     console.log('Using delimiter:', delimiter === '\t' ? 'TAB' : delimiter);
+    console.log('First line of CSV:', text.split('\n')[0]);
     
     // Use PapaParse to parse the CSV
-    const result = Papa.parse<RawCSVRow>(text, {
+    const parseConfig: Papa.ParseConfig = {
       header: true,
       delimiter: delimiter,
       skipEmptyLines: true,
       transformHeader: (header: string) => header.trim(),
-      transform: (value: string) => value.trim()
-    });
+      transform: (value: string) => value.trim(),
+      dynamicTyping: false
+    };
+    
+    console.log('Papa.parse config:', parseConfig);
+    const result = Papa.parse<RawCSVRow>(text, parseConfig);
     
     if (result.errors && result.errors.length > 0) {
       console.warn(`CSV Parse Warnungen: ${result.errors.length} Warnungen gefunden`);
