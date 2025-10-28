@@ -1,0 +1,11 @@
+Produktname;Modell;Kapazität mAh;Spannung V;Typ;Zusammensetzung (Chemie);Durchmesser mm;Länge mm;Gewicht;Schutzschaltung;Wiederaufladbar
+Keeppower RCR123A;16340;950;3.7;Li-Ion Akku;Lithium-Ionen;16.8;34.5;17g;Ja;Ja
+Varta Recharge Accu;AA 2100;2100;1.2;NiMH Akku;Nickel-Metallhydrid;14.5;50.5;28g;Nein;Ja
+Panasonic Eneloop Pro;AA 2500;2500;1.2;NiMH Akku;Nickel-Metallhydrid;14.5;50.5;30g;Nein;Ja
+Keeppower 21700;P2150C2;5000;3.6;Li-Ion Akku;Lithium-Ionen;21.0;70.0;68g;Ja;Ja
+Sony VTC6;18650;3000;3.7;Li-Ion Akku;Lithium-Ionen;18.5;65.2;48g;Nein;Ja
+Samsung INR18650;35E;3500;3.6;Li-Ion Akku;Lithium-Ionen;18.5;65.0;50g;Nein;Ja
+LG HG2;18650;3000;3.6;Li-Ion Akku;Lithium-Ionen;18.5;65.2;45g;Nein;Ja
+Keeppower 26650;P2650C2;5200;3.7;Li-Ion Akku;Lithium-Ionen;26.2;65.3;90g;Ja;Ja
+Efest IMR 18350;18350;700;3.7;Li-Ion Akku;Lithium-Ionen;18.5;35.0;20g;Nein;Ja
+Nitecore NL1835HP;18350;1100;3.6;Li-Ion Akku;Lithium-Ionen;18.5;35.5;25g;Ja;Ja
