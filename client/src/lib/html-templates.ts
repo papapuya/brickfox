@@ -1,4 +1,38 @@
-import { CreatorProduct, HtmlTemplate } from "@shared/schema";
+import { CreatorProduct, HtmlTemplate, ProductImage } from "@shared/schema";
+
+/**
+ * MediaMarkt Template
+ * Professional MediaMarkt-style product description with advantages, technical specs table, and safety info
+ */
+function mediaMarktTemplate(product: CreatorProduct): string {
+  const advantages = product.advantages || product.features || [];
+  const technicalSpecs = product.technicalSpecs || {};
+  const safetyInfo = product.safetyInfo || 'Produkt entspricht den geltenden Sicherheitsstandards.';
+  const packageContents = product.packageContents || `1 × ${product.name}`;
+
+  return `
+<h2>${product.name}</h2>
+<p>${product.description}</p>
+
+<h4>Vorteile & Eigenschaften:</h4>
+${advantages.map((adv: string) => `<p>✅ ${adv}</p>`).join('\n')}
+
+<h4>Technische Daten</h4>
+<table border="0" summary="">
+<tbody>
+${Object.entries(technicalSpecs).map(([key, value]) => 
+  `<tr><td>${key}:</td><td>${value}</td></tr>`
+).join('\n')}
+</tbody>
+</table>
+
+<h4>Sicherheit & Technologie</h4>
+<p>${safetyInfo}</p>
+
+<h4>Lieferumfang</h4>
+<p>${packageContents}</p>
+`.trim();
+}
 
 /**
  * Technical Data Block Template
@@ -6,7 +40,7 @@ import { CreatorProduct, HtmlTemplate } from "@shared/schema";
  */
 function technicalTemplate(product: CreatorProduct): string {
   const images = product.images || [];
-  const imageHtml = images.map((img, index) => 
+  const imageHtml = images.map((img: ProductImage, index: number) => 
     `<img src="${img.dataUrl}" alt="${product.name} - Bild ${index + 1}" style="max-width: 100%; height: auto; margin-bottom: 15px; border-radius: 4px;" />`
   ).join('\n');
 
@@ -57,7 +91,7 @@ function storytellingTemplate(product: CreatorProduct): string {
   
   ${additionalImages.length > 0 ? `
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 25px;">
-    ${additionalImages.map((img, index) => 
+    ${additionalImages.map((img: ProductImage, index: number) => 
       `<img src="${img.dataUrl}" alt="${product.name} - Detail ${index + 1}" style="width: 100%; height: auto; border-radius: 8px;" />`
     ).join('\n')}
   </div>
@@ -76,7 +110,7 @@ function storytellingTemplate(product: CreatorProduct): string {
  */
 function minimalTemplate(product: CreatorProduct): string {
   const images = product.images || [];
-  const imageGallery = images.map((img, index) => 
+  const imageGallery = images.map((img: ProductImage, index: number) => 
     `<img src="${img.dataUrl}" alt="${product.name} ${index + 1}" style="width: 100%; max-width: 400px; height: auto; margin: 10px 0;" />`
   ).join('\n');
 
@@ -104,8 +138,8 @@ function featureListTemplate(product: CreatorProduct): string {
   // Extract features from description (split by periods, newlines, or bullet points)
   const features = product.description
     .split(/[.•\n]/)
-    .map(f => f.trim())
-    .filter(f => f.length > 10)
+    .map((f: string) => f.trim())
+    .filter((f: string) => f.length > 10)
     .slice(0, 5);
 
   return `
@@ -123,7 +157,7 @@ function featureListTemplate(product: CreatorProduct): string {
   <div style="background: #fafafa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
     <h3 style="color: #d50000; font-size: 18px; margin-bottom: 15px;">✓ Highlights</h3>
     <ul style="list-style: none; padding: 0; margin: 0;">
-      ${features.map(feature => 
+      ${features.map((feature: string) => 
         `<li style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
           <span style="color: #d50000; margin-right: 8px;">▸</span>${feature}
         </li>`
@@ -133,7 +167,7 @@ function featureListTemplate(product: CreatorProduct): string {
   
   ${images.length > 1 ? `
   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
-    ${images.slice(1).map((img, index) => 
+    ${images.slice(1).map((img: ProductImage, index: number) => 
       `<img src="${img.dataUrl}" alt="Detail ${index + 1}" style="width: calc(33.333% - 7px); height: auto; border-radius: 4px;" />`
     ).join('\n')}
   </div>
@@ -150,6 +184,13 @@ function featureListTemplate(product: CreatorProduct): string {
  * Available HTML templates for product descriptions
  */
 export const htmlTemplates: HtmlTemplate[] = [
+  {
+    id: 'mediamarkt',
+    name: 'MediaMarkt',
+    description: 'MediaMarkt-konformes Template mit Vorteilen, technischer Tabelle und Lieferumfang',
+    category: 'technical',
+    templateFunction: mediaMarktTemplate,
+  },
   {
     id: 'technical',
     name: 'Technische Daten',

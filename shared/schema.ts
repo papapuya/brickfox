@@ -183,6 +183,35 @@ export const productsInProjectsRelations = relations(productsInProjects, ({ one 
   }),
 }));
 
+// HTML Template types for product descriptions
+export interface ProductImage {
+  dataUrl: string;
+  fileName: string;
+  fileSize: number;
+}
+
+export interface CreatorProduct {
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  brand?: string;
+  images?: ProductImage[];
+  technicalSpecs?: Record<string, string>;
+  features?: string[];
+  advantages?: string[];
+  safetyInfo?: string;
+  packageContents?: string;
+}
+
+export interface HtmlTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  templateFunction: (product: CreatorProduct) => string;
+}
+
 // Drizzle insert schemas
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });
 export const insertProductInProjectSchema = createInsertSchema(productsInProjects).omit({ id: true, createdAt: true });
