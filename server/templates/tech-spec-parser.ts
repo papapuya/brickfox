@@ -53,9 +53,16 @@ export function parseTechSpecsFromText(
       }
     }
     
+    // SPEZIAL: Vereinfache Schutzschaltung (entferne redundante "Schutz"-Wörter)
+    let cleanedValue = value;
+    if (mappedFieldName === 'Schutzschaltung' || normalizeFieldName(fieldName).includes('schutz')) {
+      // "PCB/BMS Schutz, Überlade- und Entladeschutz, Kurzschlussschutz" → "PCB/BMS"
+      cleanedValue = value.split(',')[0].replace(/schutz$/i, '').trim();
+    }
+    
     // Speichere ALLE Specs (auch unbekannte)
-    specs[mappedFieldName] = value;
-    console.log(`✅ 1:1 Text-Parse: ${mappedFieldName} = ${value}`);
+    specs[mappedFieldName] = cleanedValue;
+    console.log(`✅ 1:1 Text-Parse: ${mappedFieldName} = ${cleanedValue}`);
   }
   
   return {

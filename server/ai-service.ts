@@ -464,10 +464,9 @@ Diese Informationen sind IMMER vorhanden - schaue SEHR GENAU hin!
   - "0.102 kg" (konvertiere zu g = 102 g)
   - "Weight:", "Gewicht:", "Mass:"
 
-📋 EXTRAKTIONS-FORMAT:
+📋 EXTRAKTIONS-FORMAT - BEGINNE MIT DEM PRODUKTNAMEN:
 
-⚠️ KRITISCH - ZUERST:
-PRODUKTNAME: [Lies den HAUPT-PRODUKTTITEL vom Bild - meist oben oder auf der Verpackung. Beispiele: "Keeppower RCR123A", "Varta Recharge Accu", "Panasonic Eneloop Pro". NUR der Name, KEINE Beschreibungen!]
+PRODUKTNAME: [SEHR WICHTIG! Suche oben im Bild nach dem Produkttitel wie "Keeppower RCR123A 16340" oder "Varta Recharge Accu" - der Markenname + Modell. Schaue auf Verpackung, Überschriften, Logo-Bereich!]
 
 TECHNISCHE DATEN:
 - Modell: [exakter Wert]
@@ -478,10 +477,10 @@ TECHNISCHE DATEN:
 - Technologie: [z.B. "Li-Ion"]
 - Maße: [IMMER SUCHEN! Format: "70 × 37.5 × 37.5 mm" oder "Länge 34,0mm, Durchmesser 16,9mm"]
 - Gewicht: [IMMER SUCHEN! Format: "184 g"]
-- Schutzschaltung: [z.B. "PCB/BMS Schutztechnik" oder "Ja"]
+- Schutzschaltung: [NUR KURZ! Schreibe "PCB" oder "BMS" oder "Ja" - NICHT die Details wie Überladeschutz etc.]
 - Eingang: [falls vorhanden]
 - Ausgang: [falls vorhanden]
-- Besonderheiten: [alle weiteren wichtigen Infos]
+- Besonderheiten: [andere wichtige Features]
 
 ⚡ EINHEITEN-KONVERTIERUNG:
 - Gewicht: kg → g (z.B. "0.102 kg" → "102 g")
