@@ -89,10 +89,10 @@ export async function parseCSV(file: File): Promise<CSVParseResult> {
   try {
     const text = await readFileWithEncoding(file);
     
-    // Use PapaParse to parse the CSV
+    // Use PapaParse to parse the CSV - auto-detect delimiter
     const result = Papa.parse<RawCSVRow>(text, {
       header: true,
-      delimiter: ';',
+      delimiter: '',  // Auto-detect delimiter (comma, semicolon, tab)
       skipEmptyLines: true,
       transformHeader: (header: string) => header.trim(),
       transform: (value: string) => value.trim()
