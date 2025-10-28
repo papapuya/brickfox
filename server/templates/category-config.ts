@@ -34,9 +34,10 @@ export const PRODUCT_CATEGORIES: Record<string, ProductCategoryConfig> = {
       { key: 'capacity', label: 'Kapazität', unit: 'mAh', required: true, fallback: 'Nicht angegeben' },
       { key: 'voltage', label: 'Spannung', unit: 'V', required: true, fallback: 'Nicht angegeben' },
       { key: 'chemistry', label: 'Technologie', required: false, fallback: 'Lithium-Ionen' },
+      { key: 'current', label: 'Stromstärke', unit: 'A', required: false },
+      { key: 'dimensions', label: 'Maße', unit: 'mm', required: false },
+      { key: 'weight', label: 'Gewicht', unit: 'g', required: false },
       { key: 'protection', label: 'Schutzschaltung', required: false, fallback: 'Ja' },
-      { key: 'weight', label: 'Gewicht', unit: 'g', required: false, fallback: 'Nicht angegeben' },
-      { key: 'dimensions', label: 'Abmessungen', unit: 'mm', required: false, fallback: 'Nicht angegeben' },
     ],
     uspTemplates: [
       'Wiederaufladbar - spart Kosten und schont die Umwelt',
