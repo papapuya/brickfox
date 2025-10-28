@@ -145,10 +145,20 @@ Analysiere die gegebenen Produktdaten und erstelle ein JSON-Objekt mit folgender
   },
   "packageContents": "Was ist im Lieferumfang enthalten",
   "productHighlights": [
-    "3-5 allgemeine Produkteigenschaften",
-    "z.B. 'Robuste Verarbeitung', 'Langlebig', etc."
+    "Produktspezifisches Highlight 1 (max. 8-10 Wörter)",
+    "Produktspezifisches Highlight 2",
+    "Produktspezifisches Highlight 3",
+    "Produktspezifisches Highlight 4"
   ]
 }
+
+PRODUKTHIGHLIGHTS erstellen (ähnlich wie USPs, aber kürzer):
+STIL-BEISPIELE für Akku-Highlights:
+- "Hochwertige Lithium-Ionen-Zelle für konstante Leistung"
+- "Mehrfachschutz vor Überladung, Kurzschluss und Tiefentladung"
+- "Geringe Selbstentladung – ideal für Langzeitlagerung"
+
+WICHTIG: Basierend auf echten Produktdaten, nicht generisch!
 
 KRITISCHE REGELN:
 1. Verwende NUR Informationen, die in den Produktdaten tatsächlich vorhanden sind

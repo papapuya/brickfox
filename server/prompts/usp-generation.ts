@@ -24,27 +24,30 @@ Analysiere die Produktdaten und erstelle GENAU 5 USP-Bulletpoints, die:
 
 BEISPIEL-ANALYSE:
 
-Produkt: RCR123A 950mAh Akku mit PCB
+Produkt: Keeppower RCR123A 950mAh Akku mit BMS
 ❌ SCHLECHT (zu generisch):
 - "Wiederaufladbar - spart Kosten" (gilt für ALLE Akkus)
-- "Kompatibel mit vielen Geräten" (RCR123A ist sehr speziell!)
-- "Hohe Leistung bei geringem Gewicht" (zu vage, keine konkreten Werte)
+- "Kompatibel mit vielen Geräten" (zu vage!)
+- "Hohe Leistung bei geringem Gewicht" (zu allgemein)
 
-✅ GUT (produktspezifisch):
-- "RCR123A Format - perfekt für LED-Taschenlampen und Kameras"
-- "950 mAh Kapazität - lange Betriebszeit für Ihre Geräte"
-- "PCB Schutzschaltung - verhindert Überladung und Tiefentladung"
-- "3,6V konstante Spannung - zuverlässige Leistung"
-- "Bis zu 500 Ladezyklen - langlebig und kosteneffizient"
+✅ GUT (produktspezifisch - nutze solche Formulierungen):
+- "Integrierte BMS-Schutzelektronik für maximale Zellensicherheit"
+- "Kompatibel mit Geräten, die CR123A Primärzellen nutzen – wiederaufladbare Alternative"
+- "Hervorragende Spannungsstabilität auch bei hoher Belastung"
+- "Qualitätszelle mit langer Lebensdauer – ideal für Dauerbetrieb"
+- "Entwickelt für professionelle Anwendungen (z. B. Taschenlampen, Messgeräte, Fotoausrüstung)"
 
-VERFÜGBARE TEMPLATES (nur als Inspiration, NICHT 1:1 kopieren):
+STIL-BEISPIELE (zeigen den gewünschten Stil - NICHT 1:1 kopieren, sondern an das Produkt anpassen):
 ${context.uspTemplates?.map((usp, i) => `${i + 1}. ${usp}`).join('\n') || 'Keine Vorlagen'}
 
+WICHTIG: Nutze diesen STIL, aber erstelle EIGENE USPs basierend auf den echten Produktdaten!
+
 REGELN:
-✅ Nutze echte Werte (Kapazität, Format, Schutzfunktionen)
-✅ Erkläre, WOFÜR das Produkt konkret verwendet wird
-✅ Zeige spezifische Vorteile (nicht "hochwertig", "zuverlässig")
-✅ Jeder USP sollte NUR für dieses Produkt passen
+✅ Analysiere die Produktdaten (Kapazität, Format, Schutzfunktionen, Anwendungsbereich)
+✅ Nutze den Stil der Beispiele oben (z.B. "BMS-Schutzelektronik", "CR123A-kompatibel")
+✅ Erstelle produktspezifische USPs mit echten Werten
+✅ Erkläre konkrete Anwendungen (welche Geräte? welche Zielgruppe?)
+✅ Jeder USP muss auf DIESES spezielle Produkt passen
 
 ❌ VERBOTEN:
 - Generische Aussagen ohne Produktbezug

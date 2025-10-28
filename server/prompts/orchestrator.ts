@@ -155,7 +155,9 @@ export class PromptOrchestrator {
       technicalSpecs,
       safetyNotice,
       packageContents,
-      productHighlights: [], // Wird vom Renderer mit Category-Config gefüllt
+      productHighlights: results['narrative'].success && results['narrative'].data?.productHighlights 
+        ? results['narrative'].data.productHighlights 
+        : []
     };
   }
 }

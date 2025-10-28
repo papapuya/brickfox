@@ -39,8 +39,27 @@ STIL:
 
 OUTPUT-FORMAT (JSON):
 {
-  "narrative": "Die produktspezifische Beschreibung in 4-5 Sätzen."
-}`,
+  "narrative": "Die produktspezifische Beschreibung in 4-5 Sätzen.",
+  "productHighlights": [
+    "Produktspezifisches Highlight 1",
+    "Produktspezifisches Highlight 2", 
+    "Produktspezifisches Highlight 3",
+    "Produktspezifisches Highlight 4"
+  ]
+}
+
+ZUSÄTZLICH: Erstelle 4 produktspezifische Highlights (ähnlich wie USPs, aber kürzer):
+
+STIL-BEISPIELE für Akku-Highlights:
+- "Hochwertige Lithium-Ionen-Zelle für konstante Leistung"
+- "Mehrfachschutz vor Überladung, Kurzschluss und Tiefentladung"
+- "Geringe Selbstentladung – ideal für Langzeitlagerung"
+
+WICHTIG für Highlights:
+- Basierend auf echten Produktdaten
+- Kürzer als USPs (max. 8-10 Wörter)
+- Fokus auf Qualitätsmerkmale und Schutzfunktionen
+- Produktspezifisch, nicht generisch`,
 
   userPrompt: (context: PromptContext) => `Produktdaten:
 ${JSON.stringify(context.productData, null, 2)}

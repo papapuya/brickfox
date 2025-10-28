@@ -4,6 +4,22 @@
 Eine moderne Full-Stack Web-Anwendung zur automatischen Generierung von KI-gestützten Produktbeschreibungen aus Lieferantendaten. Die App nutzt OpenAI für intelligente Textgenerierung und Firecrawl für Website-Analyse.
 
 ## Letzte Änderungen
+- **28.10.2025 (Spät-Nacht)**: Dynamische produktspezifische Textgenerierung
+  - **🎯 PRODUKTSPEZIFISCHE AI-PROMPTS**: Templates dienen nur noch als Stil-Beispiele
+    - USPs werden dynamisch generiert basierend auf echten Produktdaten (nicht mehr generisch)
+    - Produktbeschreibungen enthalten konkrete Modelle, Kapazitäten und Anwendungen
+    - Highlights werden von AI generiert (nicht aus Category-Templates kopiert)
+  - **📋 AKKU-OPTIMIERTE TEMPLATES**: Neue Stil-Beispiele für Akkus
+    - "Integrierte BMS-Schutzelektronik für maximale Zellensicherheit"
+    - "Kompatibel mit Geräten, die CR123A Primärzellen nutzen"
+    - "Hervorragende Spannungsstabilität auch bei hoher Belastung"
+  - **✅ BEISPIELE IN PROMPTS**: AI lernt von guten/schlechten Beispielen
+    - ❌ Generisch: "Wiederaufladbar - spart Kosten" (passt auf alle Akkus)
+    - ✅ Spezifisch: "950 mAh Kapazität - lange Betriebszeit für LED-Taschenlampen"
+  - **🚀 MULTI-URL SCRAPING**: Textarea statt Input-Feld
+    - Mehrere URLs gleichzeitig analysieren (eine pro Zeile)
+    - Paralleles Scraping mit automatischer Validierung
+  
 - **28.10.2025 (Nacht)**: Multi-Prompt-Architektur & neue Produktkategorien
   - **🔧 MODULAR SUBPROMPT-ARCHITEKTUR implementiert**:
     - System unterstützt nun zwei Modi: Modular (Standard) & Monolithisch (Legacy)
