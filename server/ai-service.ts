@@ -516,7 +516,7 @@ Beginne jetzt mit der Analyse!`
     console.log('GPT Vision response preview:', extractedText.substring(0, 200) + '...');
 
     // Extrahiere den Produktnamen aus der Antwort
-    let productName = 'Unbekanntes Produkt';
+    let productName = '';
     const productNameMatch = extractedText.match(/PRODUKTNAME:\s*(.+?)(?:\n|$)/i);
     if (productNameMatch) {
       productName = productNameMatch[1].trim();
@@ -610,7 +610,7 @@ export async function generateProductDescription(
   }
 
   const firstData = extractedData[0] || {};
-  const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || 'Unbekanntes Produkt';
+  const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || '';
   
   const categoryId = detectCategory(firstData);
   const categoryConfig = getCategoryConfig(categoryId);

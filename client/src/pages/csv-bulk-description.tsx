@@ -432,23 +432,18 @@ export default function CSVBulkDescription() {
             </Card>
 
             <Card className="p-6">
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {processedData.slice(0, 10).map((product, index) => (
-                  <div key={index} className="border-b pb-4 last:border-0">
-                    <p className="text-sm font-medium mb-2">
+              <div className="space-y-6 max-h-[600px] overflow-y-auto">
+                {processedData.map((product, index) => (
+                  <div key={index} className="border-b pb-6 last:border-0">
+                    <h3 className="text-base font-semibold mb-3">
                       {product.seoName || `Produkt ${index + 1}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
+                    </h3>
+                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {product.descriptionText}
-                    </p>
+                    </div>
                   </div>
                 ))}
               </div>
-              {processedData.length > 10 && (
-                <p className="text-xs text-muted-foreground mt-4 text-center">
-                  ... und {processedData.length - 10} weitere Produkte
-                </p>
-              )}
             </Card>
           </div>
         )}
