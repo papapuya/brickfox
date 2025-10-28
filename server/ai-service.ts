@@ -562,7 +562,6 @@ Versuche alle Zahlen, Maße und technischen Daten zu erkennen.`
   }
 }
 
-// Diese Funktion wurde durch generateAkkushopDescription ersetzt
 export async function generateProductDescription(
   extractedData: any[],
   template?: string,
@@ -573,10 +572,42 @@ export async function generateProductDescription(
   },
   onProgress?: (step: number, message: string) => void
 ): Promise<string> {
-  console.log('=== USING AI-BASED GENERATION ===');
+  console.log('=== USING CATEGORY-BASED GENERATION ===');
   
-  // Verwende die AI-basierte Generierung für dynamische Struktur basierend auf Lieferantendaten
-  return await generateAkkushopDescription(extractedData);
+  const { detectCategory, getCategoryConfig } = await import('./templates/category-config.js');
+  const { generateProductCopy } = await import('./templates/ai-generator.js');
+  const { renderProductHtml } = await import('./templates/renderer.js');
+  
+  const currentApiKey = getOpenAIKey();
+  const currentBaseUrl = getOpenAIBaseUrl();
+  
+  if (!currentApiKey || currentApiKey === 'dein-api-schlüssel-hier') {
+    throw new Error('OpenAI API key nicht konfiguriert');
+  }
+
+  const firstData = extractedData[0] || {};
+  const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || 'Unbekanntes Produkt';
+  
+  const categoryId = detectCategory(firstData);
+  const categoryConfig = getCategoryConfig(categoryId);
+  
+  console.log(`Detected category: ${categoryId} (${categoryConfig.name})`);
+
+  const copy = await generateProductCopy(
+    firstData,
+    categoryConfig,
+    currentApiKey,
+    currentBaseUrl
+  );
+
+  const html = renderProductHtml({
+    productName,
+    categoryConfig,
+    copy,
+    layoutStyle: 'mediamarkt',
+  });
+
+  return html;
 }
 
 export async function convertTextToHTML(
