@@ -113,6 +113,70 @@ export const PRODUCT_CATEGORIES: Record<string, ProductCategoryConfig> = {
       'Hervorragendes Preis-Leistungs-Verhältnis',
     ],
   },
+
+  accessory: {
+    id: 'accessory',
+    name: 'Zubehör',
+    description: 'Kabel, Adapter, Klemmen, Taschen und weiteres Zubehör',
+    keywords: ['kabel', 'cable', 'adapter', 'klemme', 'clip', 'tasche', 'case', 'halter', 'halterung', 'mount', 'zubehör', 'accessory', 'krokodilklemme', 'verbindung', 'stecker', 'buchse', 'connector'],
+    technicalFields: [
+      { key: 'connector', label: 'Anschluss', required: false, fallback: 'Standard' },
+      { key: 'compatibility', label: 'Kompatibilität', required: true, fallback: 'Siehe Beschreibung' },
+      { key: 'cableLength', label: 'Kabellänge', unit: 'cm', required: false, fallback: 'Nicht angegeben' },
+      { key: 'material', label: 'Material', required: false, fallback: 'Hochwertige Verarbeitung' },
+      { key: 'features', label: 'Besonderheiten', required: false, fallback: 'Zuverlässige Qualität' },
+      { key: 'weight', label: 'Gewicht', unit: 'g', required: false, fallback: 'Nicht angegeben' },
+    ],
+    uspTemplates: [
+      'Präzise Verbindung - zuverlässiger Kontakt für exakte Messungen',
+      'Hochwertige Kontaktflächen - minimaler Übergangswiderstand',
+      'Einfache Handhabung - schnelle Anbringung ohne Werkzeug',
+      'Robust und langlebig - für den täglichen professionellen Einsatz',
+      'Isolierte Ausführung - Schutz vor Kurzschlüssen',
+      'Universal kompatibel - passend für viele Geräte',
+      'Professionelle Qualität - zuverlässig in jeder Situation',
+    ],
+    safetyNotice: '⚠️ Vor dem Anschluss Polarität beachten. Nicht bei laufendem Betrieb an-/abstecken. Beschädigte Kabel nicht verwenden. Von Kindern fernhalten. Bei Defekten sofort austauschen.',
+    productHighlights: [
+      'Robuste Verarbeitung für langen Einsatz',
+      'Hochwertige Materialien für beste Leitfähigkeit',
+      'Einfache Installation und Handhabung',
+      'Zuverlässige Kontaktierung',
+      'Optimales Preis-Leistungs-Verhältnis',
+    ],
+  },
+
+  testing_equipment: {
+    id: 'testing_equipment',
+    name: 'Messgerät',
+    description: 'Mess- und Prüfgeräte für Akkus, Batterien und Elektronik',
+    keywords: ['messgerät', 'tester', 'prüfgerät', 'multimeter', 'innenwiderstand', 'kapazität', 'measuring', 'testing', 'analyzer', 'meter'],
+    technicalFields: [
+      { key: 'measurementRange', label: 'Messbereich', required: true, fallback: 'Siehe Beschreibung' },
+      { key: 'accuracy', label: 'Genauigkeit', unit: '%', required: false, fallback: 'Hoch' },
+      { key: 'display', label: 'Anzeige', required: false, fallback: 'LCD' },
+      { key: 'powerSupply', label: 'Stromversorgung', required: false, fallback: 'Batterie' },
+      { key: 'features', label: 'Funktionen', required: false, fallback: 'Siehe Beschreibung' },
+      { key: 'dimensions', label: 'Abmessungen', unit: 'mm', required: false, fallback: 'Nicht angegeben' },
+    ],
+    uspTemplates: [
+      'Präzise Messungen - professionelle Genauigkeit für zuverlässige Ergebnisse',
+      'Einfache Bedienung - intuitive Handhabung auch für Einsteiger',
+      'Übersichtliches Display - klare Anzeige aller Messwerte',
+      'Vielseitig einsetzbar - für verschiedene Mess-Anwendungen',
+      'Robustes Gehäuse - langlebig und stoßfest',
+      'Schnelle Messungen - Ergebnisse in Sekundenschnelle',
+      'Professionelle Qualität - zuverlässig im täglichen Einsatz',
+    ],
+    safetyNotice: '⚠️ Nicht an stromführenden Teilen messen ohne entsprechende Schutzmaßnahmen. Messbereich beachten. Vor Feuchtigkeit schützen. Batterie bei längerer Nichtbenutzung entfernen. Kalibrierung regelmäßig prüfen.',
+    productHighlights: [
+      'Professionelle Messgenauigkeit',
+      'Langlebige und robuste Konstruktion',
+      'Einfache und sichere Handhabung',
+      'Vielseitige Einsatzmöglichkeiten',
+      'Hervorragendes Preis-Leistungs-Verhältnis',
+    ],
+  },
 };
 
 export function detectCategory(productData: any): string {
