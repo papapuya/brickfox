@@ -1,255 +1,214 @@
 # MediaMarkt Tools - Produktmanagement
 
-## Übersicht
-Eine moderne Full-Stack Web-Anwendung zur automatischen Generierung von KI-gestützten Produktbeschreibungen aus Lieferantendaten. Die App nutzt OpenAI für intelligente Textgenerierung und Firecrawl für Website-Analyse.
+## Overview
+This full-stack web application automates the generation of AI-powered product descriptions from supplier data. It leverages OpenAI for intelligent text generation and Firecrawl for website analysis, aiming to streamline content creation for MediaMarkt. The system is designed for efficient mass processing of product data, primarily through CSV uploads, offering significant cost and speed advantages over image analysis. It supports dynamic, product-specific AI prompts and a modular architecture for scalability and maintainability.
 
-## Letzte Änderungen
-- **28.10.2025 (Spät-Nacht)**: Dynamische produktspezifische Textgenerierung
-  - **🎯 PRODUKTSPEZIFISCHE AI-PROMPTS**: Templates dienen nur noch als Stil-Beispiele
-    - USPs werden dynamisch generiert basierend auf echten Produktdaten (nicht mehr generisch)
-    - Produktbeschreibungen enthalten konkrete Modelle, Kapazitäten und Anwendungen
-    - Highlights werden von AI generiert (nicht aus Category-Templates kopiert)
-  - **📋 AKKU-OPTIMIERTE TEMPLATES**: Neue Stil-Beispiele für Akkus
-    - "Integrierte BMS-Schutzelektronik für maximale Zellensicherheit"
-    - "Kompatibel mit Geräten, die CR123A Primärzellen nutzen"
-    - "Hervorragende Spannungsstabilität auch bei hoher Belastung"
-  - **✅ BEISPIELE IN PROMPTS**: AI lernt von guten/schlechten Beispielen
-    - ❌ Generisch: "Wiederaufladbar - spart Kosten" (passt auf alle Akkus)
-    - ✅ Spezifisch: "950 mAh Kapazität - lange Betriebszeit für LED-Taschenlampen"
-  - **🚀 MULTI-URL SCRAPING**: Textarea statt Input-Feld
-    - Mehrere URLs gleichzeitig analysieren (eine pro Zeile)
-    - Paralleles Scraping mit automatischer Validierung
-  
-- **28.10.2025 (Nacht)**: Multi-Prompt-Architektur & neue Produktkategorien
-  - **🔧 MODULAR SUBPROMPT-ARCHITEKTUR implementiert**:
-    - System unterstützt nun zwei Modi: Modular (Standard) & Monolithisch (Legacy)
-    - Neue Prompt-Struktur in `server/prompts/`:
-      - `base-system.ts` - Grundprinzipien & Qualitätsregeln
-      - `usp-generation.ts` - Verkaufsfördernde USPs (5 Stück)
-      - `tech-extraction.ts` - Technische Datenextraktion
-      - `narrative.ts` - Produktbeschreibung (4-5 Sätze)
-      - `safety-warnings.ts` - Sicherheitshinweise
-      - `package-contents.ts` - Lieferumfang
-      - `orchestrator.ts` - Kombiniert Subprompts intelligent
-    - **Vorteile**: Einzeln testbar in Make/n8n, günstiger, wiederverwendbar, agenten-fähig
-  - **✅ 2 NEUE PRODUKTKATEGORIEN**:
-    - **Zubehör** (accessory) - Kabel, Adapter, Klemmen, Krokodilklemmen, Halterungen
-    - **Messgerät** (testing_equipment) - Innenwiderstandstester, Multimeter, Prüfgeräte
-  - **🎯 Verbesserte Kategorie-Erkennung**:
-    - Wählt jetzt BESTE Match (meiste Keyword-Treffer) statt ersten Match
-    - Behebt Problem mit Krokodilklemmen (wurde fälschlich als Ladegerät erkannt)
-    - Logging für besseres Debugging
-  - **🔨 Alle TypeScript-Fehler behoben** (44 → 0 Fehler)
-  
-- **28.10.2025 (Abend)**: Kategorie-basiertes Template-System implementiert
-  - **Neue 3-Schicht-Architektur** für flexible Produktbeschreibungen:
-    1. Kategorie-Konfiguration (category-config.ts) - definiert technische Felder, USPs und Sicherheitshinweise pro Produktkategorie
-    2. AI-Generator (ai-generator.ts) - AI gibt strukturiertes JSON zurück statt HTML
-    3. Template Renderer (renderer.ts) - baut HTML aus JSON + Kategorie-Config
-  - **5 Produktkategorien** jetzt verfügbar: Akku/Batterie, Ladegerät, Werkzeug, Zubehör, Messgerät
-  - **Automatische Kategorie-Erkennung** via Keyword-Matching (wählt beste Match)
-  - **Dynamischer AI-Prompt** - passt sich an verfügbare Produktdaten an
-  - **Flexibel für verschiedene Lieferanten** - funktioniert mit unterschiedlichen Datenmengen
-  - System behebt "oh jee"-Problem: AI gibt keine Template-Anweisungen mehr aus
-  
-- **28.10.2025 (Nachmittag)**: MediaMarkt-Template und Type-System erweitert
-  - ProductImage, CreatorProduct und HtmlTemplate Typen in shared/schema.ts definiert
-  - MediaMarkt-Template mit h2/h4-Struktur, Vorteilen (✅), technischer Tabelle und Lieferumfang erstellt
-  - TypeScript Type-Annotations für alle Template-Funktionen hinzugefügt
-  - MediaMarkt-Template als Standardtemplate (erstes in der Liste) konfiguriert
-  
-- **28.10.2025 (Vormittag)**: Projekt erfolgreich in Replit importiert
-  - Vite-Konfiguration für Replit-Umgebung angepasst (Host: 0.0.0.0, Port: 5000)
-  - SQLite-Datenbank initialisiert
-  - Workflow konfiguriert und getestet
-  - .gitignore erstellt
-
-## Benutzer-Präferenzen
+## User Preferences
 Keine spezifischen Präferenzen dokumentiert.
 
-## Projekt-Architektur
+## System Architecture
 
-### Technologie-Stack
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Express.js + TypeScript
-- **Datenbank**: SQLite (Development) / PostgreSQL (Production via Neon)
+### Technology Stack
+- **Frontend**: React 18, TypeScript, Vite
+- **Backend**: Express.js, TypeScript
+- **Database**: SQLite (Development), PostgreSQL (Production via Neon)
 - **ORM**: Drizzle ORM
-- **UI-Bibliothek**: shadcn/ui + Radix UI + Tailwind CSS
+- **UI Libraries**: shadcn/ui, Radix UI, Tailwind CSS
 - **AI/ML**: OpenAI API, Firecrawl API, Tesseract.js (OCR)
 
-### Projektstruktur
+### System Design
+The application features a **modular subprompt architecture** (implemented in `server/prompts/`) allowing for specialized AI prompts (e.g., USP generation, technical data extraction, narrative description, safety warnings, package contents) orchestrated by a central component. This design enhances testability, reusability, and cost-efficiency.
+
+A **category-based template system** (in `server/templates/`) ensures flexible and structured product description generation. It uses a 3-layer approach:
+1.  **Category Configuration**: Defines technical fields, USPs, and safety notices per product category.
+2.  **AI Generator**: Returns structured JSON (not raw HTML), with prompts adapting to the specific category.
+3.  **Template Renderer**: Constructs HTML from the AI-generated JSON, category configuration, and fallbacks.
+
+This system supports automatic category recognition via keyword matching and dynamically adapts AI prompts to available product data, making it flexible for various suppliers.
+
+**UI/UX**: Utilizes shadcn/ui, Radix UI, and Tailwind CSS for a modern and consistent user interface. The MediaMarkt-specific HTML template includes `h2/h4` structures, advantages (✅), technical tables, and package contents.
+
+**Core Features**:
+-   **CSV Enrichment**: Upload and process product data via CSV.
+-   **URL Analysis**: Direct scraping of supplier websites using Firecrawl.
+-   **AI Generation**: Automated product descriptions in the MediaMarkt format.
+-   **Template System**: Customizable HTML templates for descriptions.
+-   **Multi-URL Scraping**: Supports analyzing multiple URLs concurrently.
+-   **Product-Specific AI Prompts**: Dynamic generation of USPs and descriptions based on actual product data, moving beyond generic templates.
+-   **Product Categories**: Supports `battery`, `charger`, `tool`, `accessory`, and `testing_equipment` with improved category recognition.
+
+### Project Structure
+-   `client/`: React Frontend (components, hooks, lib, pages)
+-   `server/`: Express Backend
+    -   `prompts/`: Modular Subprompt Architecture (base-system, usp-generation, tech-extraction, narrative, safety-warnings, package-contents, orchestrator)
+    -   `templates/`: Category-based Template System (category-config, ai-generator, renderer)
+    -   `ai-service.ts`: OpenAI Integration
+    -   `firecrawl-service.ts`: Firecrawl Integration
+    -   `db.ts`: Database Setup
+    -   `routes.ts`: API Routes
+-   `shared/`: Shared Type Schemas
+-   `dist/`: Build Output
+
+## External Dependencies
+-   **OpenAI API**: For AI-driven text generation.
+-   **Firecrawl API**: For website scraping and content analysis.
+-   **Tesseract.js**: For Optical Character Recognition (OCR) on product images.
+-   **Neon (PostgreSQL)**: Production database hosting.
+
+## 💰 Kosten & Skalierbarkeit für Massenverarbeitung
+
+### CSV-Verarbeitung für 2000+ Produkte (Empfohlen)
+
+| Verarbeitungsmethode | Kosten pro Produkt | 2000 Produkte | Geschwindigkeit |
+|---------------------|-------------------|---------------|-----------------|
+| **CSV + GPT-4o** (empfohlen) | ~$0.013 | ~$26 | Mittel (1-2h) |
+| **CSV + GPT-4o-mini** | ~$0.0008 | ~$1.60 | Schnell (30-60min) |
+| **CSV + Caching** (50% identisch) | ~$0.01 | ~$20 | Sehr schnell |
+| **Bild + GPT-4o Vision** | ~$0.15 | ~$300 | Langsam (2-3h) |
+| **PDF + Firecrawl + GPT-4o** | ~$0.025 | ~$50 | Mittel (1-2h) |
+| **URL Scraping + Firecrawl + GPT-4o** | ~$0.016 | ~$32 | Mittel-Schnell |
+
+**Best Practice**: CSV als Hauptquelle, Vision API nur für fehlende Daten
+
+### Firecrawl API Kosten (2025)
+
+**Credit-System:**
+- Base Scraping (normale Website): **1 Credit pro Seite**
+- PDF Parsing: **+1 Credit pro Seite** (total 2 Credits/Seite)
+- Structured Extraction (JSON): **+5 Credits pro Request**
+- Stealth Proxy Mode: **+4 Credits**
+
+**Pricing:**
+- **Free Tier**: Verfügbar zum Testen
+- **Starter**: Ab **$16/Monat** für 1.000 Credits
+- **Pro**: Höhere Volumina verfügbar
+
+**Beispiel-Rechnung (2000 Produkte):**
 ```
-├── client/              # React Frontend
-│   ├── src/
-│   │   ├── components/  # UI-Komponenten (shadcn/ui)
-│   │   ├── hooks/       # React Hooks
-│   │   ├── lib/         # Utilities & Services
-│   │   └── pages/       # App-Seiten
-│   └── index.html
-├── server/              # Express Backend
-│   ├── prompts/         # 🆕 MODULARE SUBPROMPT-ARCHITEKTUR
-│   │   ├── types.ts            # Subprompt Type-Definitionen
-│   │   ├── base-system.ts      # Grund-Systemprompt (Qualitätsregeln)
-│   │   ├── usp-generation.ts   # USP-Generierung (5 verkaufsfördernde Bullets)
-│   │   ├── tech-extraction.ts  # Technische Daten-Extraktion
-│   │   ├── narrative.ts        # Produktbeschreibung (4-5 Sätze)
-│   │   ├── safety-warnings.ts  # Sicherheitshinweise
-│   │   ├── package-contents.ts # Lieferumfang
-│   │   ├── orchestrator.ts     # Orchestrator für kombinierte Calls
-│   │   └── index.ts            # Exports
-│   ├── templates/       # Kategorie-basiertes Template-System
-│   │   ├── category-config.ts  # Produktkategorien-Definitionen (5 Kategorien)
-│   │   ├── ai-generator.ts     # Dual-Mode: Modular (neu) + Monolithisch (legacy)
-│   │   ├── renderer.ts         # HTML-Template-Rendering
-│   │   └── types.ts            # Template-spezifische Typen
-│   ├── ai-service.ts    # OpenAI Integration
-│   ├── firecrawl-service.ts  # Firecrawl Integration
-│   ├── db.ts            # Datenbank-Setup
-│   ├── routes.ts        # API Routes
-│   └── index.ts         # Server Entry Point
-├── shared/              # Gemeinsame Typen
-│   └── schema.ts        # Drizzle Schema
-└── dist/                # Build Output
-```
+Szenario 1: URLs scrapen
+- 2000 URLs × 1 Credit = 2.000 Credits (~$32)
+- Mit Structured Extraction: 2000 × 6 Credits = 12.000 Credits (~$192)
 
-### Hauptfunktionen
-1. **CSV-Anreicherung**: Upload und Verarbeitung von Produktdaten-CSVs
-2. **URL-Analyse**: Direkte Analyse von Lieferanten-Websites mit Firecrawl
-3. **Bildanalyse**: KI-gestützte Analyse von Produktbildern (OCR + Vision)
-4. **KI-Generierung**: Automatische Produktbeschreibungen im MediaMarkt-Format
-5. **Projektmanagement**: Verwaltung mehrerer Produktdaten-Projekte
-6. **Template-System**: Anpassbare HTML-Templates für Beschreibungen
-7. **API-Verwaltung**: Sichere Verwaltung von OpenAI und Firecrawl API-Keys
-
-### Konfiguration
-
-#### Entwicklung (Development)
-- **Server**: Läuft auf `localhost:5000` mit Vite Dev-Server integriert
-- **Datenbank**: SQLite (local.db)
-- **Host**: Frontend auf 0.0.0.0 (für Replit-Proxy)
-
-#### Produktion (Production)
-- **Server**: Express mit statischem Build-Output
-- **Datenbank**: PostgreSQL über Neon
-- **Build**: `npm run build` erstellt optimierte Builds
-
-### Umgebungsvariablen
-Die App benötigt folgende API-Keys (optional für lokale Entwicklung):
-- `OPENAI_API_KEY`: Für KI-Textgenerierung
-- `FIRECRAWL_API_KEY`: Für Website-Scraping
-- `DATABASE_URL`: PostgreSQL-URL (nur Production)
-- `PORT`: Server-Port (Standard: 5000)
-- `NODE_ENV`: development/production
-
-### Verfügbare Scripts
-- `npm run dev`: Startet Development-Server
-- `npm run build`: Erstellt Production-Build
-- `npm run start`: Startet Production-Server
-- `tsx server/migrate.ts`: Initialisiert SQLite-Datenbank
-
-### Architektur-Entscheidungen
-
-**28.10.2025 (Nacht) - Multi-Prompt-Architektur**
-- **Problem**: Monolithische Prompts sind schwer testbar, teuer, nicht wiederverwendbar
-- **Lösung**: Modulare Subprompt-Architektur in `server/prompts/`
-  - 6 spezialisierte Subprompts (USPs, Tech, Narrative, Safety, Package)
-  - Orchestrator kombiniert Subprompts intelligent
-  - Dual-Mode: Wahl zwischen Modular (Standard) oder Monolithisch (Legacy)
-  - Jeder Subprompt einzeln testbar in Make/n8n
-- **Vorteile**: 
-  - ✅ A/B-Testing pro Modul möglich
-  - ✅ Caching & Wiederverwendung von Ergebnissen
-  - ✅ Günstiger (kleinere Context-Fenster)
-  - ✅ Agenten-fähig (GPT kann Subprompts selbst wählen)
-- **Neue Kategorien**: Zubehör (Kabel, Klemmen) & Messgerät (Tester, Multimeter)
-- **Verbesserte Erkennung**: Beste Match statt erster Match (behebt Krokodilklemmen-Problem)
-
-**28.10.2025 (Abend) - Kategorie-basiertes Template-System**
-- **Problem**: Alte AI-Prompts waren zu komplex → AI gab Template-Anweisungen direkt aus ("VERWENDE technicalSpecs.standards")
-- **Lösung**: 3-Schicht-Architektur
-  1. **Kategorie-Config**: Definiert was für Akku/Ladegerät/Werkzeug/Zubehör/Messgerät wichtig ist
-  2. **AI → JSON**: AI gibt strukturiertes JSON zurück (kein HTML!), Prompt passt sich an Kategorie an
-  3. **Code → HTML**: Server baut HTML aus JSON + Kategorie-Config + Fallbacks
-- **Flexibilität**: System funktioniert mit unterschiedlichen Lieferantendaten (viele oder wenige Infos)
-- **Erweiterbarkeit**: Neue Kategorien einfach in `server/templates/category-config.ts` hinzufügen
-- **Automatik**: Kategorie wird automatisch via Keywords erkannt (beste Match-Logik)
-
-**28.10.2025 - Replit-Anpassungen**
-- Vite-Server muss auf 0.0.0.0 binden, damit Replit-Proxy funktioniert
-- HMR-Client-Port auf 443 gesetzt für sichere WebSocket-Verbindungen
-- Backend läuft auf localhost (127.0.0.1) in Development
-- Frontend und Backend teilen sich Port 5000 (Vite integriert in Express)
-
-**Original-Design**
-- Dual-Database-Strategie: SQLite für schnelle lokale Entwicklung, PostgreSQL für Production
-- Monorepo-Struktur mit shared schema für Type-Safety zwischen Frontend/Backend
-- AI-Service-Abstraktion für flexible Integration verschiedener LLM-Provider
-- Template-basierte Generierung für konsistente Ausgaben
-
-## Deployment
-Für Production-Deployment auf Replit verwenden Sie den "Deploy"-Button. Die App ist bereits für Autoscale-Deployment konfiguriert.
-
-## Kategorie-System: Neue Produktkategorien hinzufügen
-
-Das neue kategorie-basierte Template-System macht es einfach, neue Produkttypen hinzuzufügen. Folgen Sie diesen Schritten:
-
-### 1. Kategorie-Konfiguration erstellen
-
-Öffnen Sie `server/templates/category-config.ts` und fügen Sie eine neue Kategorie zum `PRODUCT_CATEGORIES` Objekt hinzu:
-
-```typescript
-electronics: {
-  id: 'electronics',
-  name: 'Elektronik',
-  description: 'Elektronische Geräte und Zubehör',
-  keywords: ['elektronik', 'device', 'gadget', 'usb', 'kabel'],
-  technicalFields: [
-    { key: 'connectivity', label: 'Anschlüsse', required: true, fallback: 'USB' },
-    { key: 'power', label: 'Leistung', unit: 'W', required: false },
-    { key: 'weight', label: 'Gewicht', unit: 'g', required: false },
-  ],
-  uspTemplates: [
-    'Einfache Bedienung - intuitive Steuerung',
-    'Vielseitig einsetzbar - für viele Anwendungen',
-    'Kompaktes Design - platzsparend',
-  ],
-  safetyNotice: '⚠️ Bedienungsanleitung beachten. Nicht in feuchten Umgebungen verwenden.',
-  productHighlights: [
-    'Moderne Technologie für zuverlässigen Betrieb',
-    'Hochwertige Verarbeitung und Materialien',
-    'Optimales Preis-Leistungs-Verhältnis',
-  ],
-}
+Szenario 2: PDF-Kataloge (5 Seiten pro Produkt)
+- 2000 PDFs × 5 Seiten × 2 Credits = 20.000 Credits (~$320)
 ```
 
-### 2. Kategorie-Erkennung testen
+**Firecrawl PDF-Capabilities:**
+- ✅ Direkte PDF-Extraktion von URLs (keine File-Uploads)
+- ✅ Multi-Spalten-Layouts und Tabellen
+- ✅ Markdown oder HTML Output
+- ✅ Strukturierte JSON-Extraktion mit AI
+- ✅ Batch-Processing mehrerer PDFs
+- ⚠️ Password-geschützte PDFs benötigen Spezialbehandlung
 
-Die Kategorie wird automatisch erkannt basierend auf den `keywords`. Testen Sie mit Beispieldaten:
-- Keywords sollten typische Begriffe enthalten, die in Produktnamen/Beschreibungen vorkommen
-- System wählt erste Kategorie mit Match (Reihenfolge in PRODUCT_CATEGORIES wichtig!)
+**CSV-Anforderungen (Akku-Kategorie):**
 
-### 3. Template anpassen (optional)
+Minimale Spalten:
+- Produktname, Modell, Kapazität, Spannung
 
-Falls nötig, können Sie in `server/templates/renderer.ts` spezielle Rendering-Logik für die neue Kategorie hinzufügen.
+Optionale Spalten (verbessern Qualität):
+- Typ, Technologie, Maße, Gewicht, Schutzschaltung, Max. Ladestrom, Max. Entladestrom, Besonderheiten
 
-### 4. System testen
+**Workflow:**
+```
+CSV hochladen → Spalten-Mapping → AI-Generierung → Export mit Produktbeschreibungen
+```
 
-Laden Sie ein Testprodukt hoch und prüfen Sie:
-- ✅ Wird die richtige Kategorie erkannt? (Log: "Detected category: ...")
-- ✅ Sind die technischen Felder korrekt?
-- ✅ Passen die USPs zur Kategorie?
+## 💳 Laufende Kosten bei der App-Entwicklung auf Replit
 
-### Verfügbare Kategorien (Stand 28.10.2025)
+### Replit Abonnement-Kosten
 
-1. **Akku/Batterie** (`battery`) - Wiederaufladbare Akkus und Batterien
-2. **Ladegerät** (`charger`) - Ladegeräte für Akkus
-3. **Werkzeug** (`tool`) - Elektrowerkzeuge und Handwerkzeuge
-4. **Zubehör** (`accessory`) - Kabel, Adapter, Klemmen, Taschen, Halterungen
-5. **Messgerät** (`testing_equipment`) - Innenwiderstandstester, Multimeter, Prüfgeräte
+| Plan | Monatspreis | Inkl. Guthaben | Verwendung |
+|------|-------------|----------------|------------|
+| **Core** | ~$20/Monat | $25 Guthaben | Einzelentwickler |
+| **Teams** | ~$40/User | $40 Guthaben pro User | Team-Projekte |
 
-## Support & Dokumentation
-Weitere technische Details finden Sie in:
-- `API-SETUP.md` - API-Konfiguration
-- `TECHNICAL-OVERVIEW.md` - Detaillierte technische Übersicht
-- `TECHNICAL-FAQ.md` - Häufige Fragen
-- `DEPLOYMENT.md` - Deployment-Anweisungen
+**Wichtig**: Die inkludierten Guthaben decken normalerweise **alle** Entwicklungskosten ab (AI Agent, Datenbank, Deployment). Nicht genutztes Guthaben verfällt am Monatsende.
+
+### Entwicklungskosten (innerhalb der Guthaben)
+
+**Während der Entwicklung:**
+- ✅ **AI Agent** (dieser Assistent): ~$0.25 pro Checkpoint (Code-Änderung)
+  - Einfache Fixes: <$0.25
+  - Komplexe Features: >$0.25
+  - Planung ist kostenlos - nur Implementierung kostet
+- ✅ **Datenbank (PostgreSQL)**:
+  - Compute Time: Nur wenn aktiv (5 Min nach letzter Anfrage)
+  - Storage: ~33 MB Minimum, max 10 GiB
+- ✅ **Code-Speicherung**: Kostenlos im Abonnement
+
+**Typische Entwicklung dieser App:**
+- Agent-Nutzung: ~$5-15/Monat (je nach Änderungsumfang)
+- Datenbank (SQLite Dev): $0 (lokal)
+- **Total Development**: Meist unter $25 Guthaben
+
+### Deployment/Publishing Kosten (Production)
+
+**Nach Veröffentlichung fallen zusätzlich an:**
+
+1. **Outbound Data Transfer** (ausgehender Traffic):
+   - Core: 100 GiB/Monat **kostenlos**
+   - Danach: ~$0.10 pro GiB
+   - Beispiel bei 2000 Akkus: ~5-10 GiB/Monat = $0
+
+2. **Autoscale Deployment** (empfohlen für diese App):
+   - Compute Units: CPU + RAM Nutzung
+   - Requests: Pro Anfrage
+   - **Statische Deployments**: $0 Compute Units
+
+3. **PostgreSQL Production Database**:
+   - Compute Time: Nur bei aktiven Queries
+   - Storage: Erste 10 GiB meist unter $5/Monat
+   - Für 2000 Akkus: ~$2-5/Monat
+
+**Geschätzte Production-Kosten (nach Launch):**
+- Traffic: $0-2/Monat (innerhalb Free Tier)
+- Datenbank: $2-5/Monat
+- Compute: $5-10/Monat (bei moderater Nutzung)
+- **Total Production**: ~$7-17/Monat
+
+### External API-Kosten (zusätzlich zu Replit)
+
+**Diese Kosten fallen außerhalb von Replit an:**
+
+| Service | Verwendung | Kosten |
+|---------|-----------|--------|
+| **OpenAI API** | GPT-4o für Produktbeschreibungen | $0.013/Produkt |
+| **Firecrawl API** | URL/PDF Scraping (optional) | Ab $16/Monat für 1.000 Credits |
+
+**Einmalige Bulk-Verarbeitung (2000 Akkus):**
+- OpenAI: ~$26 (CSV) bis ~$300 (Bilder)
+- Firecrawl: ~$32 (URLs) bis ~$320 (PDFs)
+
+**Laufende Nutzung (z.B. 100 neue Produkte/Monat):**
+- OpenAI: ~$1.30/Monat (CSV)
+- Firecrawl: Optional, nur bei Bedarf
+
+### Gesamtkosten-Übersicht
+
+**Monatliche Kosten während Entwicklung:**
+```
+Replit Core Abo:        $20/Monat (inkl. $25 Guthaben)
+AI Agent Nutzung:       $0-5 (innerhalb Guthaben)
+Externe APIs:           $0 (nur bei Bulk-Verarbeitung)
+─────────────────────────────────────────────────
+Total Development:      ~$20/Monat
+```
+
+**Monatliche Kosten nach Launch (Production):**
+```
+Replit Core Abo:        $20/Monat
+Production Deployment:  $7-17/Monat (über Guthaben hinaus)
+Datenbank:             (im Deployment enthalten)
+Laufende Nutzung:      $1-5/Monat (100 neue Produkte)
+─────────────────────────────────────────────────
+Total Production:       ~$28-42/Monat
+```
+
+### Kosten-Spar-Tipps
+
+1. **CSV bevorzugen** statt Bildanalyse (90% günstiger)
+2. **Statisches Deployment** wenn möglich (keine Compute Units)
+3. **Caching nutzen** für identische Produkte
+4. **Guthaben ausschöpfen** innerhalb des Monats (verfällt sonst)
+5. **Budgetlimits setzen** in Replit-Einstellungen
