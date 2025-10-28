@@ -35,11 +35,6 @@ export function renderProductHtml(options: RenderOptions): string {
 
   const safetyNotice = cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
   const packageContents = cleanMarkdown(copy.packageContents || 'Produkt wie beschrieben');
-  
-  // Nutze AI-generierte Highlights wenn vorhanden, sonst Category-Fallback
-  // ABER: Filtere generische Highlights raus
-  const aiHighlights = copy.productHighlights || [];
-  const highlights = aiHighlights.length > 0 ? aiHighlights : categoryConfig.productHighlights;
 
   const technicalSpecs = buildTechnicalSpecsTable(
     copy.technicalSpecs,
@@ -64,7 +59,6 @@ export function renderProductHtml(options: RenderOptions): string {
       productName: cleanProductName,
       narrative: cleanNarrative,
       uspBullets,
-      highlights,
       technicalSpecs,
       safetyNotice,
       packageContents,
@@ -75,7 +69,6 @@ export function renderProductHtml(options: RenderOptions): string {
     productName: cleanProductName,
     narrative: cleanNarrative,
     uspBullets,
-    highlights,
     technicalSpecs,
     safetyNotice,
     packageContents,
@@ -113,7 +106,6 @@ function renderMediaMarktLayout(data: {
   productName: string;
   narrative: string;
   uspBullets: string[];
-  highlights: string[];
   technicalSpecs: Array<{label: string, value: string}>;
   safetyNotice: string;
   packageContents: string;
@@ -121,10 +113,6 @@ function renderMediaMarktLayout(data: {
   const uspHtml = data.uspBullets
     .map(usp => `✅ ${usp}`)
     .join('<br />\n');
-
-  const highlightsHtml = data.highlights
-    .map(h => `<li>${h}</li>`)
-    .join('\n');
 
   const techTableHtml = data.technicalSpecs.length > 0
     ? `<h4>Technische Daten:</h4>
@@ -140,11 +128,6 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
   return `<h2>${data.productName}</h2>
 <p>${data.narrative}<br /><br />
 ${uspHtml}</p>
-
-<h3>Produkteigenschaften & Highlights</h3>
-<ul>
-${highlightsHtml}
-</ul>
 
 ${techTableHtml}<p>${data.productName} steht für Qualität, Zuverlässigkeit und Langlebigkeit – ideal für den täglichen Einsatz.</p>
 
