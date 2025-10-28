@@ -4,6 +4,17 @@
 Eine moderne Full-Stack Web-Anwendung zur automatischen Generierung von KI-gestützten Produktbeschreibungen aus Lieferantendaten. Die App nutzt OpenAI für intelligente Textgenerierung und Firecrawl für Website-Analyse.
 
 ## Letzte Änderungen
+- **28.10.2025 (Abend)**: Kategorie-basiertes Template-System implementiert
+  - **Neue 3-Schicht-Architektur** für flexible Produktbeschreibungen:
+    1. Kategorie-Konfiguration (category-config.ts) - definiert technische Felder, USPs und Sicherheitshinweise pro Produktkategorie
+    2. AI-Generator (ai-generator.ts) - AI gibt strukturiertes JSON zurück statt HTML
+    3. Template Renderer (renderer.ts) - baut HTML aus JSON + Kategorie-Config
+  - **3 Produktkategorien** standardmäßig verfügbar: Akku/Batterie, Ladegerät, Werkzeug
+  - **Automatische Kategorie-Erkennung** via Keyword-Matching
+  - **Dynamischer AI-Prompt** - passt sich an verfügbare Produktdaten an
+  - **Flexibel für verschiedene Lieferanten** - funktioniert mit unterschiedlichen Datenmengen
+  - System behebt "oh jee"-Problem: AI gibt keine Template-Anweisungen mehr aus
+  
 - **28.10.2025 (Nachmittag)**: MediaMarkt-Template und Type-System erweitert
   - ProductImage, CreatorProduct und HtmlTemplate Typen in shared/schema.ts definiert
   - MediaMarkt-Template mit h2/h4-Struktur, Vorteilen (✅), technischer Tabelle und Lieferumfang erstellt
@@ -39,6 +50,11 @@ Keine spezifischen Präferenzen dokumentiert.
 │   │   └── pages/       # App-Seiten
 │   └── index.html
 ├── server/              # Express Backend
+│   ├── templates/       # Kategorie-basiertes Template-System (NEU!)
+│   │   ├── category-config.ts  # Produktkategorien-Definitionen
+│   │   ├── ai-generator.ts     # JSON-basierte AI-Generierung
+│   │   ├── renderer.ts         # HTML-Template-Rendering
+│   │   └── types.ts            # Template-spezifische Typen
 │   ├── ai-service.ts    # OpenAI Integration
 │   ├── firecrawl-service.ts  # Firecrawl Integration
 │   ├── db.ts            # Datenbank-Setup
@@ -86,6 +102,16 @@ Die App benötigt folgende API-Keys (optional für lokale Entwicklung):
 
 ### Architektur-Entscheidungen
 
+**28.10.2025 - Kategorie-basiertes Template-System**
+- **Problem**: Alte AI-Prompts waren zu komplex → AI gab Template-Anweisungen direkt aus ("VERWENDE technicalSpecs.standards")
+- **Lösung**: 3-Schicht-Architektur
+  1. **Kategorie-Config**: Definiert was für Akku/Ladegerät/Werkzeug wichtig ist
+  2. **AI → JSON**: AI gibt strukturiertes JSON zurück (kein HTML!), Prompt passt sich an Kategorie an
+  3. **Code → HTML**: Server baut HTML aus JSON + Kategorie-Config + Fallbacks
+- **Flexibilität**: System funktioniert mit unterschiedlichen Lieferantendaten (viele oder wenige Infos)
+- **Erweiterbarkeit**: Neue Kategorien einfach in `server/templates/category-config.ts` hinzufügen
+- **Automatik**: Kategorie wird automatisch via Keywords erkannt (z.B. "akku", "batterie" → Akku-Kategorie)
+
 **28.10.2025 - Replit-Anpassungen**
 - Vite-Server muss auf 0.0.0.0 binden, damit Replit-Proxy funktioniert
 - HMR-Client-Port auf 443 gesetzt für sichere WebSocket-Verbindungen
@@ -100,6 +126,62 @@ Die App benötigt folgende API-Keys (optional für lokale Entwicklung):
 
 ## Deployment
 Für Production-Deployment auf Replit verwenden Sie den "Deploy"-Button. Die App ist bereits für Autoscale-Deployment konfiguriert.
+
+## Kategorie-System: Neue Produktkategorien hinzufügen
+
+Das neue kategorie-basierte Template-System macht es einfach, neue Produkttypen hinzuzufügen. Folgen Sie diesen Schritten:
+
+### 1. Kategorie-Konfiguration erstellen
+
+Öffnen Sie `server/templates/category-config.ts` und fügen Sie eine neue Kategorie zum `PRODUCT_CATEGORIES` Objekt hinzu:
+
+```typescript
+electronics: {
+  id: 'electronics',
+  name: 'Elektronik',
+  description: 'Elektronische Geräte und Zubehör',
+  keywords: ['elektronik', 'device', 'gadget', 'usb', 'kabel'],
+  technicalFields: [
+    { key: 'connectivity', label: 'Anschlüsse', required: true, fallback: 'USB' },
+    { key: 'power', label: 'Leistung', unit: 'W', required: false },
+    { key: 'weight', label: 'Gewicht', unit: 'g', required: false },
+  ],
+  uspTemplates: [
+    'Einfache Bedienung - intuitive Steuerung',
+    'Vielseitig einsetzbar - für viele Anwendungen',
+    'Kompaktes Design - platzsparend',
+  ],
+  safetyNotice: '⚠️ Bedienungsanleitung beachten. Nicht in feuchten Umgebungen verwenden.',
+  productHighlights: [
+    'Moderne Technologie für zuverlässigen Betrieb',
+    'Hochwertige Verarbeitung und Materialien',
+    'Optimales Preis-Leistungs-Verhältnis',
+  ],
+}
+```
+
+### 2. Kategorie-Erkennung testen
+
+Die Kategorie wird automatisch erkannt basierend auf den `keywords`. Testen Sie mit Beispieldaten:
+- Keywords sollten typische Begriffe enthalten, die in Produktnamen/Beschreibungen vorkommen
+- System wählt erste Kategorie mit Match (Reihenfolge in PRODUCT_CATEGORIES wichtig!)
+
+### 3. Template anpassen (optional)
+
+Falls nötig, können Sie in `server/templates/renderer.ts` spezielle Rendering-Logik für die neue Kategorie hinzufügen.
+
+### 4. System testen
+
+Laden Sie ein Testprodukt hoch und prüfen Sie:
+- ✅ Wird die richtige Kategorie erkannt? (Log: "Detected category: ...")
+- ✅ Sind die technischen Felder korrekt?
+- ✅ Passen die USPs zur Kategorie?
+
+### Verfügbare Kategorien (Stand 28.10.2025)
+
+1. **Akku/Batterie** (`battery`) - Wiederaufladbare Akkus und Batterien
+2. **Ladegerät** (`charger`) - Ladegeräte für Akkus
+3. **Werkzeug** (`tool`) - Elektrowerkzeuge und Handwerkzeuge
 
 ## Support & Dokumentation
 Weitere technische Details finden Sie in:
