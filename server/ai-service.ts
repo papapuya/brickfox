@@ -1014,13 +1014,13 @@ ERSTELLE IMMER DIESE EXAKTE STRUKTUR:
 ✅ Feature 5 (NUR aus bullets, KEINE technischen Daten)</p>
 
 <h3>Produkteigenschaften & Highlights</h3>
-<p>
-✅ Robustes Gehäuse und langlebige Verarbeitung<br />
-✅ Ergonomisches Design für komfortables Arbeiten<br />
-✅ Hohe Leistung bei geringem Energieverbrauch<br />
-✅ Vielseitig einsetzbar in Werkstatt und Haushalt<br />
-✅ Optimales Preis-Leistungs-Verhältnis
-</p>
+<ul>
+<li>Robustes Gehäuse und langlebige Verarbeitung</li>
+<li>Ergonomisches Design für komfortables Arbeiten</li>
+<li>Hohe Leistung bei geringem Energieverbrauch</li>
+<li>Vielseitig einsetzbar in Werkstatt und Haushalt</li>
+<li>Optimales Preis-Leistungs-Verhältnis</li>
+</ul>
 
 <h4>Technische Daten:</h4>
 <table border="0" summary="">
@@ -1207,13 +1207,13 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
 ✅ ${features[4]}</p>
 
 <h3>Produkteigenschaften & Highlights</h3>
-<p>
-✅ Robustes Gehäuse und langlebige Verarbeitung<br />
-✅ Ergonomisches Design für komfortables Arbeiten<br />
-✅ Hohe Leistung bei geringem Energieverbrauch<br />
-✅ Vielseitig einsetzbar in Werkstatt und Haushalt<br />
-✅ Optimales Preis-Leistungs-Verhältnis
-</p>
+<ul>
+<li>Robustes Gehäuse und langlebige Verarbeitung</li>
+<li>Ergonomisches Design für komfortables Arbeiten</li>
+<li>Hohe Leistung bei geringem Energieverbrauch</li>
+<li>Vielseitig einsetzbar in Werkstatt und Haushalt</li>
+<li>Optimales Preis-Leistungs-Verhältnis</li>
+</ul>
 
 <h4>Technische Daten:</h4>
 <table border="0" summary="">
