@@ -120,10 +120,15 @@ CSV hochladen → Spalten-Mapping → AI-Generierung → Export mit Produktbesch
 
 | Plan | Monatspreis | Inkl. Guthaben | Verwendung |
 |------|-------------|----------------|------------|
-| **Core** | ~$20/Monat | $25 Guthaben | Einzelentwickler |
+| **Core** | $25/Monat | $25 Guthaben | Einzelentwickler |
 | **Teams** | ~$40/User | $40 Guthaben pro User | Team-Projekte |
 
-**Wichtig**: Die inkludierten Guthaben decken normalerweise **alle** Entwicklungskosten ab (AI Agent, Datenbank, Deployment). Nicht genutztes Guthaben verfällt am Monatsende.
+**Wichtig**: Die inkludierten Guthaben decken **Basis-Nutzung** ab (AI Agent, Datenbank, Deployment). Wenn Sie mehr nutzen als das Guthaben, fallen **zusätzliche Kosten** an.
+
+**Typische monatliche Gesamtkosten:**
+- Minimale Nutzung: $25/Monat (nur Abo)
+- Normale Entwicklung: $40-60/Monat (Abo + zusätzliche Nutzung)
+- Intensive Nutzung: $60-100/Monat (viel AI Agent, Production Deployment)
 
 ### Entwicklungskosten (innerhalb der Guthaben)
 
@@ -138,9 +143,11 @@ CSV hochladen → Spalten-Mapping → AI-Generierung → Export mit Produktbesch
 - ✅ **Code-Speicherung**: Kostenlos im Abonnement
 
 **Typische Entwicklung dieser App:**
-- Agent-Nutzung: ~$5-15/Monat (je nach Änderungsumfang)
+- Agent-Nutzung: ~$15-35/Monat (je nach Änderungsumfang)
+  - Einfache Wartung: ~$10-15
+  - Aktive Entwicklung: ~$25-35
 - Datenbank (SQLite Dev): $0 (lokal)
-- **Total Development**: Meist unter $25 Guthaben
+- **Total Development**: $40-60/Monat (realistisch bei aktiver Entwicklung)
 
 ### Deployment/Publishing Kosten (Production)
 
@@ -188,21 +195,21 @@ CSV hochladen → Spalten-Mapping → AI-Generierung → Export mit Produktbesch
 
 **Monatliche Kosten während Entwicklung:**
 ```
-Replit Core Abo:        $20/Monat (inkl. $25 Guthaben)
-AI Agent Nutzung:       $0-5 (innerhalb Guthaben)
+Replit Core Abo:        $25/Monat (Basis)
+AI Agent Nutzung:       $15-35/Monat (zusätzlich)
 Externe APIs:           $0 (nur bei Bulk-Verarbeitung)
 ─────────────────────────────────────────────────
-Total Development:      ~$20/Monat
+Total Development:      ~$40-60/Monat
 ```
 
 **Monatliche Kosten nach Launch (Production):**
 ```
-Replit Core Abo:        $20/Monat
-Production Deployment:  $7-17/Monat (über Guthaben hinaus)
-Datenbank:             (im Deployment enthalten)
-Laufende Nutzung:      $1-5/Monat (100 neue Produkte)
+Replit Core Abo:        $25/Monat
+AI Agent (Wartung):     $10-20/Monat
+Production Deployment:  $10-25/Monat
+Laufende Nutzung:       $1-5/Monat (100 neue Produkte)
 ─────────────────────────────────────────────────
-Total Production:       ~$28-42/Monat
+Total Production:       ~$45-75/Monat
 ```
 
 ### Kosten-Spar-Tipps
