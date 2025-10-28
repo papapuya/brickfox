@@ -44,12 +44,21 @@ async function generateProductCopyModular(
   try {
     const result = await orchestrator.generateFullProductCopy(context);
 
+    // 1:1 TABELLENÜBERNAHME: Wenn Lieferant strukturierte Daten bereitstellt
+    const supplierTechData = extractSupplierTechnicalData(productData, categoryConfig);
+    const mergedTechSpecs = {
+      ...result.technicalSpecs,
+      ...supplierTechData, // Lieferantendaten überschreiben AI-Daten
+    };
+
+    console.log(`📊 Merged tech specs: ${Object.keys(mergedTechSpecs).length} fields (${Object.keys(supplierTechData).length} from supplier)`);
+
     return {
       narrative: result.narrative,
       uspBullets: result.uspBullets.length >= 5 
         ? result.uspBullets.slice(0, 5)
         : [...result.uspBullets, ...categoryConfig.uspTemplates].slice(0, 5),
-      technicalSpecs: result.technicalSpecs,
+      technicalSpecs: mergedTechSpecs,
       safetyNotice: result.safetyNotice || categoryConfig.safetyNotice,
       packageContents: result.packageContents,
       productHighlights: categoryConfig.productHighlights.slice(0, 5),
@@ -58,6 +67,39 @@ async function generateProductCopyModular(
     console.error('Modular generation failed, using fallback:', error);
     return getFallbackCopy(categoryConfig);
   }
+}
+
+function extractSupplierTechnicalData(
+  productData: any,
+  categoryConfig: ProductCategoryConfig
+): Record<string, string> {
+  const extracted: Record<string, string> = {};
+  
+  // Prüfe auf strukturierte CSV/Excel-Daten
+  if (productData.technicalData || productData.technicalSpecs || productData.specs) {
+    const source = productData.technicalData || productData.technicalSpecs || productData.specs;
+    
+    for (const field of categoryConfig.technicalFields) {
+      const value = source[field.label] || source[field.key];
+      if (value && value !== 'Nicht angegeben' && value !== 'Nicht sichtbar') {
+        extracted[field.label] = value;
+        console.log(`✅ 1:1 Übernahme: ${field.label} = ${value}`);
+      }
+    }
+  }
+  
+  // Prüfe auf direkte Felder im productData (z.B. von CSV-Import)
+  for (const field of categoryConfig.technicalFields) {
+    if (!extracted[field.label]) {
+      const value = productData[field.label] || productData[field.key];
+      if (value && value !== 'Nicht angegeben' && value !== 'Nicht sichtbar') {
+        extracted[field.label] = value;
+        console.log(`✅ 1:1 Übernahme: ${field.label} = ${value}`);
+      }
+    }
+  }
+  
+  return extracted;
 }
 
 async function generateProductCopyMonolithic(

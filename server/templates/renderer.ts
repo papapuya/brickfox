@@ -8,11 +8,33 @@ export interface RenderOptions {
   layoutStyle?: 'mediamarkt' | 'minimal' | 'detailed';
 }
 
+function cleanMarkdown(text: string): string {
+  if (!text) return text;
+  
+  let cleaned = text;
+  
+  // Entferne "- **" am Anfang
+  cleaned = cleaned.replace(/^-\s*\*\*/gm, '');
+  
+  // Entferne alle ** (bold markers)
+  cleaned = cleaned.replace(/\*\*/g, '');
+  
+  // Entferne alle * (italic markers)
+  cleaned = cleaned.replace(/\*/g, '');
+  
+  // Entferne führende/folgende Leerzeichen
+  cleaned = cleaned.trim();
+  
+  return cleaned;
+}
+
 export function renderProductHtml(options: RenderOptions): string {
   const { productName, categoryConfig, copy, layoutStyle = 'mediamarkt' } = options;
+  
+  const cleanProductName = cleanMarkdown(productName);
 
-  const safetyNotice = copy.safetyNotice || categoryConfig.safetyNotice;
-  const packageContents = copy.packageContents || 'Produkt wie beschrieben';
+  const safetyNotice = cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
+  const packageContents = cleanMarkdown(copy.packageContents || 'Produkt wie beschrieben');
   const highlights = copy.productHighlights || categoryConfig.productHighlights;
 
   const technicalSpecs = buildTechnicalSpecsTable(
@@ -20,7 +42,8 @@ export function renderProductHtml(options: RenderOptions): string {
     categoryConfig.technicalFields
   );
 
-  const uspBullets = copy.uspBullets.slice(0, 5);
+  const cleanNarrative = cleanMarkdown(copy.narrative);
+  const uspBullets = copy.uspBullets.map(usp => cleanMarkdown(usp)).slice(0, 5);
   while (uspBullets.length < 5) {
     const remainingTemplates = categoryConfig.uspTemplates.filter(
       template => !uspBullets.includes(template)
@@ -34,8 +57,8 @@ export function renderProductHtml(options: RenderOptions): string {
 
   if (layoutStyle === 'mediamarkt') {
     return renderMediaMarktLayout({
-      productName,
-      narrative: copy.narrative,
+      productName: cleanProductName,
+      narrative: cleanNarrative,
       uspBullets,
       highlights,
       technicalSpecs,
@@ -45,8 +68,8 @@ export function renderProductHtml(options: RenderOptions): string {
   }
 
   return renderMediaMarktLayout({
-    productName,
-    narrative: copy.narrative,
+    productName: cleanProductName,
+    narrative: cleanNarrative,
     uspBullets,
     highlights,
     technicalSpecs,
@@ -62,9 +85,11 @@ function buildTechnicalSpecsTable(
   const result: Array<{label: string, value: string}> = [];
 
   for (const field of fields) {
-    const value = specs[field.label] || specs[field.key];
+    let value = specs[field.label] || specs[field.key];
     
-    if (value && value !== 'Nicht angegeben') {
+    if (value && value !== 'Nicht angegeben' && value !== 'Nicht sichtbar') {
+      value = cleanMarkdown(value);
+      
       result.push({
         label: field.label,
         value: value
@@ -72,7 +97,7 @@ function buildTechnicalSpecsTable(
     } else if (field.required && field.fallback) {
       result.push({
         label: field.label,
-        value: field.fallback
+        value: cleanMarkdown(field.fallback)
       });
     }
   }
