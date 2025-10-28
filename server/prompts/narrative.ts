@@ -15,7 +15,7 @@ ${context.categoryDescription}
 NICHT generische Texte, die auf jedes Produkt der Kategorie passen!
 
 DEINE AUFGABE:
-Schreibe eine professionelle, produktspezifische Beschreibung in 4-5 Sätzen.
+Schreibe eine professionelle, produktspezifische Beschreibung in GENAU 3-4 Sätzen.
 
 INHALT (produktspezifisch):
 1. Was ist das Produkt KONKRET? Nenne Modell/Format (z.B. "Der RCR123A...")
@@ -36,6 +36,13 @@ STIL:
 - Nenne spezifische Anwendungen
 - Erkläre echte Vorteile (nicht "hochwertig", "zuverlässig")
 - Der Produktname wird separat behandelt - nicht wiederholen
+- GENAU 3-4 Sätze (nicht mehr, nicht weniger!)
+
+❌ VERBOTENE PHRASEN (nicht verwenden!):
+- "steht für Qualität, Zuverlässigkeit und Langlebigkeit"
+- "ideal für den täglichen Einsatz"
+- "perfekte Wahl für"
+- "hochwertiges Produkt"
 
 OUTPUT-FORMAT (JSON):
 {

@@ -126,10 +126,11 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
     : '';
 
   return `<h2>${data.productName}</h2>
-<p>${data.narrative}<br /><br />
-${uspHtml}</p>
+<p>${data.narrative}</p>
 
-${techTableHtml}<p>${data.productName} steht für Qualität, Zuverlässigkeit und Langlebigkeit – ideal für den täglichen Einsatz.</p>
+<p>${uspHtml}</p>
+
+${techTableHtml}
 
 <h3>Sicherheitshinweise</h3>
 <p>${data.safetyNotice}</p>

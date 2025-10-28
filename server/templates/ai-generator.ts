@@ -3,6 +3,8 @@ import { ProductCopyPayload } from './types';
 import { ProductCategoryConfig } from './category-config';
 import { createOrchestrator } from '../prompts/orchestrator';
 import type { PromptContext } from '../prompts/types';
+import { processProductCopy } from './post-processor';
+import { extractTechSpecs1to1 } from './tech-spec-parser';
 
 export async function generateProductCopy(
   productData: any,
@@ -44,20 +46,36 @@ async function generateProductCopyModular(
   try {
     const result = await orchestrator.generateFullProductCopy(context);
 
-    // 1:1 TABELLENÜBERNAHME: Wenn Lieferant strukturierte Daten bereitstellt
-    const supplierTechData = extractSupplierTechnicalData(productData, categoryConfig);
+    // POST-PROCESSING: Validiere und bereinige AI-Output
+    const processed = processProductCopy({
+      narrative: result.narrative,
+      uspBullets: result.uspBullets,
+    });
+
+    if (processed.validationIssues.length > 0) {
+      console.log('⚠️ Post-processing applied:', processed.validationIssues);
+    }
+
+    // 1:1 TECH SPECS EXTRAKTION: Aus Vision-Text oder strukturierten Daten
+    const directTechSpecs = extractTechSpecs1to1(
+      productData.extractedText || '',
+      productData.structuredData || productData,
+      categoryConfig
+    );
+    
+    // Wenn direkte Extraktion erfolgreich war, nutze diese (überschreibt AI)
     const mergedTechSpecs = {
-      ...result.technicalSpecs,
-      ...supplierTechData, // Lieferantendaten überschreiben AI-Daten
+      ...result.technicalSpecs,      // AI-generierte Specs (Fallback)
+      ...directTechSpecs,             // 1:1 extrahierte Specs (überschreiben AI)
     };
 
-    console.log(`📊 Merged tech specs: ${Object.keys(mergedTechSpecs).length} fields (${Object.keys(supplierTechData).length} from supplier)`);
+    console.log(`📊 Tech Specs: ${Object.keys(mergedTechSpecs).length} total (${Object.keys(directTechSpecs).length} direct 1:1, ${Object.keys(result.technicalSpecs).length} AI fallback)`);
 
     return {
-      narrative: result.narrative,
-      uspBullets: result.uspBullets.length >= 5 
-        ? result.uspBullets.slice(0, 5)
-        : [...result.uspBullets, ...categoryConfig.uspTemplates].slice(0, 5),
+      narrative: processed.narrative,
+      uspBullets: processed.uspBullets.length >= 5 
+        ? processed.uspBullets.slice(0, 5)
+        : [...processed.uspBullets, ...categoryConfig.uspTemplates].slice(0, 5),
       technicalSpecs: mergedTechSpecs,
       safetyNotice: result.safetyNotice || categoryConfig.safetyNotice,
       packageContents: result.packageContents,
