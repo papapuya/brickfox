@@ -466,7 +466,8 @@ Diese Informationen sind IMMER vorhanden - schaue SEHR GENAU hin!
 
 📋 EXTRAKTIONS-FORMAT:
 
-PRODUKTNAME: [extrahiere den EXAKTEN Namen wie er im Bild steht - OHNE Zusätze]
+⚠️ KRITISCH - ZUERST:
+PRODUKTNAME: [Lies den HAUPT-PRODUKTTITEL vom Bild - meist oben oder auf der Verpackung. Beispiele: "Keeppower RCR123A", "Varta Recharge Accu", "Panasonic Eneloop Pro". NUR der Name, KEINE Beschreibungen!]
 
 TECHNISCHE DATEN:
 - Modell: [exakter Wert]
