@@ -9,6 +9,10 @@ export default {
         lg: ".5625rem", /* 9px */
         md: ".375rem", /* 6px */
         sm: ".1875rem", /* 3px */
+        '2xl': '1rem',
+      },
+      boxShadow: {
+        'soft': '0 4px 20px rgba(0,0,0,0.05)',
       },
       colors: {
         // Flat / base colors (regular buttons)
@@ -30,6 +34,8 @@ export default {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
           border: "var(--primary-border)",
+          hover: '#1d4ed8',
+          light: '#60a5fa',
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
@@ -80,6 +86,11 @@ export default {
           away: "rgb(245 158 11)",
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
+        },
+        neutral: {
+          100: '#f9fafb',
+          200: '#f3f4f6',
+          800: '#1f2937',
         },
       },
       fontFamily: {

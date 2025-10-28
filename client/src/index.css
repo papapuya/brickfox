@@ -355,3 +355,11 @@
     inset: -1px;
   }
 }
+
+h1, h2, h3, h4 {
+  @apply font-bold text-foreground;
+}
+
+a {
+  @apply text-primary hover:text-primary-hover transition;
+}
