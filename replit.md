@@ -4,7 +4,13 @@
 Eine moderne Full-Stack Web-Anwendung zur automatischen Generierung von KI-gestützten Produktbeschreibungen aus Lieferantendaten. Die App nutzt OpenAI für intelligente Textgenerierung und Firecrawl für Website-Analyse.
 
 ## Letzte Änderungen
-- **28.10.2025**: Projekt erfolgreich in Replit importiert
+- **28.10.2025 (Nachmittag)**: MediaMarkt-Template und Type-System erweitert
+  - ProductImage, CreatorProduct und HtmlTemplate Typen in shared/schema.ts definiert
+  - MediaMarkt-Template mit h2/h4-Struktur, Vorteilen (✅), technischer Tabelle und Lieferumfang erstellt
+  - TypeScript Type-Annotations für alle Template-Funktionen hinzugefügt
+  - MediaMarkt-Template als Standardtemplate (erstes in der Liste) konfiguriert
+  
+- **28.10.2025 (Vormittag)**: Projekt erfolgreich in Replit importiert
   - Vite-Konfiguration für Replit-Umgebung angepasst (Host: 0.0.0.0, Port: 5000)
   - SQLite-Datenbank initialisiert
   - Workflow konfiguriert und getestet
