@@ -4,13 +4,34 @@
 Eine moderne Full-Stack Web-Anwendung zur automatischen Generierung von KI-gestützten Produktbeschreibungen aus Lieferantendaten. Die App nutzt OpenAI für intelligente Textgenerierung und Firecrawl für Website-Analyse.
 
 ## Letzte Änderungen
+- **28.10.2025 (Nacht)**: Multi-Prompt-Architektur & neue Produktkategorien
+  - **🔧 MODULAR SUBPROMPT-ARCHITEKTUR implementiert**:
+    - System unterstützt nun zwei Modi: Modular (Standard) & Monolithisch (Legacy)
+    - Neue Prompt-Struktur in `server/prompts/`:
+      - `base-system.ts` - Grundprinzipien & Qualitätsregeln
+      - `usp-generation.ts` - Verkaufsfördernde USPs (5 Stück)
+      - `tech-extraction.ts` - Technische Datenextraktion
+      - `narrative.ts` - Produktbeschreibung (4-5 Sätze)
+      - `safety-warnings.ts` - Sicherheitshinweise
+      - `package-contents.ts` - Lieferumfang
+      - `orchestrator.ts` - Kombiniert Subprompts intelligent
+    - **Vorteile**: Einzeln testbar in Make/n8n, günstiger, wiederverwendbar, agenten-fähig
+  - **✅ 2 NEUE PRODUKTKATEGORIEN**:
+    - **Zubehör** (accessory) - Kabel, Adapter, Klemmen, Krokodilklemmen, Halterungen
+    - **Messgerät** (testing_equipment) - Innenwiderstandstester, Multimeter, Prüfgeräte
+  - **🎯 Verbesserte Kategorie-Erkennung**:
+    - Wählt jetzt BESTE Match (meiste Keyword-Treffer) statt ersten Match
+    - Behebt Problem mit Krokodilklemmen (wurde fälschlich als Ladegerät erkannt)
+    - Logging für besseres Debugging
+  - **🔨 Alle TypeScript-Fehler behoben** (44 → 0 Fehler)
+  
 - **28.10.2025 (Abend)**: Kategorie-basiertes Template-System implementiert
   - **Neue 3-Schicht-Architektur** für flexible Produktbeschreibungen:
     1. Kategorie-Konfiguration (category-config.ts) - definiert technische Felder, USPs und Sicherheitshinweise pro Produktkategorie
     2. AI-Generator (ai-generator.ts) - AI gibt strukturiertes JSON zurück statt HTML
     3. Template Renderer (renderer.ts) - baut HTML aus JSON + Kategorie-Config
-  - **3 Produktkategorien** standardmäßig verfügbar: Akku/Batterie, Ladegerät, Werkzeug
-  - **Automatische Kategorie-Erkennung** via Keyword-Matching
+  - **5 Produktkategorien** jetzt verfügbar: Akku/Batterie, Ladegerät, Werkzeug, Zubehör, Messgerät
+  - **Automatische Kategorie-Erkennung** via Keyword-Matching (wählt beste Match)
   - **Dynamischer AI-Prompt** - passt sich an verfügbare Produktdaten an
   - **Flexibel für verschiedene Lieferanten** - funktioniert mit unterschiedlichen Datenmengen
   - System behebt "oh jee"-Problem: AI gibt keine Template-Anweisungen mehr aus
@@ -50,9 +71,19 @@ Keine spezifischen Präferenzen dokumentiert.
 │   │   └── pages/       # App-Seiten
 │   └── index.html
 ├── server/              # Express Backend
-│   ├── templates/       # Kategorie-basiertes Template-System (NEU!)
-│   │   ├── category-config.ts  # Produktkategorien-Definitionen
-│   │   ├── ai-generator.ts     # JSON-basierte AI-Generierung
+│   ├── prompts/         # 🆕 MODULARE SUBPROMPT-ARCHITEKTUR
+│   │   ├── types.ts            # Subprompt Type-Definitionen
+│   │   ├── base-system.ts      # Grund-Systemprompt (Qualitätsregeln)
+│   │   ├── usp-generation.ts   # USP-Generierung (5 verkaufsfördernde Bullets)
+│   │   ├── tech-extraction.ts  # Technische Daten-Extraktion
+│   │   ├── narrative.ts        # Produktbeschreibung (4-5 Sätze)
+│   │   ├── safety-warnings.ts  # Sicherheitshinweise
+│   │   ├── package-contents.ts # Lieferumfang
+│   │   ├── orchestrator.ts     # Orchestrator für kombinierte Calls
+│   │   └── index.ts            # Exports
+│   ├── templates/       # Kategorie-basiertes Template-System
+│   │   ├── category-config.ts  # Produktkategorien-Definitionen (5 Kategorien)
+│   │   ├── ai-generator.ts     # Dual-Mode: Modular (neu) + Monolithisch (legacy)
 │   │   ├── renderer.ts         # HTML-Template-Rendering
 │   │   └── types.ts            # Template-spezifische Typen
 │   ├── ai-service.ts    # OpenAI Integration
@@ -102,15 +133,30 @@ Die App benötigt folgende API-Keys (optional für lokale Entwicklung):
 
 ### Architektur-Entscheidungen
 
-**28.10.2025 - Kategorie-basiertes Template-System**
+**28.10.2025 (Nacht) - Multi-Prompt-Architektur**
+- **Problem**: Monolithische Prompts sind schwer testbar, teuer, nicht wiederverwendbar
+- **Lösung**: Modulare Subprompt-Architektur in `server/prompts/`
+  - 6 spezialisierte Subprompts (USPs, Tech, Narrative, Safety, Package)
+  - Orchestrator kombiniert Subprompts intelligent
+  - Dual-Mode: Wahl zwischen Modular (Standard) oder Monolithisch (Legacy)
+  - Jeder Subprompt einzeln testbar in Make/n8n
+- **Vorteile**: 
+  - ✅ A/B-Testing pro Modul möglich
+  - ✅ Caching & Wiederverwendung von Ergebnissen
+  - ✅ Günstiger (kleinere Context-Fenster)
+  - ✅ Agenten-fähig (GPT kann Subprompts selbst wählen)
+- **Neue Kategorien**: Zubehör (Kabel, Klemmen) & Messgerät (Tester, Multimeter)
+- **Verbesserte Erkennung**: Beste Match statt erster Match (behebt Krokodilklemmen-Problem)
+
+**28.10.2025 (Abend) - Kategorie-basiertes Template-System**
 - **Problem**: Alte AI-Prompts waren zu komplex → AI gab Template-Anweisungen direkt aus ("VERWENDE technicalSpecs.standards")
 - **Lösung**: 3-Schicht-Architektur
-  1. **Kategorie-Config**: Definiert was für Akku/Ladegerät/Werkzeug wichtig ist
+  1. **Kategorie-Config**: Definiert was für Akku/Ladegerät/Werkzeug/Zubehör/Messgerät wichtig ist
   2. **AI → JSON**: AI gibt strukturiertes JSON zurück (kein HTML!), Prompt passt sich an Kategorie an
   3. **Code → HTML**: Server baut HTML aus JSON + Kategorie-Config + Fallbacks
 - **Flexibilität**: System funktioniert mit unterschiedlichen Lieferantendaten (viele oder wenige Infos)
 - **Erweiterbarkeit**: Neue Kategorien einfach in `server/templates/category-config.ts` hinzufügen
-- **Automatik**: Kategorie wird automatisch via Keywords erkannt (z.B. "akku", "batterie" → Akku-Kategorie)
+- **Automatik**: Kategorie wird automatisch via Keywords erkannt (beste Match-Logik)
 
 **28.10.2025 - Replit-Anpassungen**
 - Vite-Server muss auf 0.0.0.0 binden, damit Replit-Proxy funktioniert
@@ -182,6 +228,8 @@ Laden Sie ein Testprodukt hoch und prüfen Sie:
 1. **Akku/Batterie** (`battery`) - Wiederaufladbare Akkus und Batterien
 2. **Ladegerät** (`charger`) - Ladegeräte für Akkus
 3. **Werkzeug** (`tool`) - Elektrowerkzeuge und Handwerkzeuge
+4. **Zubehör** (`accessory`) - Kabel, Adapter, Klemmen, Taschen, Halterungen
+5. **Messgerät** (`testing_equipment`) - Innenwiderstandstester, Multimeter, Prüfgeräte
 
 ## Support & Dokumentation
 Weitere technische Details finden Sie in:

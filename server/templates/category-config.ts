@@ -191,20 +191,26 @@ export function detectCategory(productData: any): string {
     productData.product_name || '',
     productData.short_intro || '',
     productData.description || '',
+    productData.extractedText || '',
     JSON.stringify(productData.bullets || []),
   ].join(' ').toLowerCase();
+
+  let bestCategory = 'battery';
+  let bestScore = 0;
 
   for (const [categoryId, config] of Object.entries(PRODUCT_CATEGORIES)) {
     const matches = config.keywords.filter(keyword => 
       searchText.includes(keyword.toLowerCase())
     ).length;
 
-    if (matches > 0) {
-      return categoryId;
+    if (matches > bestScore) {
+      bestScore = matches;
+      bestCategory = categoryId;
     }
   }
 
-  return 'battery';
+  console.log(`Category detection: "${bestCategory}" with ${bestScore} keyword matches`);
+  return bestCategory;
 }
 
 export function getCategoryConfig(categoryId: string): ProductCategoryConfig {
