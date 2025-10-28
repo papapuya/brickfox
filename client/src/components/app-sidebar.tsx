@@ -1,4 +1,4 @@
-import { Home, FileSpreadsheet, ImagePlus, FolderOpen, Settings } from "lucide-react";
+import { Home, FileSpreadsheet, ImagePlus, FolderOpen, Settings, Zap } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -22,6 +22,11 @@ const menuItems = [
     title: "CSV Anreicherung",
     url: "/csv-enricher",
     icon: FileSpreadsheet,
+  },
+  {
+    title: "CSV Bulk Beschreibungen",
+    url: "/csv-bulk-description",
+    icon: Zap,
   },
   {
     title: "Meine Projekte",
