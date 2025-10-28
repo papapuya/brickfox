@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaMarkt Tools - Präsentation 2025</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .slide {
+            background: white;
+            border-radius: 12px;
+            padding: 60px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            min-height: 500px;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 15px;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-size: 2em;
+            margin: 30px 0 15px 0;
+        }
+        
+        h3 {
+            color: #555;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+        }
+        
+        ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+        
+        li {
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+        
+        strong {
+            color: #667eea;
+        }
+        
+        code, pre {
+            background: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        pre {
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background: #ffeaa7;
+            padding: 20px;
+            border-left: 4px solid #fdcb6e;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .emoji {
+            font-size: 1.3em;
+        }
+        
+        .slide-number {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .tech-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 15px;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        @media print {
+            .slide {
+                page-break-after: always;
+                box-shadow: none;
+            }
+        }
+        
+        .nav-buttons {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+        
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- Folie 1 -->
+        <div class="slide" id="slide-1">
+            <div class="slide-number">1 / 15</div>
+            <h1>MediaMarkt Tools - Produktmanagement</h1>
+            <h2>Präsentation 2025</h2>
+            
+            <div style="margin-top: 60px;">
+                <h3>Was macht die App?</h3>
+                <p style="font-size: 1.3em; color: #555;">
+                    <strong>Automatische KI-gestützte Produktbeschreibungen</strong> aus Lieferantendaten
+                </p>
+                
+                <div class="grid" style="margin-top: 40px;">
+                    <div class="card">
+                        <h3>📁 CSV-Upload</h3>
+                        <p>Analyse & Strukturierung</p>
+                    </div>
+                    <div class="card">
+                        <h3>🌐 Website-Scraping</h3>
+                        <p>Von Lieferanten-Seiten</p>
+                    </div>
+                    <div class="card">
+                        <h3>🖼️ Bild-Analyse</h3>
+                        <p>OCR & AI Vision</p>
+                    </div>
+                </div>
+                
+                <div class="highlight" style="margin-top: 40px;">
+                    <h3>✨ Ergebnis</h3>
+                    <p style="font-size: 1.2em;">Fertige MediaMarkt-konforme Produkttexte in Sekunden</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Folie 2 -->
+        <div class="slide" id="slide-2">
+            <div class="slide-number">2 / 15</div>
+            <h1>🛠️ Technologie-Stack</h1>
+            
+            <h3>Frontend</h3>
+            <div>
+                <span class="tech-badge">React 18</span>
+                <span class="tech-badge">TypeScript</span>
+                <span class="tech-badge">Vite</span>
+                <span class="tech-badge">Tailwind CSS</span>
+                <span class="tech-badge">shadcn/ui</span>
+                <span class="tech-badge">Radix UI</span>
+            </div>
+            
+            <h3>Backend</h3>
+            <div>
+                <span class="tech-badge">Node.js</span>
+                <span class="tech-badge">Express</span>
+                <span class="tech-badge">TypeScript</span>
+                <span class="tech-badge">Drizzle ORM</span>
+            </div>
+            
+            <h3>Datenbank</h3>
+            <div>
+                <span class="tech-badge">SQLite (Dev)</span>
+                <span class="tech-badge">PostgreSQL (Prod)</span>
+                <span class="tech-badge">Neon</span>
+            </div>
+            
+            <h3>AI & Tools</h3>
+            <div>
+                <span class="tech-badge">OpenAI GPT-4o</span>
+                <span class="tech-badge">Firecrawl API</span>
+                <span class="tech-badge">Tesseract.js OCR</span>
+            </div>
+        </div>
+
+        <!-- Folie 3 -->
+        <div class="slide" id="slide-3">
+            <div class="slide-number">3 / 15</div>
+            <h1>🤖 AI & Automatisierung</h1>
+            
+            <h2>Modulare Prompt-Architektur</h2>
+            <p style="font-size: 1.1em; margin-bottom: 30px;">6 spezialisierte AI-Module statt einem großen Prompt</p>
+            
+            <div class="grid">
+                <div class="card">
+                    <strong>1. USP-Generierung</strong>
+                    <p>Verkaufsfördernde Vorteile</p>
+                </div>
+                <div class="card">
+                    <strong>2. Tech-Extraktion</strong>
+                    <p>Technische Daten</p>
+                </div>
+                <div class="card">
+                    <strong>3. Narrative</strong>
+                    <p>Produktbeschreibung</p>
+                </div>
+                <div class="card">
+                    <strong>4. Safety</strong>
+                    <p>Sicherheitshinweise</p>
+                </div>
+                <div class="card">
+                    <strong>5. Package</strong>
+                    <p>Lieferumfang</p>
+                </div>
+                <div class="card">
+                    <strong>6. Orchestrator</strong>
+                    <p>Intelligente Kombination</p>
+                </div>
+            </div>
+            
+            <div class="highlight">
+                <h3>✅ Vorteile</h3>
+                <ul>
+                    <li>Einzeln testbar in Make/n8n</li>
+                    <li>Kostengünstiger (kleinere Context-Fenster)</li>
+                    <li>Wiederverwendbar in anderen Projekten</li>
+                    <li>A/B-Testing pro Modul möglich</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Folie 4 -->
+        <div class="slide" id="slide-4">
+            <div class="slide-number">4 / 15</div>
+            <h1>📦 Intelligente Kategorie-Erkennung</h1>
+            
+            <h2>5 Produktkategorien (automatisch erkannt)</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>🔋 Akkus & Batterien</h3>
+                    <p>Wiederaufladbare Energiespeicher</p>
+                </div>
+                <div class="card">
+                    <h3>⚡ Ladegeräte</h3>
+                    <p>Ladeelektronik</p>
+                </div>
+                <div class="card">
+                    <h3>🔧 Werkzeuge</h3>
+                    <p>Elektro- & Handwerkzeuge</p>
+                </div>
+                <div class="card">
+                    <h3>🔌 Zubehör</h3>
+                    <p>Kabel, Adapter, Klemmen</p>
+                </div>
+                <div class="card">
+                    <h3>📊 Messgeräte</h3>
+                    <p>Tester & Multimeter</p>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 40px;">Smart Detection</h3>
+            <ul style="font-size: 1.1em;">
+                <li>✅ Keyword-basierte Erkennung</li>
+                <li>✅ Wählt <strong>beste</strong> Match (nicht erste)</li>
+                <li>✅ Kategorie-spezifische Templates</li>
+                <li>✅ Dynamische AI-Prompts</li>
+            </ul>
+        </div>
+
+        <!-- Folie 5 -->
+        <div class="slide" id="slide-5">
+            <div class="slide-number">5 / 15</div>
+            <h1>🎯 3-Schicht-Architektur</h1>
+            
+            <div class="card" style="margin: 30px 0;">
+                <h2>Schicht 1: Kategorie-Konfiguration</h2>
+                <ul>
+                    <li>Definiert relevante Felder pro Kategorie</li>
+                    <li>USP-Vorlagen</li>
+                    <li>Sicherheitshinweise</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; font-size: 2em; margin: 20px 0;">⬇️</div>
+            
+            <div class="card" style="margin: 30px 0;">
+                <h2>Schicht 2: AI → Strukturiertes JSON</h2>
+                <ul>
+                    <li>Keine Template-Anweisungen im Output</li>
+                    <li>Dynamischer Prompt basierend auf Daten</li>
+                    <li>Funktioniert mit unterschiedlichen Lieferanten</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; font-size: 2em; margin: 20px 0;">⬇️</div>
+            
+            <div class="card" style="margin: 30px 0;">
+                <h2>Schicht 3: Code → HTML-Rendering</h2>
+                <ul>
+                    <li>Automatische Fallbacks</li>
+                    <li>Konsistente MediaMarkt-Formatierung</li>
+                    <li>Qualitätssicherung</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Folie 6 -->
+        <div class="slide" id="slide-6">
+            <div class="slide-number">6 / 15</div>
+            <h1>💡 Vorteile für MediaMarkt</h1>
+            
+            <div class="grid">
+                <div class="card">
+                    <h2>⏱️ Zeit-Ersparnis</h2>
+                    <p><strong>Früher:</strong> 15-30 Min/Produkt (manuell)</p>
+                    <p style="color: #27ae60; font-size: 1.3em; margin-top: 10px;"><strong>Jetzt:</strong> Sekunden (automatisch)</p>
+                </div>
+                
+                <div class="card">
+                    <h2>✨ Qualität</h2>
+                    <ul style="margin-left: 20px;">
+                        <li>Konsistente Formatierung</li>
+                        <li>Verkaufsfördernde Texte</li>
+                        <li>Kategorie-optimiert</li>
+                        <li>Fehlerfreie Daten</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h2>📈 Skalierbarkeit</h2>
+                    <ul style="margin-left: 20px;">
+                        <li>Hunderte Produkte parallel</li>
+                        <li>Verschiedene Lieferanten</li>
+                        <li>Einfach erweiterbar</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="highlight" style="margin-top: 40px;">
+                <h3>💰 ROI-Beispiel</h3>
+                <p style="font-size: 1.2em;">
+                    <strong>100 Produkte:</strong><br>
+                    Alt: 25-50 Stunden → Neu: < 30 Minuten
+                </p>
+            </div>
+        </div>
+
+        <!-- Folie 7 -->
+        <div class="slide" id="slide-7">
+            <div class="slide-number">7 / 15</div>
+            <h1>🚀 Technische Innovation</h1>
+            
+            <h2>Dual-Mode AI-Generierung</h2>
+            
+            <div class="card" style="border-left-color: #27ae60; margin: 30px 0;">
+                <h3>🔧 Modular (Standard)</h3>
+                <ul>
+                    <li>6 Subprompts parallel ausgeführt</li>
+                    <li>Schneller & günstiger</li>
+                    <li>Einzeln testbar</li>
+                    <li>Wiederverwendbar</li>
+                </ul>
+            </div>
+            
+            <div class="card" style="border-left-color: #e74c3c; margin: 30px 0;">
+                <h3>📦 Monolithisch (Fallback)</h3>
+                <ul>
+                    <li>Ein großer Prompt</li>
+                    <li>Zuverlässigkeit garantiert</li>
+                    <li>Automatisches Fallback</li>
+                </ul>
+            </div>
+            
+            <div class="highlight">
+                <h3>🎯 Beispiel: Krokodilklemmen</h3>
+                <p><strong>Problem gelöst:</strong> Wurden früher als "Ladegerät" erkannt</p>
+                <p><strong>Lösung:</strong> Best-Match-Algorithmus → jetzt korrekt als "Zubehör"</p>
+            </div>
+        </div>
+
+        <!-- Folie 8 -->
+        <div class="slide" id="slide-8">
+            <div class="slide-number">8 / 15</div>
+            <h1>📊 Features im Überblick</h1>
+            
+            <h2>Haupt-Features</h2>
+            <ul style="font-size: 1.2em;">
+                <li>✅ CSV-Anreicherung mit AI</li>
+                <li>✅ URL-Analyse von Lieferanten-Websites</li>
+                <li>✅ Bildanalyse (OCR + Vision)</li>
+                <li>✅ Projektmanagement (mehrere Projekte parallel)</li>
+                <li>✅ Template-System (anpassbar)</li>
+                <li>✅ API-Key-Verwaltung (sicher)</li>
+            </ul>
+            
+            <h2 style="margin-top: 40px;">Besondere Stärken</h2>
+            <div class="grid">
+                <div class="card">
+                    <strong>Flexibel</strong>
+                    <p>Funktioniert mit unterschiedlichen Lieferantendaten</p>
+                </div>
+                <div class="card">
+                    <strong>Qualität</strong>
+                    <p>Automatische Qualitätssicherung</p>
+                </div>
+                <div class="card">
+                    <strong>Optimiert</strong>
+                    <p>Kategorie-spezifische Anpassungen</p>
+                </div>
+                <div class="card">
+                    <strong>Zuverlässig</strong>
+                    <p>Dual-Mode für maximale Verfügbarkeit</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Folie 9 -->
+        <div class="slide" id="slide-9">
+            <div class="slide-number">9 / 15</div>
+            <h1>🎨 UI/UX Highlights</h1>
+            
+            <h2>Design-Prinzipien</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Clean & Modern</h3>
+                    <p>shadcn/ui Komponenten</p>
+                </div>
+                <div class="card">
+                    <h3>Responsive</h3>
+                    <p>Alle Geräte unterstützt</p>
+                </div>
+                <div class="card">
+                    <h3>Intuitiv</h3>
+                    <p>Klarer Workflow</p>
+                </div>
+                <div class="card">
+                    <h3>Professionell</h3>
+                    <p>MediaMarkt-Standards</p>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 40px;">Technische UI-Features</h2>
+            <ul style="font-size: 1.1em;">
+                <li>🌓 Dark/Light Mode Support</li>
+                <li>📤 Drag & Drop File Upload</li>
+                <li>👁️ Real-time Preview</li>
+                <li>📊 Progress Indicators</li>
+                <li>🔔 Toast Notifications</li>
+            </ul>
+        </div>
+
+        <!-- Folie 10 -->
+        <div class="slide" id="slide-10">
+            <div class="slide-number">10 / 15</div>
+            <h1>🔒 Sicherheit & Code-Qualität</h1>
+            
+            <div class="grid">
+                <div class="card">
+                    <h2>🔐 Sicherheit</h2>
+                    <ul>
+                        <li>API-Keys verschlüsselt</li>
+                        <li>Keine Secrets im Code</li>
+                        <li>Dev/Prod getrennt</li>
+                        <li>Type-sichere API-Calls</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h2>✨ Code-Qualität</h2>
+                    <ul>
+                        <li>TypeScript überall</li>
+                        <li>SQL-Injection-Schutz</li>
+                        <li>Input-Validierung (Zod)</li>
+                        <li>Error Handling</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 40px;">Best Practices</h2>
+            <ul style="font-size: 1.1em;">
+                <li>✅ Type-Safety zwischen Frontend & Backend</li>
+                <li>✅ Automatische Migrations</li>
+                <li>✅ Shared Schema (Drizzle ORM)</li>
+                <li>✅ Monorepo-Struktur</li>
+            </ul>
+        </div>
+
+        <!-- Folie 11 -->
+        <div class="slide" id="slide-11">
+            <div class="slide-number">11 / 15</div>
+            <h1>📈 Zukunftspotenzial</h1>
+            
+            <h2>Erweiterbar für:</h2>
+            <div class="grid">
+                <div class="card">
+                    <strong>📦 Mehr Kategorien</strong>
+                    <p>Elektronik, Haushalt, Gaming, etc.</p>
+                </div>
+                <div class="card">
+                    <strong>🛒 Andere Shops</strong>
+                    <p>Amazon, Otto, eBay, etc.</p>
+                </div>
+                <div class="card">
+                    <strong>🌍 Mehrsprachig</strong>
+                    <p>EN, FR, IT, ES, etc.</p>
+                </div>
+                <div class="card">
+                    <strong>📤 Bulk-Export</strong>
+                    <p>CSV, XML, API-Integration</p>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 40px;">Technisch vorbereitet für:</h2>
+            <ul style="font-size: 1.1em;">
+                <li>🤖 Agenten-basierte AI (GPT wählt Prompts selbst)</li>
+                <li>💾 Caching von AI-Ergebnissen</li>
+                <li>🔗 Make/n8n Integration</li>
+                <li>🎨 Custom Template-Engine</li>
+            </ul>
+        </div>
+
+        <!-- Folie 12 -->
+        <div class="slide" id="slide-12">
+            <div class="slide-number">12 / 15</div>
+            <h1>🚀 Development & Deployment</h1>
+            
+            <h2>Moderne Development-Umgebung</h2>
+            <ul style="font-size: 1.1em;">
+                <li>⚡ Hot Module Replacement - Änderungen sofort sichtbar</li>
+                <li>🛡️ Type Safety - Fehler vor dem Deployment</li>
+                <li>📦 Modulare Architektur - Einfache Wartung</li>
+            </ul>
+            
+            <h2 style="margin-top: 40px;">Production-Ready</h2>
+            <div class="grid">
+                <div class="card">
+                    <strong>💾 Dual-Database</strong>
+                    <p>Dev & Prod getrennt</p>
+                </div>
+                <div class="card">
+                    <strong>☁️ Replit Deploy</strong>
+                    <p>Ein-Klick-Publishing</p>
+                </div>
+                <div class="card">
+                    <strong>📈 Autoscaling</strong>
+                    <p>Automatische Skalierung</p>
+                </div>
+            </div>
+            
+            <div class="highlight" style="margin-top: 40px;">
+                <h3>⚡ Performance</h3>
+                <ul>
+                    <li>Vite Build: < 10s</li>
+                    <li>Hot Reload: < 100ms</li>
+                    <li>API Response: < 2s (mit AI)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Folie 13 -->
+        <div class="slide" id="slide-13">
+            <div class="slide-number">13 / 15</div>
+            <h1>💻 Workflow im Detail</h1>
+            
+            <div class="card" style="margin: 30px 0;">
+                <h2>1️⃣ Daten-Upload</h2>
+                <p style="font-size: 1.1em;">CSV hochladen → Automatische Analyse → Strukturierung</p>
+            </div>
+            
+            <div style="text-align: center; font-size: 2em; margin: 20px 0;">⬇️</div>
+            
+            <div class="card" style="margin: 30px 0;">
+                <h2>2️⃣ AI-Verarbeitung (Dual-Mode)</h2>
+                <p><strong>Modular:</strong> 6 Subprompts parallel → Schneller & günstiger</p>
+                <p><strong>Fallback:</strong> Monolithischer Prompt → Zuverlässigkeit</p>
+            </div>
+            
+            <div style="text-align: center; font-size: 2em; margin: 20px 0;">⬇️</div>
+            
+            <div class="card" style="margin: 30px 0;">
+                <h2>3️⃣ Template-Generierung</h2>
+                <p style="font-size: 1.1em;">JSON-Daten + Kategorie-Config → HTML-Output</p>
+            </div>
+            
+            <div style="text-align: center; font-size: 2em; margin: 20px 0;">⬇️</div>
+            
+            <div class="highlight">
+                <h2>4️⃣ Fertig! ✨</h2>
+                <ul style="font-size: 1.1em;">
+                    <li>Professioneller Text (4-5 Sätze)</li>
+                    <li>5 verkaufsfördernde USPs</li>
+                    <li>Technische Tabelle</li>
+                    <li>Sicherheitshinweise</li>
+                    <li>Lieferumfang</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Folie 14 -->
+        <div class="slide" id="slide-14">
+            <div class="slide-number">14 / 15</div>
+            <h1>✅ Zusammenfassung</h1>
+            
+            <h2>Was haben wir gebaut?</h2>
+            <p style="font-size: 1.3em; margin: 20px 0;">
+                Eine <strong>moderne, skalierbare Full-Stack-Anwendung</strong> für automatisierte Produktbeschreibungen
+            </p>
+            
+            <h2 style="margin-top: 40px;">Tech-Stack</h2>
+            <p style="font-size: 1.2em;">
+                React + TypeScript + Tailwind + Express + OpenAI + PostgreSQL
+            </p>
+            
+            <h2 style="margin-top: 40px;">Besonderheiten</h2>
+            <div class="grid">
+                <div class="card">
+                    <strong>🔧 Modular</strong>
+                    <p>AI-Architektur</p>
+                </div>
+                <div class="card">
+                    <strong>🎯 Smart</strong>
+                    <p>Category Detection</p>
+                </div>
+                <div class="card">
+                    <strong>📦 Dual-Mode</strong>
+                    <p>Generierung</p>
+                </div>
+                <div class="card">
+                    <strong>✨ Flexibel</strong>
+                    <p>Templates</p>
+                </div>
+            </div>
+            
+            <div class="highlight" style="margin-top: 40px;">
+                <h2>Status</h2>
+                <p style="font-size: 1.3em;">
+                    ✅ Produktionsbereit<br>
+                    ✅ Type-safe<br>
+                    ✅ Skalierbar<br>
+                    ✅ Erweiterbar
+                </p>
+            </div>
+        </div>
+
+        <!-- Folie 15 -->
+        <div class="slide" id="slide-15">
+            <div class="slide-number">15 / 15</div>
+            <h1 style="text-align: center; margin-top: 100px;">🙏 Vielen Dank!</h1>
+            <h2 style="text-align: center; color: #667eea; margin-top: 40px;">Fragen?</h2>
+            
+            <div class="highlight" style="margin-top: 80px; text-align: center;">
+                <h3>Live-Demo verfügbar</h3>
+                <p style="font-size: 1.2em; margin-top: 20px;">Code auf Replit gehostet</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nav-buttons">
+        <button class="nav-btn" onclick="scrollToSlide('prev')">◀ Zurück</button>
+        <button class="nav-btn" onclick="scrollToSlide('next')">Weiter ▶</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 15;
+
+        function scrollToSlide(direction) {
+            if (direction === 'next' && currentSlide < totalSlides) {
+                currentSlide++;
+            } else if (direction === 'prev' && currentSlide > 1) {
+                currentSlide--;
+            }
+            
+            document.getElementById('slide-' + currentSlide).scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                scrollToSlide('next');
+            } else if (e.key === 'ArrowLeft') {
+                scrollToSlide('prev');
+            }
+        });
+
+        // Track current slide on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const slideId = entry.target.id;
+                    currentSlide = parseInt(slideId.split('-')[1]);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.slide').forEach(slide => {
+            observer.observe(slide);
+        });
+    </script>
+</body>
+</html>
