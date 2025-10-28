@@ -614,9 +614,14 @@ WICHTIG: Erstelle KEINE feste Struktur! Passe die Struktur an die verfügbaren D
 
 REGELN:
 - Verwende strukturierte HTML-Tags (<h2>, <h4>, <p>, <table>, <tr>, <td>)
-- Erstelle IMMER GENAU 5 grüne Bulletpoints mit ✅ für Vorteile (Überschrift OHNE Icon)
+- Erstelle IMMER GENAU 5 grüne Bulletpoints mit ✅ für verkaufsfördernde USPs (Überschrift OHNE Icon)
+
+KRITISCH - Die 5 Bulletpoints müssen IMMER verkaufsfördernde USPs sein:
+❌ VERBOTEN in Bulletpoints: Spannung, Kapazität, Gewicht, Abmessungen, Strom, etc.
+✅ ERLAUBT in Bulletpoints: "Wiederaufladbar - spart Geld", "Schutzschaltung - maximale Sicherheit", "Langlebig", "Zuverlässig", etc.
+
 - VERBOTEN: Keine UI-Anweisungen, keine Barrierefreiheits-Hinweise
-- FOKUS: Nur echte Produktvorteile aus den technischen Daten ableiten
+- Technische Daten (Spannung, mAh, Gewicht, etc.) gehören NUR in die Tabelle
 - Erstelle eine logische, verkaufsfördernde Struktur ohne feste Vorlage
 - Passe die Struktur an die verfügbaren Daten an
 - KEINE festen Sektionen - nur das was Daten hat
@@ -1007,11 +1012,26 @@ ERSTELLE IMMER DIESE EXAKTE STRUKTUR:
 <li>
 <h2>PRODUKTNAME</h2>
 <p>Detaillierte Produktbeschreibung (4-5 Sätze)<br /><br />
-✅ Feature 1 (NUR aus bullets, KEINE technischen Daten)<br />
-✅ Feature 2 (NUR aus bullets, KEINE technischen Daten)<br />
-✅ Feature 3 (NUR aus bullets, KEINE technischen Daten)<br />
-✅ Feature 4 (NUR aus bullets, KEINE technischen Daten)<br />
-✅ Feature 5 (NUR aus bullets, KEINE technischen Daten)</p>
+✅ USP 1 (verkaufsfördernd, z.B. "Wiederaufladbar - spart Geld und schont die Umwelt")<br />
+✅ USP 2 (verkaufsfördernd, z.B. "Integrierte Schutzschaltung - maximale Sicherheit")<br />
+✅ USP 3 (verkaufsfördernd, z.B. "Langlebig und zuverlässig - für professionelle Anwendungen")<br />
+✅ USP 4 (verkaufsfördernd, z.B. "Umweltfreundlich - nachhaltige Technologie")<br />
+✅ USP 5 (verkaufsfördernd, z.B. "Hohe Leistung - langanhaltende Energie")</p>
+
+KRITISCH: Die 5 Bulletpoints (✅) müssen IMMER verkaufsfördernde USPs sein!
+VERBOTEN in den Bulletpoints:
+❌ Spannung (z.B. "7,2 V", "3,6V")
+❌ Kapazität (z.B. "5200 mAh", "950mAh")  
+❌ Gewicht (z.B. "184 g", "18 g")
+❌ Abmessungen (z.B. "70×37.5×37.5 mm")
+❌ Entladestrom, Ladestrom, etc.
+
+✅ ERLAUBT in den Bulletpoints (Beispiele):
+- "Wiederaufladbar - spart Kosten und schont die Umwelt"
+- "Integrierte Schutzschaltung - maximale Sicherheit vor Überladung"
+- "Langlebige Lithium-Ionen Technologie - lange Lebensdauer"
+- "Professionelle Qualität - zuverlässig für den täglichen Einsatz"
+- "Vielseitig einsetzbar - perfekt für viele Geräte"</p>
 
 <h3>Produkteigenschaften & Highlights</h3>
 <ul>
