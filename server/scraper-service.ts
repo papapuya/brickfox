@@ -336,7 +336,68 @@ function autoDetectProductLinks($: cheerio.CheerioAPI, url: string): string[] {
 }
 
 /**
- * Scrape multiple products from a listing page
+ * Find the next page URL from pagination
+ */
+function findNextPageUrl($: cheerio.CheerioAPI, currentUrl: string, paginationSelector?: string): string | null {
+  // Method 1: Use provided pagination selector (e.g., '.pagination .next', 'a[rel="next"]')
+  if (paginationSelector) {
+    const nextLink = $(paginationSelector).first();
+    const href = nextLink.attr('href');
+    if (href && !nextLink.hasClass('disabled') && nextLink.attr('aria-disabled') !== 'true') {
+      return href.startsWith('http') ? href : new URL(href, currentUrl).toString();
+    }
+  }
+
+  // Method 2: Auto-detect common pagination patterns
+  const commonSelectors = [
+    'a[rel="next"]',
+    '.pagination .next:not(.disabled) a',
+    '.pagination li.next:not(.disabled) a',
+    'a.next:not(.disabled)',
+    '.pager .next a',
+    '[aria-label="Next"]',
+    'a:contains("Weiter"):not(.disabled)',
+    'a:contains("Next"):not(.disabled)',
+    'a:contains("›"):not(.disabled)',
+    'a:contains("»"):not(.disabled)'
+  ];
+
+  for (const selector of commonSelectors) {
+    try {
+      const nextLink = $(selector).first();
+      if (nextLink.length > 0) {
+        const href = nextLink.attr('href');
+        if (href && !nextLink.hasClass('disabled')) {
+          const absoluteUrl = href.startsWith('http') ? href : new URL(href, currentUrl).toString();
+          console.log(`Found next page using selector: ${selector}`);
+          return absoluteUrl;
+        }
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  // Method 3: Try URL pattern increment (e.g., ?page=1 → ?page=2)
+  const urlObj = new URL(currentUrl);
+  const pageParam = urlObj.searchParams.get('page') || urlObj.searchParams.get('p');
+  
+  if (pageParam) {
+    const currentPage = parseInt(pageParam, 10);
+    if (!isNaN(currentPage)) {
+      const nextPage = currentPage + 1;
+      const paramName = urlObj.searchParams.has('page') ? 'page' : 'p';
+      urlObj.searchParams.set(paramName, nextPage.toString());
+      console.log(`Incremented URL parameter ${paramName} to ${nextPage}`);
+      return urlObj.toString();
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Scrape multiple products from a listing page (single page only)
  */
 export async function scrapeProductList(
   url: string,
@@ -408,6 +469,101 @@ export async function scrapeProductList(
   console.log(`Found ${productUrls.length} products, returning ${limitedUrls.length}`);
 
   return limitedUrls;
+}
+
+/**
+ * Scrape multiple pages of a product listing with pagination
+ */
+export async function scrapeAllPages(
+  startUrl: string,
+  productLinkSelector: string | null,
+  paginationSelector: string | null,
+  maxPages: number = 10,
+  maxProductsTotal: number = 500,
+  options?: Partial<ScrapeOptions>,
+  progressCallback?: (currentPage: number, totalProducts: number) => void
+): Promise<string[]> {
+  console.log(`Starting multi-page scraping from: ${startUrl}`);
+  console.log(`Max pages: ${maxPages}, Max products: ${maxProductsTotal}`);
+
+  const allProductUrls: string[] = [];
+  let currentUrl: string | null = startUrl;
+  let pageNumber = 1;
+
+  while (currentUrl && pageNumber <= maxPages && allProductUrls.length < maxProductsTotal) {
+    console.log(`\n📄 Scraping Seite ${pageNumber}/${maxPages}: ${currentUrl}`);
+
+    try {
+      // Scrape current page
+      const pageProducts = await scrapeProductList(
+        currentUrl,
+        productLinkSelector,
+        maxProductsTotal - allProductUrls.length, // Remaining quota
+        options
+      );
+
+      console.log(`✓ Found ${pageProducts.length} products on page ${pageNumber}`);
+      allProductUrls.push(...pageProducts);
+
+      // Report progress
+      if (progressCallback) {
+        progressCallback(pageNumber, allProductUrls.length);
+      }
+
+      // Check if we've reached the limit
+      if (allProductUrls.length >= maxProductsTotal) {
+        console.log(`Reached maximum product limit (${maxProductsTotal})`);
+        break;
+      }
+
+      // Fetch page HTML to find next page
+      const headers: Record<string, string> = {
+        'User-Agent': options?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'de,en-US;q=0.7,en;q=0.3'
+      };
+
+      if (options?.cookies) {
+        headers['Cookie'] = options.cookies;
+      }
+
+      const response = await fetch(currentUrl, { headers });
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      // Find next page
+      const nextUrl = findNextPageUrl($, currentUrl, paginationSelector || undefined);
+      
+      if (!nextUrl) {
+        console.log('No next page found, pagination complete');
+        break;
+      }
+
+      if (nextUrl === currentUrl) {
+        console.log('Next page URL is same as current, stopping to prevent infinite loop');
+        break;
+      }
+
+      currentUrl = nextUrl;
+      pageNumber++;
+
+      // Polite delay between pages (2 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+    } catch (error) {
+      console.error(`Error scraping page ${pageNumber}:`, error);
+      break;
+    }
+  }
+
+  // Remove duplicates (in case products appear on multiple pages)
+  const uniqueProducts = Array.from(new Set(allProductUrls));
+  
+  console.log(`\n=== PAGINATION COMPLETE ===`);
+  console.log(`Pages scraped: ${pageNumber}`);
+  console.log(`Total products found: ${uniqueProducts.length}`);
+
+  return uniqueProducts;
 }
 
 /**

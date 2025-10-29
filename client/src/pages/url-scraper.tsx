@@ -49,6 +49,11 @@ export default function URLScraper() {
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
   
+  // Pagination options for multi-page scraping
+  const [enablePagination, setEnablePagination] = useState(false);
+  const [paginationSelector, setPaginationSelector] = useState("");
+  const [maxPages, setMaxPages] = useState(10);
+  
   // Session cookies and userAgent for authenticated scraping
   const [sessionCookies, setSessionCookies] = useState("");
   const [userAgent, setUserAgent] = useState("");
@@ -148,20 +153,30 @@ export default function URLScraper() {
 
     setIsLoading(true);
     setScrapedProducts([]);
-    setBatchProgress({ current: 0, total: 0, status: "Suche nach Produkten..." });
+    setBatchProgress({ current: 0, total: 0, status: enablePagination ? "Scrape alle Seiten..." : "Suche nach Produkten..." });
 
     try {
-      // Step 1: Get all product URLs from listing page
-      const listResponse = await fetch('/api/scrape-product-list', {
+      // Step 1: Get all product URLs from listing page (single or multi-page)
+      const apiEndpoint = enablePagination ? '/api/scrape-all-pages' : '/api/scrape-product-list';
+      const requestBody: any = {
+        url: url.trim(),
+        productLinkSelector: productLinkSelector.trim() || null,
+        maxProducts,
+        userAgent: userAgent || undefined,
+        cookies: sessionCookies || undefined
+      };
+
+      // Add pagination-specific params
+      if (enablePagination) {
+        requestBody.paginationSelector = paginationSelector.trim() || null;
+        requestBody.maxPages = maxPages;
+        setBatchProgress({ current: 0, total: 0, status: `Scrape bis zu ${maxPages} Seiten...` });
+      }
+
+      const listResponse = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: url.trim(),
-          productLinkSelector: productLinkSelector.trim(),
-          maxProducts,
-          userAgent: userAgent || undefined,
-          cookies: sessionCookies || undefined
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!listResponse.ok) {
@@ -756,6 +771,54 @@ export default function URLScraper() {
                   onChange={(e) => setMaxProducts(parseInt(e.target.value) || 50)}
                   className="mt-2"
                 />
+              </div>
+
+              {/* Pagination Options */}
+              <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="enable-pagination"
+                    checked={enablePagination}
+                    onCheckedChange={(checked) => setEnablePagination(!!checked)}
+                  />
+                  <Label htmlFor="enable-pagination" className="cursor-pointer font-medium">
+                    🔄 Alle Seiten scrapen (Paginierung)
+                  </Label>
+                </div>
+                
+                {enablePagination && (
+                  <>
+                    <div>
+                      <Label htmlFor="pagination-selector" className="text-sm">Pagination CSS-Selektor (optional)</Label>
+                      <Input
+                        id="pagination-selector"
+                        placeholder="a[rel='next'], .pagination .next (leer für Auto-Erkennung)"
+                        value={paginationSelector}
+                        onChange={(e) => setPaginationSelector(e.target.value)}
+                        className="mt-2 text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        💡 Selektor für den "Nächste Seite"-Button. Leer lassen für automatische Erkennung.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="max-pages" className="text-sm">Maximale Seitenanzahl</Label>
+                      <Input
+                        id="max-pages"
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={maxPages}
+                        onChange={(e) => setMaxPages(parseInt(e.target.value) || 10)}
+                        className="mt-2 text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ⚠️ Sicherheitslimit, um Endlos-Loops zu vermeiden
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
               <Button onClick={handleScrapeProductList} disabled={isLoading} className="w-full">

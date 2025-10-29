@@ -278,7 +278,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product Scraper: Multi-page scraping with pagination
+  app.post('/api/scrape-all-pages', async (req, res) => {
+    try {
+      const { 
+        url, 
+        productLinkSelector, 
+        paginationSelector,
+        maxPages,
+        maxProducts,
+        userAgent, 
+        cookies 
+      } = req.body;
 
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+
+      console.log(`Starting multi-page scraping from: ${url}`);
+      console.log(`Pagination selector: ${paginationSelector || 'auto-detect'}`);
+      console.log(`Max pages: ${maxPages || 10}, Max products: ${maxProducts || 500}`);
+
+      // Import scrapeAllPages function
+      const { scrapeAllPages } = await import('./scraper-service.js');
+
+      const productUrls = await scrapeAllPages(
+        url,
+        productLinkSelector || null,
+        paginationSelector || null,
+        maxPages || 10,
+        maxProducts || 500,
+        {
+          userAgent,
+          cookies,
+          timeout: 15000
+        }
+      );
+
+      res.json({
+        success: true,
+        productUrls,
+        count: productUrls.length,
+        message: `Scraped ${productUrls.length} products from multiple pages`
+      });
+
+    } catch (error) {
+      console.error('Multi-page scraping error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 
   // Product Creator: Neuer 3-Stufen Workflow mit Fortschritt
   app.post('/api/process-with-new-workflow', async (req, res) => {
