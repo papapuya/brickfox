@@ -414,30 +414,6 @@ export default function CSVBulkDescription() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="text-blue-600 dark:text-blue-400 mt-0.5">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                      So funktioniert die Spalten-Zuordnung
-                    </h3>
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                      <strong>Links:</strong> Das Feld, das die App benötigt (z.B. "Produktname")
-                      <br />
-                      <strong>Dropdown:</strong> Wählen Sie die passende Spalte aus Ihrer CSV-Datei aus
-                      <br />
-                      <strong>Rechts:</strong> Vorschau des Wertes aus der ersten Zeile
-                      <br />
-                      <span className="text-red-600 dark:text-red-400 font-medium">*</span> = Pflichtfeld (muss zugeordnet werden)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4 text-foreground">
