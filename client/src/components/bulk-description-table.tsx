@@ -135,16 +135,22 @@ export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescript
           </tbody>
         </table>
       </div>
-      {hasMore && (
-        <div className="p-4 text-center border-t">
+      <div className="p-4 border-t bg-muted/30 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Zeige <span className="font-medium text-foreground">{Math.min(displayLimit, products.length)}</span> von <span className="font-medium text-foreground">{products.length}</span> Produkten
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Seite <span className="font-medium text-foreground">{Math.ceil(displayLimit / 50)}</span> von <span className="font-medium text-foreground">{Math.ceil(products.length / 50)}</span>
+        </div>
+        {hasMore && (
           <button
             onClick={() => setDisplayLimit(prev => prev + 50)}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-primary hover:underline font-medium"
           >
             Weitere {Math.min(50, products.length - displayLimit)} Produkte laden
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </Card>
   );
 }
