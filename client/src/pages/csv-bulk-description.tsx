@@ -473,7 +473,10 @@ export default function CSVBulkDescription() {
                   </div>
                   <div className="bg-muted/30 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-6">
-                      Konfigurieren Sie die Attribute, die automatisch generiert werden sollen
+                      {processedData.length > 0 
+                        ? `Vorschau des ersten generierten Produkts (${processedData[0].seoName}):` 
+                        : 'Konfigurieren Sie die Attribute, die automatisch generiert werden sollen'
+                      }
                     </p>
                     <div className="space-y-6">
                       <div className="space-y-2">
@@ -491,9 +494,10 @@ export default function CSVBulkDescription() {
                         </div>
                         <input
                           type="text"
+                          value={processedData.length > 0 ? processedData[0].seoName || '' : ''}
                           placeholder="Wird automatisch aus CSV übernommen"
                           className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm"
-                          disabled
+                          readOnly
                         />
                       </div>
 
@@ -512,9 +516,10 @@ export default function CSVBulkDescription() {
                         </div>
                         <input
                           type="text"
+                          value={processedData.length > 0 ? processedData[0].mediamarktNameV1 || '' : ''}
                           placeholder="Wird automatisch generiert (z.B. Akku 16340 950 mAh 3.7V)"
                           className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm"
-                          disabled
+                          readOnly
                         />
                       </div>
 
@@ -533,9 +538,10 @@ export default function CSVBulkDescription() {
                         </div>
                         <input
                           type="text"
+                          value={processedData.length > 0 ? processedData[0].mediamarktNameV2 || '' : ''}
                           placeholder="Wird automatisch generiert (z.B. 16340 950mAh)"
                           className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm"
-                          disabled
+                          readOnly
                         />
                       </div>
 
@@ -553,10 +559,11 @@ export default function CSVBulkDescription() {
                           </Label>
                         </div>
                         <textarea
+                          value={processedData.length > 0 ? processedData[0].seoDescription || '' : ''}
                           placeholder="Wird automatisch generiert (erste 150 Zeichen der Produktbeschreibung)"
                           className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
                           rows={2}
-                          disabled
+                          readOnly
                         />
                       </div>
 
@@ -574,10 +581,11 @@ export default function CSVBulkDescription() {
                           </Label>
                         </div>
                         <textarea
+                          value={processedData.length > 0 ? processedData[0].shortDescription || '' : ''}
                           placeholder="Wird automatisch generiert (erste 300 Zeichen für Produktlisten)"
                           className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
                           rows={3}
-                          disabled
+                          readOnly
                         />
                       </div>
 
@@ -595,10 +603,11 @@ export default function CSVBulkDescription() {
                           </Label>
                         </div>
                         <textarea
+                          value={processedData.length > 0 ? processedData[0].descriptionHtml || '' : ''}
                           placeholder="Wird automatisch generiert (vollständige HTML-Produktbeschreibung im MediaMarkt-Format)"
-                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none font-mono"
                           rows={5}
-                          disabled
+                          readOnly
                         />
                       </div>
                     </div>
