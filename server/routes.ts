@@ -679,7 +679,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },
             { key: 'seo_beschreibung', value: product.seo_beschreibung || '', type: 'text' },
             { key: 'kurzbeschreibung', value: product.kurzbeschreibung || '', type: 'text' },
-          ],
+            { key: 'ean', value: product.ean || '', type: 'text' },
+            { key: 'hersteller', value: product.hersteller || '', type: 'text' },
+            { key: 'preis', value: product.preis || '', type: 'text' },
+            { key: 'gewicht', value: product.gewicht || '', type: 'text' },
+            { key: 'kategorie', value: product.kategorie || '', type: 'text' },
+            { key: 'source_url', value: product.source_url || '', type: 'text' },
+          ].filter(attr => attr.value),
         };
 
         const savedProduct = await storage.createProduct(project.id, productData);

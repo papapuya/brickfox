@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2 } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import type { Project } from "@shared/schema";
 
 interface ScrapedProduct {
   articleNumber: string;
@@ -22,10 +27,30 @@ interface ScrapedProduct {
 
 export default function URLScraper() {
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [scrapedProduct, setScrapedProduct] = useState<ScrapedProduct | null>(null);
+  const [generatedDescription, setGeneratedDescription] = useState<string>("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("new");
+  const [projectName, setProjectName] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load existing projects
+  const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
+    queryKey: ['/api/projects'],
+    enabled: showSaveDialog,
+    queryFn: async () => {
+      const response = await fetch('/api/projects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+      return response.json();
+    },
+  });
 
   // Custom selectors
   const [selectors, setSelectors] = useState({
@@ -51,6 +76,7 @@ export default function URLScraper() {
     }
 
     setIsLoading(true);
+    setGeneratedDescription("");
     try {
       // Build selectors object (only include non-empty selectors)
       const activeSelectors: any = {};
@@ -91,6 +117,165 @@ export default function URLScraper() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!scrapedProduct) return;
+
+    setIsGenerating(true);
+    try {
+      const productData = {
+        productName: scrapedProduct.productName,
+        articleNumber: scrapedProduct.articleNumber,
+        ean: scrapedProduct.ean,
+        manufacturer: scrapedProduct.manufacturer,
+        price: scrapedProduct.price,
+        weight: scrapedProduct.weight,
+        category: scrapedProduct.category,
+        description: scrapedProduct.description,
+      };
+
+      const response = await fetch('/api/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          extractedData: [{ extractedText: JSON.stringify(productData) }],
+          customAttributes: {
+            exactProductName: scrapedProduct.productName,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'AI-Generierung fehlgeschlagen');
+      }
+
+      const data = await response.json();
+      setGeneratedDescription(data.htmlCode || '');
+      
+      toast({
+        title: "Erfolgreich",
+        description: "AI-Beschreibung wurde generiert",
+      });
+
+    } catch (error) {
+      console.error('AI generation error:', error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : 'AI-Generierung fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveToProject = async () => {
+    if (!scrapedProduct || !generatedDescription) return;
+
+    if (selectedProjectId === "new" && !projectName.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen Projektnamen ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedProjectId !== "new" && !selectedProjectId) {
+      toast({
+        title: "Fehler",
+        description: "Bitte wählen Sie ein Projekt aus",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (selectedProjectId === "new") {
+        // Create new project with single product
+        const response = await fetch('/api/bulk-save-to-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectName: projectName.trim(),
+            products: [{
+              produktname: scrapedProduct.productName,
+              artikelnummer: scrapedProduct.articleNumber || '',
+              produktbeschreibung: generatedDescription,
+              ean: scrapedProduct.ean || '',
+              hersteller: scrapedProduct.manufacturer || '',
+              preis: scrapedProduct.price || '',
+              gewicht: scrapedProduct.weight || '',
+              kategorie: scrapedProduct.category || '',
+              mediamarktname_v1: scrapedProduct.productName,
+              seo_beschreibung: scrapedProduct.description?.substring(0, 200) || '',
+              source_url: url,
+            }],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Fehler beim Erstellen des Projekts');
+        }
+
+        toast({
+          title: "Projekt erstellt",
+          description: `Produkt wurde erfolgreich in "${projectName.trim()}" gespeichert`,
+        });
+      } else {
+        // Add to existing project
+        const response = await fetch(`/api/projects/${selectedProjectId}/products`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: scrapedProduct.productName,
+            articleNumber: scrapedProduct.articleNumber || '',
+            htmlCode: generatedDescription,
+            previewText: scrapedProduct.description?.substring(0, 200) || '',
+            exactProductName: scrapedProduct.productName,
+            customAttributes: [
+              { key: 'ean', value: scrapedProduct.ean || '', type: 'text' },
+              { key: 'hersteller', value: scrapedProduct.manufacturer || '', type: 'text' },
+              { key: 'preis', value: scrapedProduct.price || '', type: 'text' },
+              { key: 'gewicht', value: scrapedProduct.weight || '', type: 'text' },
+              { key: 'kategorie', value: scrapedProduct.category || '', type: 'text' },
+              { key: 'source_url', value: url, type: 'text' },
+            ].filter(attr => attr.value),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Fehler beim Hinzufügen zum Projekt');
+        }
+
+        const project = projectsData?.projects.find(p => p.id === selectedProjectId);
+        toast({
+          title: "Produkt hinzugefügt",
+          description: `Produkt wurde erfolgreich zu "${project?.name}" hinzugefügt`,
+        });
+      }
+
+      setShowSaveDialog(false);
+      setProjectName("");
+      setSelectedProjectId("new");
+
+      // Redirect to projects page
+      setTimeout(() => {
+        setLocation('/projects');
+      }, 1000);
+
+    } catch (err) {
+      toast({
+        title: "Fehler",
+        description: err instanceof Error ? err.message : 'Speichern fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -306,15 +491,157 @@ export default function URLScraper() {
             </div>
 
             <div className="mt-6 flex gap-2">
-              <Button>
-                AI-Beschreibung generieren
+              <Button onClick={handleGenerateDescription} disabled={isGenerating}>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    AI generiert...
+                  </>
+                ) : (
+                  'AI-Beschreibung generieren'
+                )}
               </Button>
-              <Button variant="outline">
+              <Button 
+                variant="outline" 
+                disabled={!generatedDescription}
+                onClick={() => setShowSaveDialog(true)}
+              >
                 Zu Projekt hinzufügen
               </Button>
             </div>
           </Card>
         )}
+
+        {/* Generated Description */}
+        {generatedDescription && (
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Generierte Produktbeschreibung</h3>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">HTML-Vorschau</Label>
+                <div className="p-4 bg-muted rounded-lg max-h-96 overflow-y-auto">
+                  <div dangerouslySetInnerHTML={{ __html: generatedDescription }} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">HTML-Code</Label>
+                <Textarea
+                  value={generatedDescription}
+                  onChange={(e) => setGeneratedDescription(e.target.value)}
+                  className="font-mono text-sm"
+                  rows={10}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => {
+                  navigator.clipboard.writeText(generatedDescription);
+                  toast({ title: "Kopiert", description: "HTML wurde in die Zwischenablage kopiert" });
+                }}>
+                  HTML kopieren
+                </Button>
+                <Button onClick={() => setShowSaveDialog(true)}>
+                  Zu Projekt hinzufügen
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Save to Project Dialog */}
+        <Dialog open={showSaveDialog} onOpenChange={(open) => {
+          setShowSaveDialog(open);
+          if (!open) {
+            setProjectName("");
+            setSelectedProjectId("new");
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Zu Projekt hinzufügen</DialogTitle>
+              <DialogDescription>
+                Speichern Sie das gescrapte Produkt in "Meine Projekte"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <div>
+                <Label htmlFor="project-select" className="mb-2 block">
+                  Projekt wählen
+                </Label>
+                <Select
+                  value={selectedProjectId}
+                  onValueChange={setSelectedProjectId}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger id="project-select">
+                    <SelectValue placeholder="Projekt auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">
+                      <div className="flex items-center">
+                        <FolderPlus className="w-4 h-4 mr-2" />
+                        Neues Projekt erstellen
+                      </div>
+                    </SelectItem>
+                    {projectsData?.projects && projectsData.projects.length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                          Bestehende Projekte
+                        </div>
+                        {projectsData.projects.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedProjectId === "new" && (
+                <div>
+                  <Label htmlFor="project-name" className="mb-2 block">
+                    Name für neues Projekt
+                  </Label>
+                  <Input
+                    id="project-name"
+                    placeholder="z.B. Webscraping Dezember 2024"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isSaving) {
+                        handleSaveToProject();
+                      }
+                    }}
+                    disabled={isSaving}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowSaveDialog(false)}
+                disabled={isSaving}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleSaveToProject}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Speichern...
+                  </>
+                ) : (
+                  'Speichern'
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
