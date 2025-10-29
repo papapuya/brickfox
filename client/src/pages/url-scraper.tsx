@@ -1456,20 +1456,6 @@ export default function URLScraper() {
                 </Table>
               </div>
             </div>
-
-            <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-              <p className="font-semibold mb-1">📊 Tabelle & CSV-Export:</p>
-              <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                <li>✅ Alle 24 Spalten sichtbar - horizontal scrollen für technische Daten</li>
-                <li>✅ CSV mit allen Feldern: Artikelnummer, EAN, Hersteller, Preis, Gewicht, Kategorie</li>
-                <li>✅ Nitecore-Spezifikationen: Länge, Durchmesser, LED-Typen, Leuchtweite, etc.</li>
-                <li>✅ **NEU:** PDF-Bedienungsanleitung & Sicherheitshinweise automatisch extrahiert</li>
-                <li>✅ HTML-Beschreibung vollständig im CSV (nicht gekürzt)</li>
-                <li>✅ Bild-URLs pipe-getrennt | UTF-8 kodiert für Excel & Google Sheets</li>
-                <li>👁️ Augen-Icon: HTML-Beschreibung als Vorschau anzeigen</li>
-                <li>📄 PDF-Icon: Bedienungsanleitung direkt öffnen</li>
-              </ul>
-            </div>
           </Card>
         )}
 
