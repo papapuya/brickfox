@@ -76,18 +76,18 @@ export default function CSVBulkDescription() {
     const mappings: { [key: string]: string[] } = {
       productName: ['produktname', 'product name', 'name', 'titel', 'title', 'p_name', 'seo name'],
       model: ['modell', 'model', 'artikelnummer', 'sku', 'item number', 'p_item_number'],
-      capacity_mah: ['kapazität mah', 'capacity mah', 'kapazitaet', 'mah'],
+      capacity_mah: ['kapazität mah', 'capacity mah', 'kapazitaet', 'mah', 'kapazität', 'capacity'],
       capacity_wh: ['kapazität wh', 'capacity wh', 'wh'],
-      voltage: ['spannung', 'voltage', 'volt', 'spannung v'],
+      voltage: ['spannung', 'voltage', 'volt', 'spannung v', 'v'],
       type: ['typ', 'type', 'produkttyp'],
-      chemistry: ['chemie', 'chemistry', 'zusammensetzung', 'technologie'],
-      protection: ['schutzschaltung', 'protection', 'bms', 'pcb'],
-      diameter: ['durchmesser', 'diameter', 'ø'],
-      length: ['länge', 'length', 'laenge'],
-      width: ['breite', 'width'],
-      height: ['höhe', 'height', 'hoehe'],
-      weight: ['gewicht', 'weight'],
-      rechargeable: ['wiederaufladbar', 'rechargeable'],
+      chemistry: ['chemie', 'chemistry', 'zusammensetzung', 'technologie', 'composition'],
+      protection: ['schutzschaltung', 'protection', 'bms', 'pcb', 'schutzelektronik'],
+      diameter: ['durchmesser', 'diameter', 'ø', 'durchmesser mm'],
+      length: ['länge', 'length', 'laenge', 'länge mm'],
+      width: ['breite', 'width', 'breite mm'],
+      height: ['höhe', 'height', 'hoehe', 'höhe mm'],
+      weight: ['gewicht', 'weight', 'masse'],
+      rechargeable: ['wiederaufladbar', 'rechargeable', 'aufladbar'],
       connection_type: ['anschlussart', 'connection'],
       plus_pole: ['plus pol', 'pole', 'plus'],
     };
@@ -202,11 +202,15 @@ export default function CSVBulkDescription() {
       });
 
       try {
+        // Sende als strukturiertes Objekt für modulares Subprompt-System
         const response = await fetch('/api/generate-description', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            extractedData: [JSON.stringify(productData)],
+            extractedData: [productData], // Als Objekt, nicht als String
+            customAttributes: {
+              exactProductName: productData.productName || '',
+            },
           }),
         });
 
