@@ -72,14 +72,16 @@ export default function URLScraper() {
   });
 
   // Load suppliers
-  const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
+  const { data: suppliersData, isLoading: isSuppliersLoading } = useQuery<{ success: boolean; suppliers: any[] }>({
     queryKey: ['/api/suppliers'],
     queryFn: async () => {
       const response = await fetch('/api/suppliers');
       if (!response.ok) {
         throw new Error('Failed to fetch suppliers');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('Loaded suppliers:', data.suppliers?.length, 'items:', data.suppliers?.map((s: any) => s.name));
+      return data;
     },
   });
 
@@ -113,6 +115,7 @@ export default function URLScraper() {
       setProductLinkSelector(supplier.productLinkSelector || "");
       setSessionCookies(supplier.sessionCookies || "");
       setUserAgent(supplier.userAgent || "");
+      setShowAdvanced(true); // Automatically show selectors when a supplier is selected
       toast({
         title: "Lieferant geladen",
         description: `Selektoren und Authentifizierung für "${supplier.name}" wurden geladen`,
@@ -669,6 +672,26 @@ export default function URLScraper() {
                     )}
                   </Button>
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="supplier-select-single">Lieferant auswählen (optional)</Label>
+                <Select value={selectedSupplierId} onValueChange={handleSupplierSelect}>
+                  <SelectTrigger id="supplier-select-single" className="mt-2">
+                    <SelectValue placeholder="Lieferant wählen oder manuell konfigurieren" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Keine Vorlage (Auto-Erkennung)</SelectItem>
+                    {suppliersData?.suppliers?.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Gespeicherte CSS-Selektoren für diesen Lieferanten laden
+                </p>
               </div>
             </TabsContent>
 
