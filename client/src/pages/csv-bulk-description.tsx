@@ -86,6 +86,48 @@ export default function CSVBulkDescription() {
     { key: 'kurzbeschreibung', label: 'Kurzbeschreibung', enabled: true },
   ]);
 
+  // SessionStorage Keys
+  const SESSION_KEY_PRODUCTS = 'csv-bulk-products';
+  const SESSION_KEY_RAW_DATA = 'csv-bulk-raw-data';
+  const SESSION_KEY_FILE_NAME = 'csv-bulk-file-name';
+
+  // Beim Laden der Komponente: Daten aus sessionStorage wiederherstellen
+  useEffect(() => {
+    const savedProducts = sessionStorage.getItem(SESSION_KEY_PRODUCTS);
+    const savedRawData = sessionStorage.getItem(SESSION_KEY_RAW_DATA);
+    const savedFileName = sessionStorage.getItem(SESSION_KEY_FILE_NAME);
+
+    if (savedProducts && savedRawData) {
+      try {
+        const products = JSON.parse(savedProducts);
+        const rawData = JSON.parse(savedRawData);
+        
+        setBulkProducts(products);
+        setRawData(rawData);
+        
+        if (savedFileName) {
+          setSuccessMessage(`${products.length} gespeicherte Produkte wiederhergestellt (${savedFileName})`);
+        }
+      } catch (error) {
+        console.error('Failed to restore session data:', error);
+        sessionStorage.removeItem(SESSION_KEY_PRODUCTS);
+        sessionStorage.removeItem(SESSION_KEY_RAW_DATA);
+        sessionStorage.removeItem(SESSION_KEY_FILE_NAME);
+      }
+    }
+  }, []);
+
+  // Bei Änderungen: Daten in sessionStorage speichern
+  useEffect(() => {
+    if (bulkProducts.length > 0) {
+      sessionStorage.setItem(SESSION_KEY_PRODUCTS, JSON.stringify(bulkProducts));
+      sessionStorage.setItem(SESSION_KEY_RAW_DATA, JSON.stringify(rawData));
+      if (file) {
+        sessionStorage.setItem(SESSION_KEY_FILE_NAME, file.name);
+      }
+    }
+  }, [bulkProducts, rawData, file]);
+
   const handleFileSelect = (selectedFile: File | null) => {
     if (!selectedFile) return;
 
@@ -293,6 +335,11 @@ export default function CSVBulkDescription() {
     setError("");
     setSuccessMessage("");
     setProgress(0);
+    
+    // SessionStorage leeren
+    sessionStorage.removeItem(SESSION_KEY_PRODUCTS);
+    sessionStorage.removeItem(SESSION_KEY_RAW_DATA);
+    sessionStorage.removeItem(SESSION_KEY_FILE_NAME);
   };
 
   const handleSaveToProject = async () => {
