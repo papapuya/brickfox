@@ -16,7 +16,7 @@ export default function Landing() {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-              <span className="text-primary">PIMPilot</span> - AI Produktbeschreibung Generator
+              <span className="text-primary">PIMPilot</span>
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

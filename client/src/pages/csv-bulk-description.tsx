@@ -268,7 +268,7 @@ export default function CSVBulkDescription() {
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-[1600px] mx-auto px-6 py-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            PIMPilot - AI Produktbeschreibung Generator
+            PIMPilot
           </h1>
           <p className="text-sm text-muted-foreground">
             Automatische PIM-Daten Generierung • AI-gestützte Produktbeschreibungen • MediaMarkt-konforme Titel • CSV Massenverarbeitung

@@ -53,7 +53,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-border">
         <div>
           <h2 className="text-lg font-bold text-foreground">PIMPilot</h2>
-          <p className="text-xs text-muted-foreground">AI Produktbeschreibung Generator</p>
+          <p className="text-xs text-muted-foreground">Produktmanagement</p>
         </div>
       </SidebarHeader>
       <SidebarContent>
