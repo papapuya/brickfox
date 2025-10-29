@@ -479,76 +479,119 @@ export default function CSVBulkDescription() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
-                    2. Benötigte Attribute für PIM (CSV-Export)
-                    <span className="text-xs font-normal text-green-600 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
-                      ✨ Automatisch generiert
-                    </span>
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      2. Grunddaten (Custom Attributes)
+                    </h3>
+                  </div>
                   <div className="bg-muted/30 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Diese Felder werden <strong>automatisch</strong> aus der AI-generierten Produktbeschreibung extrahiert - <strong>keine manuelle Zuordnung nötig!</strong> Wählen Sie nur aus, welche Felder Sie im CSV-Export benötigen:
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Konfigurieren Sie die Attribute, die automatisch generiert werden sollen
                     </p>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="pim-seoName"
+                            checked={selectedPimFields.seoName}
+                            onChange={(e) => setSelectedPimFields({...selectedPimFields, seoName: e.target.checked})}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="pim-seoName" className="text-sm font-medium cursor-pointer">
+                            Produktname
+                          </Label>
+                        </div>
                         <input
-                          type="checkbox"
-                          id="pim-seoName"
-                          checked={selectedPimFields.seoName}
-                          onChange={(e) => setSelectedPimFields({...selectedPimFields, seoName: e.target.checked})}
-                          className="w-4 h-4 rounded border-gray-300"
+                          type="text"
+                          placeholder="Wird automatisch aus CSV übernommen"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm"
+                          disabled
                         />
-                        <Label htmlFor="pim-seoName" className="text-sm font-medium cursor-pointer">
-                          SEO Name <span className="text-muted-foreground">(= Produktname)</span>
-                        </Label>
                       </div>
-                      <div className="flex items-center space-x-3">
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="pim-mmv1"
+                            checked={selectedPimFields.mediamarktNameV1}
+                            onChange={(e) => setSelectedPimFields({...selectedPimFields, mediamarktNameV1: e.target.checked})}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="pim-mmv1" className="text-sm font-medium cursor-pointer">
+                            Mediamarktname V1
+                          </Label>
+                        </div>
                         <input
-                          type="checkbox"
-                          id="pim-seoDescription"
-                          checked={selectedPimFields.seoDescription}
-                          onChange={(e) => setSelectedPimFields({...selectedPimFields, seoDescription: e.target.checked})}
-                          className="w-4 h-4 rounded border-gray-300"
+                          type="text"
+                          placeholder="Wird automatisch generiert (z.B. Akku 16340 950 mAh 3.7V)"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm"
+                          disabled
                         />
-                        <Label htmlFor="pim-seoDescription" className="text-sm font-medium cursor-pointer">
-                          SEO Beschreibung <span className="text-muted-foreground">(150 Zeichen, Meta-Description)</span>
-                        </Label>
                       </div>
-                      <div className="flex items-center space-x-3">
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="pim-mmv2"
+                            checked={selectedPimFields.mediamarktNameV2}
+                            onChange={(e) => setSelectedPimFields({...selectedPimFields, mediamarktNameV2: e.target.checked})}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="pim-mmv2" className="text-sm font-medium cursor-pointer">
+                            Mediamarktname V2
+                          </Label>
+                        </div>
                         <input
-                          type="checkbox"
-                          id="pim-shortDescription"
-                          checked={selectedPimFields.shortDescription}
-                          onChange={(e) => setSelectedPimFields({...selectedPimFields, shortDescription: e.target.checked})}
-                          className="w-4 h-4 rounded border-gray-300"
+                          type="text"
+                          placeholder="Wird automatisch generiert (z.B. 16340 950mAh)"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm"
+                          disabled
                         />
-                        <Label htmlFor="pim-shortDescription" className="text-sm font-medium cursor-pointer">
-                          Kurzbeschreibung <span className="text-muted-foreground">(300 Zeichen, Produktlisten)</span>
-                        </Label>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="pim-mmv1"
-                          checked={selectedPimFields.mediamarktNameV1}
-                          onChange={(e) => setSelectedPimFields({...selectedPimFields, mediamarktNameV1: e.target.checked})}
-                          className="w-4 h-4 rounded border-gray-300"
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="pim-seoDescription"
+                            checked={selectedPimFields.seoDescription}
+                            onChange={(e) => setSelectedPimFields({...selectedPimFields, seoDescription: e.target.checked})}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="pim-seoDescription" className="text-sm font-medium cursor-pointer">
+                            SEO Beschreibung
+                          </Label>
+                        </div>
+                        <textarea
+                          placeholder="Wird automatisch generiert (erste 150 Zeichen der Produktbeschreibung)"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
+                          rows={2}
+                          disabled
                         />
-                        <Label htmlFor="pim-mmv1" className="text-sm font-medium cursor-pointer">
-                          Mediamarktname V1 <span className="text-muted-foreground">(max. 60 Zeichen)</span>
-                        </Label>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="pim-mmv2"
-                          checked={selectedPimFields.mediamarktNameV2}
-                          onChange={(e) => setSelectedPimFields({...selectedPimFields, mediamarktNameV2: e.target.checked})}
-                          className="w-4 h-4 rounded border-gray-300"
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="pim-shortDescription"
+                            checked={selectedPimFields.shortDescription}
+                            onChange={(e) => setSelectedPimFields({...selectedPimFields, shortDescription: e.target.checked})}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="pim-shortDescription" className="text-sm font-medium cursor-pointer">
+                            Kurzbeschreibung
+                          </Label>
+                        </div>
+                        <textarea
+                          placeholder="Wird automatisch generiert (erste 300 Zeichen für Produktlisten)"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
+                          rows={3}
+                          disabled
                         />
-                        <Label htmlFor="pim-mmv2" className="text-sm font-medium cursor-pointer">
-                          Mediamarktname V2 <span className="text-muted-foreground">(max. 40 Zeichen, kompakt)</span>
-                        </Label>
                       </div>
                     </div>
                   </div>
