@@ -29,7 +29,7 @@ const menuItems = [
     icon: FolderOpen,
   },
   {
-    title: "Produktbeschreibungen",
+    title: "Bild-Analyse/Webscraper",
     url: "/product-creator",
     icon: ImagePlus,
   },

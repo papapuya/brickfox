@@ -94,16 +94,16 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            {/* Produktbeschreibungen Tool */}
+            {/* Bild-Analyse/Webscraper Tool */}
             <Card className="hover-elevate transition-all flex flex-col" data-testid="card-product-creator">
               <CardHeader className="space-y-4">
                 <div className="w-12 h-12 bg-chart-2/10 rounded-md flex items-center justify-center">
                   <ImagePlus className="w-6 h-6 text-chart-2" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl mb-2">Produktbeschreibungen</CardTitle>
+                  <CardTitle className="text-2xl mb-2">Bild-Analyse/Webscraper</CardTitle>
                   <CardDescription className="text-base">
-                    KI-gestützte Produktbeschreibungen aus Lieferantendaten generieren
+                    KI-gestützte Produktbeschreibungen aus Bildern und Webseiten generieren
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -135,7 +135,7 @@ export default function Landing() {
                   <Link href="/product-creator">
                     <Button className="w-full" data-testid="button-product-creator">
                       <ImagePlus className="w-4 h-4 mr-2" />
-                      Produktbeschreibungen erstellen
+                      Bild-Analyse starten
                     </Button>
                   </Link>
                 </div>
