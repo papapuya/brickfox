@@ -90,16 +90,63 @@ export function extractTechSpecsFromStructured(
     structuredData.technicalSpecs,
     structuredData.specs,
     structuredData.technischeDaten,
+    structuredData, // WICHTIG: Auch direkt im Hauptobjekt suchen (für CSV-Daten)
   ].filter(Boolean);
   
   for (const source of sources) {
     for (const field of categoryConfig.technicalFields) {
-      const value = source[field.label] || source[field.key];
-      if (value && isValidValue(value)) {
-        specs[field.label] = value;
-        console.log(`✅ 1:1 Strukturierte Daten: ${field.label} = ${value}`);
+      // Suche nach verschiedenen Varianten des Feldnamens
+      const possibleKeys = [
+        field.key,
+        field.label,
+        field.key.toLowerCase(),
+        field.label.toLowerCase(),
+        // CSV-spezifische Varianten
+        field.key.replace(/_/g, ''),
+        field.key.replace(/_/g, ' '),
+      ];
+      
+      let value = null;
+      for (const key of possibleKeys) {
+        if (source[key] && isValidValue(source[key])) {
+          value = source[key];
+          break;
+        }
+      }
+      
+      if (value) {
+        // SPEZIAL: Vereinfache Schutzschaltung
+        let cleanedValue = value;
+        if (field.key === 'protection' || field.label === 'Schutzschaltung') {
+          cleanedValue = value.split(',')[0].replace(/schutz$/i, '').trim();
+        }
+        
+        specs[field.label] = cleanedValue;
+        console.log(`✅ 1:1 Strukturierte Daten: ${field.label} = ${cleanedValue}`);
       }
     }
+  }
+  
+  // DYNAMISCH: Extrahiere ALLE übrigen Felder (auch wenn nicht in categoryConfig)
+  // Dies ermöglicht dynamische Tabellen mit 18+ Specs
+  const processedKeys = new Set(Object.keys(specs).map(k => normalizeFieldName(k)));
+  
+  for (const key of Object.keys(structuredData)) {
+    const value = structuredData[key];
+    
+    // Skip bereits verarbeitete Felder
+    if (processedKeys.has(normalizeFieldName(key))) continue;
+    
+    // Skip Meta-Felder
+    if (['productName', 'product_name', 'seoName', 'description'].includes(key)) continue;
+    
+    // Nur gültige Werte
+    if (!isValidValue(value)) continue;
+    
+    // Formatiere Feldnamen (z.B. "capacity_mah" → "Kapazität mAh")
+    const formattedKey = formatFieldName(key);
+    specs[formattedKey] = value;
+    console.log(`✅ 1:1 Dynamisches Feld: ${formattedKey} = ${value}`);
   }
   
   return {
@@ -166,4 +213,16 @@ function isValidValue(value: string): boolean {
   
   const normalized = value.toLowerCase().trim();
   return !invalid.includes(normalized) && normalized.length > 0;
+}
+
+function formatFieldName(key: string): string {
+  // Entferne Unterstriche und formatiere
+  let formatted = key.replace(/_/g, ' ');
+  
+  // Großschreibe ersten Buchstaben jedes Wortes
+  formatted = formatted.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  return formatted;
 }
