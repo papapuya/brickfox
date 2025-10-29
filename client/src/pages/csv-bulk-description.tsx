@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Settings2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Settings2, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,6 +9,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { BulkDescriptionTable } from "@/components/bulk-description-table";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useLocation } from "wouter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import type { Project } from "@shared/schema";
 
 interface RawCSVRow {
   [key: string]: string;
@@ -33,6 +52,7 @@ interface ExportColumn {
 
 export default function CSVBulkDescription() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [file, setFile] = useState<File | null>(null);
   const [bulkProducts, setBulkProducts] = useState<BulkProduct[]>([]);
   const [rawData, setRawData] = useState<RawCSVRow[]>([]);
@@ -43,6 +63,18 @@ export default function CSVBulkDescription() {
   const [parseWarnings, setParseWarnings] = useState<Papa.ParseError[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [savingProject, setSavingProject] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("new");
+
+  // Lade bestehende Projekte
+  const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
+    queryKey: ['/api/projects'],
+    enabled: showSaveDialog,
+  });
+
+  const existingProjects = projectsData?.projects || [];
   
   const [exportColumns, setExportColumns] = useState<ExportColumn[]>([
     { key: 'artikelnummer', label: 'Artikelnummer', enabled: true },
@@ -263,6 +295,111 @@ export default function CSVBulkDescription() {
     setProgress(0);
   };
 
+  const handleSaveToProject = async () => {
+    // Wenn neues Projekt: Projektname erforderlich
+    if (selectedProjectId === "new" && !projectName.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen Projektnamen ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Wenn bestehendes Projekt: Projekt muss ausgewählt sein
+    if (selectedProjectId !== "new" && !selectedProjectId) {
+      toast({
+        title: "Fehler",
+        description: "Bitte wählen Sie ein Projekt aus",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingProject(true);
+    try {
+      if (selectedProjectId === "new") {
+        // Neues Projekt erstellen
+        const response = await fetch('/api/bulk-save-to-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectName: projectName.trim(),
+            products: bulkProducts,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Fehler beim Speichern des Projekts');
+        }
+
+        const data = await response.json();
+        
+        toast({
+          title: "Projekt gespeichert",
+          description: `${data.productCount} Produkte wurden erfolgreich in "${projectName}" gespeichert`,
+        });
+      } else {
+        // Zu bestehendem Projekt hinzufügen
+        const savedCount = await addProductsToExistingProject(selectedProjectId, bulkProducts);
+        const project = existingProjects.find(p => p.id === selectedProjectId);
+        
+        toast({
+          title: "Produkte hinzugefügt",
+          description: `${savedCount} Produkte wurden erfolgreich zu "${project?.name}" hinzugefügt`,
+        });
+      }
+
+      setShowSaveDialog(false);
+      setProjectName("");
+      setSelectedProjectId("new");
+      
+      // Weiterleitung zu Projekten nach 1 Sekunde
+      setTimeout(() => {
+        setLocation('/projects');
+      }, 1000);
+      
+    } catch (err) {
+      toast({
+        title: "Fehler",
+        description: err instanceof Error ? err.message : 'Projekt konnte nicht gespeichert werden',
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
+  const addProductsToExistingProject = async (projectId: string, products: BulkProduct[]): Promise<number> => {
+    let savedCount = 0;
+    for (const product of products) {
+      const productData = {
+        name: product.produktname || 'Unbekanntes Produkt',
+        articleNumber: product.artikelnummer || '',
+        htmlCode: product.produktbeschreibung || '',
+        previewText: product.seo_beschreibung || product.kurzbeschreibung || '',
+        exactProductName: product.mediamarktname_v1 || product.mediamarktname_v2 || product.produktname || '',
+        customAttributes: [
+          { key: 'mediamarktname_v1', value: product.mediamarktname_v1 || '', type: 'text' },
+          { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },
+          { key: 'seo_beschreibung', value: product.seo_beschreibung || '', type: 'text' },
+          { key: 'kurzbeschreibung', value: product.kurzbeschreibung || '', type: 'text' },
+        ],
+      };
+
+      const response = await fetch(`/api/projects/${projectId}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productData),
+      });
+
+      if (response.ok) {
+        savedCount++;
+      }
+    }
+    return savedCount;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
@@ -376,6 +513,15 @@ export default function CSVBulkDescription() {
                     Spalten auswählen
                   </Button>
                   <Button
+                    onClick={() => setShowSaveDialog(true)}
+                    disabled={bulkProducts.length === 0}
+                    size="sm"
+                    variant="default"
+                  >
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                    Als Projekt speichern
+                  </Button>
+                  <Button
                     onClick={handleDownload}
                     disabled={bulkProducts.length === 0}
                     size="sm"
@@ -442,6 +588,114 @@ export default function CSVBulkDescription() {
           </div>
         )}
       </main>
+
+      {/* Dialog zum Projekt speichern */}
+      <Dialog open={showSaveDialog} onOpenChange={(open) => {
+        setShowSaveDialog(open);
+        if (!open) {
+          setProjectName("");
+          setSelectedProjectId("new");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Als Projekt speichern</DialogTitle>
+            <DialogDescription>
+              Speichern Sie alle {bulkProducts.length} Produkte in "Meine Projekte" für spätere Bearbeitung
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="project-select" className="mb-2 block">
+                Projekt wählen
+              </Label>
+              <Select
+                value={selectedProjectId}
+                onValueChange={setSelectedProjectId}
+                disabled={savingProject}
+              >
+                <SelectTrigger id="project-select">
+                  <SelectValue placeholder="Projekt auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">
+                    <div className="flex items-center">
+                      <FolderPlus className="w-4 h-4 mr-2" />
+                      Neues Projekt erstellen
+                    </div>
+                  </SelectItem>
+                  {existingProjects.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        Bestehende Projekte
+                      </div>
+                      {existingProjects.map(project => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedProjectId === "new" && (
+              <div>
+                <Label htmlFor="project-name" className="mb-2 block">
+                  Name für neues Projekt
+                </Label>
+                <Input
+                  id="project-name"
+                  placeholder="z.B. Akku-Import November 2024"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !savingProject) {
+                      handleSaveToProject();
+                    }
+                  }}
+                  disabled={savingProject}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowSaveDialog(false);
+                setProjectName("");
+                setSelectedProjectId("new");
+              }}
+              disabled={savingProject}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSaveToProject}
+              disabled={savingProject || (selectedProjectId === "new" && !projectName.trim())}
+            >
+              {savingProject ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Speichere...
+                </>
+              ) : selectedProjectId === "new" ? (
+                <>
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  Projekt erstellen
+                </>
+              ) : (
+                <>
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  Zu Projekt hinzufügen
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

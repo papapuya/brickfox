@@ -573,6 +573,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk save CSV products to project
+  app.post('/api/bulk-save-to-project', async (req, res) => {
+    try {
+      const { projectName, products } = req.body;
+
+      if (!projectName || !Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ error: 'Project name and products are required' });
+      }
+
+      // Create new project
+      const project = await storage.createProject({ name: projectName });
+
+      // Save all products to the project
+      const savedProducts = [];
+      for (const product of products) {
+        const productData = {
+          projectId: project.id,
+          name: product.produktname || 'Unbekanntes Produkt',
+          articleNumber: product.artikelnummer || '',
+          htmlCode: product.produktbeschreibung || '',
+          previewText: product.seo_beschreibung || product.kurzbeschreibung || '',
+          exactProductName: product.mediamarktname_v1 || product.mediamarktname_v2 || product.produktname || '',
+          customAttributes: [
+            { key: 'mediamarktname_v1', value: product.mediamarktname_v1 || '', type: 'text' },
+            { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },
+            { key: 'seo_beschreibung', value: product.seo_beschreibung || '', type: 'text' },
+            { key: 'kurzbeschreibung', value: product.kurzbeschreibung || '', type: 'text' },
+          ],
+        };
+
+        const savedProduct = await storage.createProduct(project.id, productData);
+        savedProducts.push(savedProduct);
+      }
+
+      res.json({ 
+        success: true, 
+        project,
+        productCount: savedProducts.length 
+      });
+    } catch (error) {
+      console.error('Bulk save to project error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to save products to project' 
+      });
+    }
+  });
+
   // Product Management: Get all products in a project
   app.get('/api/projects/:id/products', async (req, res) => {
     try {
