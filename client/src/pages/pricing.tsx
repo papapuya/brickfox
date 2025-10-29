@@ -165,9 +165,23 @@ export default function Pricing() {
           ))}
         </div>
 
-        <div className="mt-12 text-center text-gray-600">
-          <p>Alle Pläne beinhalten 7 Tage Geld-zurück-Garantie</p>
-          <p className="mt-2">Monatlich kündbar • Keine versteckten Kosten</p>
+        <div className="mt-12 text-center text-gray-600 space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-blue-900 font-medium">
+              💡 <strong>Hinweis:</strong> Stripe ist noch nicht konfiguriert
+            </p>
+            <p className="text-sm text-blue-800 mt-2">
+              Neue User erhalten automatisch 100 kostenlose AI-Generierungen zum Testen.
+              Nach der Stripe-Konfiguration können Sie hier upgraden.
+            </p>
+            <p className="text-xs text-blue-600 mt-2">
+              Setup-Anleitung: Siehe <code>STRIPE_SETUP.md</code>
+            </p>
+          </div>
+          <div>
+            <p>Alle Pläne beinhalten 7 Tage Geld-zurück-Garantie</p>
+            <p className="mt-2">Monatlich kündbar • Keine versteckten Kosten</p>
+          </div>
         </div>
       </div>
     </div>

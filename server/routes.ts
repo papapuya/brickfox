@@ -64,6 +64,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.createUser(validatedData);
       
+      // Set trial subscription for new users (100 free AI generations)
+      await storage.updateUserSubscription(user.id, {
+        subscriptionStatus: 'trial',
+        planId: 'trial',
+        apiCallsLimit: 100,
+      });
+      
       // Auto-login after registration
       req.login(user, (err) => {
         if (err) {

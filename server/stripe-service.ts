@@ -5,7 +5,8 @@ import { storage } from './storage';
 const getStripe = () => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY ist nicht konfiguriert');
+    console.warn('⚠️ STRIPE_SECRET_KEY nicht konfiguriert - Stripe-Funktionen deaktiviert');
+    return null;
   }
   return new Stripe(secretKey, {
     apiVersion: '2025-10-29.clover',
@@ -67,6 +68,9 @@ export async function createCheckoutSession(
   cancelUrl: string
 ) {
   const stripe = getStripe();
+  if (!stripe) {
+    throw new Error('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
+  }
   const plan = PLANS[planId];
   
   if (!plan) {
@@ -127,6 +131,9 @@ export async function createCheckoutSession(
 // Create Customer Portal Session
 export async function createPortalSession(customerId: string, returnUrl: string) {
   const stripe = getStripe();
+  if (!stripe) {
+    throw new Error('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
+  }
   
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
@@ -139,6 +146,10 @@ export async function createPortalSession(customerId: string, returnUrl: string)
 // Handle Stripe Webhook Events
 export async function handleWebhookEvent(event: Stripe.Event) {
   const stripe = getStripe();
+  if (!stripe) {
+    console.error('Stripe nicht konfiguriert - Webhook ignoriert');
+    return;
+  }
   
   switch (event.type) {
     case 'checkout.session.completed': {
@@ -269,6 +280,32 @@ export async function getSubscriptionStatus(userId: string) {
   
   const stripe = getStripe();
   let subscriptionDetails = null;
+  
+  // If Stripe is not configured, return user data without subscription details
+  if (!stripe) {
+    const planId = user.planId as keyof typeof PLANS | null;
+    return {
+      user: {
+        subscriptionStatus: user.subscriptionStatus || 'trial',
+        planId: user.planId || 'trial',
+        apiCallsUsed: user.apiCallsUsed || 0,
+        apiCallsLimit: user.apiCallsLimit || 100,
+      },
+      plan: planId && PLANS[planId] ? PLANS[planId] : {
+        id: 'trial',
+        name: 'Trial',
+        price: 0,
+        currency: 'eur',
+        apiCallsLimit: 100,
+        features: [
+          '100 AI-Generierungen (Trial)',
+          'Alle Features zum Testen',
+          'Upgrade jederzeit möglich'
+        ]
+      },
+      subscription: null
+    };
+  }
   
   if (user.subscriptionId) {
     try {

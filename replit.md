@@ -1,10 +1,42 @@
-# PIMPilot - Produktmanagement
+# PIMPilot - Produktmanagement SaaS
 
 ## Overview
-PIMPilot is a full-stack web application that automates the generation of AI-powered product descriptions and PIM metadata from supplier data. It leverages OpenAI for intelligent text generation and a custom Cheerio-based web scraper for website analysis, aiming to streamline content creation for MediaMarkt. The system is designed for efficient mass processing of product data (2000+ products), primarily through CSV uploads. It supports dynamic, product-specific AI prompts and a modular architecture for scalability and maintainability.
+PIMPilot is a **multi-tenant SaaS platform** that automates the generation of AI-powered product descriptions and PIM metadata from supplier data. It leverages OpenAI GPT-4o-mini for intelligent text generation and a custom Cheerio-based web scraper for website analysis, streamlining content creation for MediaMarkt. 
+
+**Key Features:**
+- 🔐 **User Authentication:** Secure login/register with Passport.js + bcrypt
+- 💳 **Stripe Subscription:** Tier-based pricing (Starter €29, Pro €79, Enterprise €199)
+- 🎁 **Trial Mode:** 100 free AI-generations for new users (no credit card required)
+- 📊 **Usage Tracking:** Real-time API call monitoring with tier-based limits
+- 🛡️ **Protected Routes:** AuthProvider with subscription-based access control
+- 🔄 **Graceful Fallback:** Works without Stripe (trial mode) for immediate testing
+
+The system is designed for efficient mass processing of product data (2000+ products), primarily through CSV uploads, with dynamic AI prompts and modular architecture.
 
 ## User Preferences
 Keine spezifischen Präferenzen dokumentiert.
+
+## 🚀 Quick Start (Ohne Stripe)
+
+### 1. App starten
+```bash
+npm run dev
+```
+
+### 2. Registrieren
+- Öffnen Sie `/register`
+- Erstellen Sie einen Account
+- **Automatisch:** 100 kostenlose AI-Generierungen (Trial)
+
+### 3. Sofort loslegen
+- CSV hochladen → Bulk-Generierung
+- URL scrapen → Einzelprodukt-Analyse
+- Alle Features testen
+
+### 4. Später: Stripe aktivieren (Optional)
+- Folgen Sie `STRIPE_SETUP.md`
+- Fügen Sie API-Keys hinzu
+- Bezahl-Funktion aktiviert sich automatisch
 
 ## System Architecture
 
@@ -30,14 +62,20 @@ This system supports automatic category recognition via keyword matching and dyn
 **UI/UX**: Utilizes shadcn/ui, Radix UI, and Tailwind CSS for a modern and consistent user interface. The MediaMarkt-specific HTML template includes `h2/h4` structures, advantages (✅), technical tables, and package contents.
 
 **Core Features**:
--   **CSV Bulk Processing**: Upload and process product data via CSV for mass generation (2000+ products).
--   **URL Web Scraper**: Direct scraping of supplier websites using custom Cheerio-based scraper with configurable CSS selectors.
--   **AI Generation**: Automated product descriptions in the MediaMarkt format using OpenAI GPT-4o.
--   **Template System**: Customizable HTML templates for descriptions.
--   **Multi-URL Scraping**: Supports analyzing multiple URLs concurrently with timeout protection.
--   **Product-Specific AI Prompts**: Dynamic generation of USPs and descriptions based on actual product data.
--   **Product Categories**: Supports `battery`, `charger`, `tool`, `accessory`, and `testing_equipment` with improved category recognition.
--   **Project Management**: Save and organize generated products into projects.
+-   **🔐 User Authentication**: Passport.js Local Strategy + bcrypt password hashing
+-   **💳 Subscription Management**: Stripe integration (3 tiers: Starter, Pro, Enterprise)
+-   **🎁 Trial Mode**: 100 free AI-generations for new users without payment
+-   **📊 Usage Tracking**: Real-time API call monitoring with automatic limit enforcement
+-   **🛡️ Protected Routes**: AuthContext + ProtectedRoute components for access control
+-   **CSV Bulk Processing**: Upload and process product data via CSV for mass generation (2000+ products)
+-   **URL Web Scraper**: Direct scraping of supplier websites using custom Cheerio-based scraper with configurable CSS selectors
+-   **AI Generation**: Automated product descriptions in the MediaMarkt format using OpenAI GPT-4o-mini
+-   **Template System**: Customizable HTML templates for descriptions
+-   **Multi-URL Scraping**: Supports analyzing multiple URLs concurrently with timeout protection
+-   **Product-Specific AI Prompts**: Dynamic generation of USPs and descriptions based on actual product data
+-   **Product Categories**: Supports `battery`, `charger`, `tool`, `accessory`, and `testing_equipment` with improved category recognition
+-   **Project Management**: Save and organize generated products into projects
+-   **Supplier Profiles**: Manage multiple suppliers with saved selectors and auto-population
 
 ### Project Structure
 -   `client/`: React Frontend (components, hooks, lib, pages)
