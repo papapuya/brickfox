@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Play, DollarSign } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Play, DollarSign, Eye, Code, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 interface ColumnMapping {
   field: string;
@@ -37,12 +39,14 @@ interface ProcessedProduct {
 }
 
 export default function CSVBulkDescription() {
+  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [rawData, setRawData] = useState<RawCSVRow[]>([]);
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [processedData, setProcessedData] = useState<ProcessedProduct[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [currentStep, setCurrentStep] = useState<'upload' | 'configure' | 'processing' | 'results'>('upload');
@@ -466,20 +470,111 @@ export default function CSVBulkDescription() {
               </div>
             </Card>
 
-            <Card className="p-6">
-              <div className="space-y-6 max-h-[600px] overflow-y-auto">
-                {processedData.map((product, index) => (
-                  <div key={index} className="border-b pb-6 last:border-0">
-                    <h3 className="text-base font-semibold mb-3">
-                      {product.seoName || `Produkt ${index + 1}`}
-                    </h3>
-                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {product.descriptionText}
+            <div className="space-y-4">
+              {processedData.map((product, index) => {
+                const isExpanded = expandedProducts.has(index);
+                
+                return (
+                  <Card key={index} className="overflow-hidden">
+                    <div className="p-4 border-b bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-base font-semibold">
+                          {product.seoName || `Produkt ${index + 1}`}
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newExpanded = new Set(expandedProducts);
+                            if (isExpanded) {
+                              newExpanded.delete(index);
+                            } else {
+                              newExpanded.add(index);
+                            }
+                            setExpandedProducts(newExpanded);
+                          }}
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="w-4 h-4 mr-2" />
+                              Einklappen
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-4 h-4 mr-2" />
+                              Details anzeigen
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {!isExpanded && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {product.descriptionText}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+
+                    {isExpanded && (
+                      <div className="p-6">
+                        <Tabs defaultValue="preview" className="w-full">
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="preview">
+                              <Eye className="w-4 h-4 mr-2" />
+                              Vorschau
+                            </TabsTrigger>
+                            <TabsTrigger value="html">
+                              <Code className="w-4 h-4 mr-2" />
+                              HTML-Code
+                            </TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="preview" className="mt-4">
+                            <div className="border rounded-md p-6 min-h-96 max-h-96 overflow-y-auto bg-background prose prose-sm max-w-none">
+                              {product.descriptionHtml ? (
+                                <div dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+                              ) : (
+                                <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                  {product.descriptionText}
+                                </div>
+                              )}
+                            </div>
+                          </TabsContent>
+                          
+                          <TabsContent value="html" className="mt-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">HTML-Code</Label>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(product.descriptionHtml || '');
+                                    toast({
+                                      title: "Kopiert!",
+                                      description: "HTML-Code wurde in die Zwischenablage kopiert",
+                                    });
+                                  }}
+                                  disabled={!product.descriptionHtml}
+                                  className="h-8 px-3"
+                                >
+                                  <Copy className="w-4 h-4 mr-1" />
+                                  Kopieren
+                                </Button>
+                              </div>
+                              <textarea
+                                value={product.descriptionHtml || 'Kein HTML-Code verfügbar'}
+                                readOnly
+                                className="w-full h-96 p-4 border rounded-md font-mono text-xs resize-none bg-muted/30"
+                              />
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
