@@ -462,53 +462,95 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
 
 /**
  * INTELLIGENT TABLE PARSER: Extract structured technical data from generic property tables
- * Nitecore-style: <th class="properties-label">Länge:</th><td class="properties-value">156 mm</td>
+ * Supports two formats:
+ * 1. Table: <th class="properties-label">Länge:</th><td class="properties-value">156 mm</td>
+ * 2. DIVs: <div class="product-detail-technical-data-label">Länge (mm)</div><div class="product-detail-technical-data-value">148,2</div>
  */
 function parsePropertiesTable($: cheerio.CheerioAPI, product: any): void {
-  // Find the technical properties table
-  const table = $('.product-detail-properties-table, table.table-striped, .properties-table').first();
-  
-  if (table.length === 0) {
-    return; // No properties table found
+  let foundData = false;
+
+  // METHOD 1: Parse DIV-based technical data (Nitecore "Technische Daten" tab)
+  const technicalDataContainer = $('.product-detail-technical-data, #lds-technical-data-tab-pane');
+  if (technicalDataContainer.length > 0) {
+    console.log('Found DIV-based technical data structure, parsing...');
+    
+    technicalDataContainer.find('.product-detail-technical-data-label').each((_, labelEl) => {
+      const $label = $(labelEl);
+      const label = $label.text().trim().toLowerCase();
+      const $value = $label.next('.product-detail-technical-data-value');
+      const value = $value.text().trim();
+
+      if (!label || !value) return;
+      foundData = true;
+
+      // Map labels to product fields using keywords
+      if (label.includes('länge') && !label.includes('leucht')) {
+        product.length = value;
+      } else if (label.includes('gehäusedurchmesser') || label.includes('body diameter') || label.includes('bodydurchmesser')) {
+        product.bodyDiameter = value;
+      } else if (label.includes('kopfdurchmesser') || label.includes('head diameter')) {
+        product.headDiameter = value;
+      } else if (label.includes('gewicht') && (label.includes('ohne') || label.includes('without'))) {
+        product.weightWithoutBattery = value;
+      } else if (label.includes('gesamt gewicht') || label.includes('total weight')) {
+        product.totalWeight = value;
+      } else if (label.includes('stromversorgung') || label.includes('power supply')) {
+        product.powerSupply = value;
+      } else if (label.includes('leuchtmittel 1') || label === 'leuchtmittel 1') {
+        product.led1 = value;
+      } else if (label.includes('leuchtmittel 2') || label === 'leuchtmittel 2') {
+        product.led2 = value;
+      } else if (label.includes('spotintensität') || label.includes('spot intensity')) {
+        product.spotIntensity = value;
+      } else if (label.includes('leuchtleistung')) {
+        product.maxLuminosity = value;
+      } else if (label.includes('leuchtweite')) {
+        product.maxBeamDistance = value;
+      }
+    });
   }
 
-  console.log('Found properties table, parsing...');
+  // METHOD 2: Parse TABLE-based properties (fallback)
+  if (!foundData) {
+    const table = $('.product-detail-properties-table, table.table-striped, .properties-table').first();
+    
+    if (table.length > 0) {
+      console.log('Found TABLE-based properties, parsing...');
+      
+      table.find('tr').each((_, row) => {
+        const $row = $(row);
+        const label = $row.find('th, .properties-label').first().text().trim().toLowerCase();
+        const value = $row.find('td, .properties-value').first().text().trim();
 
-  // Parse each row
-  table.find('tr').each((_, row) => {
-    const $row = $(row);
-    const label = $row.find('th, .properties-label').first().text().trim().toLowerCase();
-    const value = $row.find('td, .properties-value').first().text().trim();
+        if (!label || !value) return;
 
-    if (!label || !value) return;
-
-    // Map labels to product fields using keywords
-    if (label.includes('länge') && !label.includes('leucht')) {
-      product.length = value;
-    } else if (label.includes('gehäusedurchmesser') || label.includes('body diameter') || label.includes('bodydurchmesser')) {
-      product.bodyDiameter = value;
-    } else if (label.includes('kopfdurchmesser') || label.includes('head diameter')) {
-      product.headDiameter = value;
-    } else if (label.includes('gewicht ohne akku') || label.includes('weight without battery')) {
-      product.weightWithoutBattery = value;
-    } else if (label.includes('gesamt gewicht') || label.includes('total weight') || (label.includes('gewicht') && label.includes('gesamt'))) {
-      product.totalWeight = value;
-    } else if (label.includes('stromversorgung') || label.includes('power supply') || label.includes('batterie')) {
-      product.powerSupply = value;
-    } else if (label.includes('leuchtmittel 1') || label.includes('led 1') || label === 'led1') {
-      product.led1 = value;
-    } else if (label.includes('leuchtmittel 2') || label.includes('led 2') || label === 'led2') {
-      product.led2 = value;
-    } else if (label.includes('leuchtmittel') && !product.led1) {
-      product.led1 = value; // First LED field
-    } else if (label.includes('spotintensität') || label.includes('spot intensity') || label.includes('candela')) {
-      product.spotIntensity = value;
-    } else if (label.includes('leuchtleistung') || label.includes('max output') || label.includes('lumen')) {
-      product.maxLuminosity = value;
-    } else if (label.includes('leuchtweite') || label.includes('beam distance') || label.includes('throw')) {
-      product.maxBeamDistance = value;
+        // Map labels to product fields using keywords
+        if (label.includes('länge') && !label.includes('leucht')) {
+          product.length = value;
+        } else if (label.includes('gehäusedurchmesser') || label.includes('body diameter')) {
+          product.bodyDiameter = value;
+        } else if (label.includes('kopfdurchmesser') || label.includes('head diameter')) {
+          product.headDiameter = value;
+        } else if (label.includes('gewicht ohne akku') || label.includes('weight without battery')) {
+          product.weightWithoutBattery = value;
+        } else if (label.includes('gesamt gewicht') || label.includes('total weight')) {
+          product.totalWeight = value;
+        } else if (label.includes('stromversorgung') || label.includes('power supply')) {
+          product.powerSupply = value;
+        } else if (label.includes('leuchtmittel 1') || label.includes('led 1')) {
+          product.led1 = value;
+        } else if (label.includes('leuchtmittel 2') || label.includes('led 2')) {
+          product.led2 = value;
+        } else if (label.includes('spotintensität') || label.includes('spot intensity')) {
+          product.spotIntensity = value;
+        } else if (label.includes('leuchtleistung') || label.includes('max output')) {
+          product.maxLuminosity = value;
+        } else if (label.includes('leuchtweite') || label.includes('beam distance')) {
+          product.maxBeamDistance = value;
+        }
+      });
     }
-  });
+  }
 
   console.log('Parsed technical data:', {
     length: product.length,
