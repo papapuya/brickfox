@@ -74,12 +74,12 @@ export default function URLScraper() {
     },
   });
 
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("none");
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplierId(supplierId);
     
-    if (supplierId === "") {
+    if (supplierId === "none") {
       // Clear selectors
       setSelectors({
         articleNumber: "",
@@ -615,7 +615,7 @@ export default function URLScraper() {
                     <SelectValue placeholder="Lieferant wählen oder manuell konfigurieren" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Keine Vorlage (Auto-Erkennung)</SelectItem>
+                    <SelectItem value="none">Keine Vorlage (Auto-Erkennung)</SelectItem>
                     {suppliersData?.suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
