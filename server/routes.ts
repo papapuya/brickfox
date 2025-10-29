@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import passport from './auth';
 import { storage } from "./storage";
+import { registerUserSchema, loginUserSchema } from '@shared/schema';
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
 import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors } from "./scraper-service";
@@ -35,6 +37,82 @@ const upload = multer({
 import { apiKeyManager } from './api-key-manager';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication endpoints
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const validatedData = registerUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ error: 'E-Mail bereits registriert' });
+      }
+      
+      const user = await storage.createUser(validatedData);
+      
+      // Auto-login after registration
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Fehler beim Login nach Registrierung' });
+        }
+        res.json({ user: { id: user.id, email: user.email, username: user.username } });
+      });
+    } catch (error) {
+      res.status(400).json({ error: 'Ungültige Registrierungsdaten' });
+    }
+  });
+
+  app.post('/api/auth/login', (req, res, next) => {
+    try {
+      loginUserSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({ error: 'Ungültige Login-Daten' });
+    }
+
+    passport.authenticate('local', (err: any, user: any, info: any) => {
+      if (err) {
+        return res.status(500).json({ error: 'Server-Fehler' });
+      }
+      if (!user) {
+        return res.status(401).json({ error: info?.message || 'Ungültige Anmeldedaten' });
+      }
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          return res.status(500).json({ error: 'Fehler beim Login' });
+        }
+        res.json({ user: { id: user.id, email: user.email, username: user.username } });
+      });
+    })(req, res, next);
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Fehler beim Logout' });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  app.get('/api/auth/user', (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+    const user = req.user as any;
+    res.json({ 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        username: user.username,
+        subscriptionStatus: user.subscriptionStatus,
+        planId: user.planId,
+        apiCallsUsed: user.apiCallsUsed,
+        apiCallsLimit: user.apiCallsLimit
+      } 
+    });
+  });
+
   // API-Schlüssel-Verwaltung
   app.post('/api/encrypt-api-key', async (req, res) => {
     try {

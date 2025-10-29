@@ -1,11 +1,13 @@
 import { nanoid } from 'nanoid';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 import { 
   projects, 
   productsInProjects, 
   templates,
   suppliers,
+  users,
   type Project, 
   type CreateProject, 
   type ProductInProject, 
@@ -14,10 +16,27 @@ import {
   type Template,
   type Supplier,
   type CreateSupplier,
-  type UpdateSupplier
+  type UpdateSupplier,
+  type User,
+  type RegisterUser
 } from '@shared/schema';
 
 export interface IStorage {
+  // User operations
+  createUser(data: RegisterUser): Promise<User>;
+  getUserById(id: string): Promise<User | null>;
+  getUserByEmail(email: string): Promise<User & { passwordHash: string } | null>;
+  updateUserSubscription(userId: string, data: {
+    stripeCustomerId?: string;
+    subscriptionStatus?: string;
+    subscriptionId?: string;
+    planId?: string;
+    currentPeriodEnd?: string;
+    apiCallsLimit?: number;
+  }): Promise<User | null>;
+  incrementApiCalls(userId: string): Promise<void>;
+  resetApiCalls(userId: string): Promise<void>;
+  
   // Project operations
   createProject(data: CreateProject): Promise<Project>;
   getProjects(): Promise<Project[]>;
@@ -46,6 +65,149 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User operations
+  async createUser(data: RegisterUser): Promise<User> {
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: nanoid(),
+        email: data.email,
+        passwordHash,
+        username: data.username || data.email.split('@')[0],
+        apiCallsUsed: 0,
+        apiCallsLimit: 500, // Starter plan default
+      })
+      .returning();
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username || undefined,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 500,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : user.updatedAt.toISOString(),
+    };
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    
+    if (!user) return null;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username || undefined,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 500,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : user.updatedAt.toISOString(),
+    };
+  }
+
+  async getUserByEmail(email: string): Promise<User & { passwordHash: string } | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    
+    if (!user) return null;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username || undefined,
+      passwordHash: user.passwordHash,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 500,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : user.updatedAt.toISOString(),
+    };
+  }
+
+  async updateUserSubscription(userId: string, data: {
+    stripeCustomerId?: string;
+    subscriptionStatus?: string;
+    subscriptionId?: string;
+    planId?: string;
+    currentPeriodEnd?: string;
+    apiCallsLimit?: number;
+  }): Promise<User | null> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!user) return null;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username || undefined,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 500,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : user.updatedAt.toISOString(),
+    };
+  }
+
+  async incrementApiCalls(userId: string): Promise<void> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (user) {
+      await db
+        .update(users)
+        .set({
+          apiCallsUsed: (user.apiCallsUsed || 0) + 1,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(users.id, userId));
+    }
+  }
+
+  async resetApiCalls(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        apiCallsUsed: 0,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+  }
+  
   // Project operations
   async createProject(data: CreateProject): Promise<Project> {
     const [project] = await db
@@ -69,7 +231,7 @@ export class DatabaseStorage implements IStorage {
       .from(projects)
       .orderBy(projects.createdAt);
     
-    return result.map(p => ({
+    return result.map((p: any) => ({
       id: p.id,
       name: p.name,
       createdAt: typeof p.createdAt === 'string' ? p.createdAt : p.createdAt.toISOString(),
@@ -129,7 +291,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(productsInProjects.projectId, projectId))
       .orderBy(productsInProjects.createdAt);
     
-    return result.map(p => this.mapProductFromDb(p));
+    return result.map((p: any) => this.mapProductFromDb(p));
   }
 
   async getProduct(id: string): Promise<ProductInProject | null> {
@@ -204,7 +366,7 @@ export class DatabaseStorage implements IStorage {
       .from(templates)
       .orderBy(templates.createdAt);
     
-    return result.map(t => ({
+    return result.map((t: any) => ({
       id: t.id,
       name: t.name,
       content: t.content,
@@ -262,7 +424,7 @@ export class DatabaseStorage implements IStorage {
       .from(suppliers)
       .orderBy(suppliers.name);
     
-    return result.map(s => this.mapSupplierFromDb(s));
+    return result.map((s: any) => this.mapSupplierFromDb(s));
   }
 
   async getSupplier(id: string): Promise<Supplier | null> {

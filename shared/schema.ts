@@ -142,6 +142,29 @@ export const updateProductInProjectSchema = productInProjectSchema.partial().omi
 export type UpdateProductInProject = z.infer<typeof updateProductInProjectSchema>;
 
 // Drizzle database tables for SQLite
+
+// Users table for authentication and subscription management
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  username: text("username"),
+  
+  // Stripe subscription fields
+  stripeCustomerId: text("stripe_customer_id"),
+  subscriptionStatus: text("subscription_status"), // active, canceled, past_due, trialing, incomplete
+  subscriptionId: text("subscription_id"),
+  planId: text("plan_id"), // starter, pro, enterprise
+  currentPeriodEnd: text("current_period_end"),
+  
+  // Usage tracking for API limits
+  apiCallsUsed: integer("api_calls_used").default(0),
+  apiCallsLimit: integer("api_calls_limit").default(500), // Default: Starter plan
+  
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -267,7 +290,41 @@ export type CreateSupplier = z.infer<typeof createSupplierSchema>;
 export const updateSupplierSchema = createSupplierSchema.partial();
 export type UpdateSupplier = z.infer<typeof updateSupplierSchema>;
 
+// User schemas for authentication
+export const userSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  username: z.string().optional(),
+  stripeCustomerId: z.string().optional(),
+  subscriptionStatus: z.string().optional(),
+  subscriptionId: z.string().optional(),
+  planId: z.string().optional(),
+  currentPeriodEnd: z.string().optional(),
+  apiCallsUsed: z.number().default(0),
+  apiCallsLimit: z.number().default(500),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type User = z.infer<typeof userSchema>;
+
+export const registerUserSchema = z.object({
+  email: z.string().email("Ungültige E-Mail-Adresse"),
+  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen lang sein"),
+  username: z.string().optional(),
+});
+
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+
+export const loginUserSchema = z.object({
+  email: z.string().email("Ungültige E-Mail-Adresse"),
+  password: z.string(),
+});
+
+export type LoginUser = z.infer<typeof loginUserSchema>;
+
 // Drizzle insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });
 export const insertProductInProjectSchema = createInsertSchema(productsInProjects).omit({ id: true, createdAt: true });
 export const insertTemplateSchema = createInsertSchema(templates).omit({ id: true, createdAt: true });
