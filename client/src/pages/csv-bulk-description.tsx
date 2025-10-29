@@ -55,6 +55,15 @@ export default function CSVBulkDescription() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'configure' | 'processing' | 'results'>('upload');
   const [progress, setProgress] = useState(0);
   const [estimatedCost, setEstimatedCost] = useState(0);
+  
+  // PIM-Attribute Selection
+  const [selectedPimFields, setSelectedPimFields] = useState({
+    seoName: true,
+    seoDescription: true,
+    shortDescription: true,
+    mediamarktNameV1: true,
+    mediamarktNameV2: true,
+  });
 
   const productFields: { field: string; label: string; required: boolean }[] = [
     { field: 'productName', label: 'Produktname', required: true },
@@ -265,25 +274,33 @@ export default function CSVBulkDescription() {
   };
 
   const exportToCSV = () => {
+    // Dynamische Headers basierend auf Auswahl
+    const pimHeaders: string[] = [];
+    if (selectedPimFields.seoName) pimHeaders.push('SEO_Name');
+    if (selectedPimFields.seoDescription) pimHeaders.push('SEO_Beschreibung');
+    if (selectedPimFields.shortDescription) pimHeaders.push('Kurzbeschreibung');
+    if (selectedPimFields.mediamarktNameV1) pimHeaders.push('Mediamarktname_V1');
+    if (selectedPimFields.mediamarktNameV2) pimHeaders.push('Mediamarktname_V2');
+    
     const headers = [
-      ...csvColumns, 
-      'SEO_Name',
-      'SEO_Beschreibung',
-      'Kurzbeschreibung',
-      'Mediamarktname_V1',
-      'Mediamarktname_V2',
+      ...csvColumns,
+      ...pimHeaders,
       'Beschreibung_Text', 
       'Beschreibung_HTML'
     ];
+    
     const rows = processedData.map(product => {
       const originalValues = csvColumns.map(col => product.originalData[col] || '');
+      const pimValues: string[] = [];
+      if (selectedPimFields.seoName) pimValues.push(product.seoName || '');
+      if (selectedPimFields.seoDescription) pimValues.push(product.seoDescription || '');
+      if (selectedPimFields.shortDescription) pimValues.push(product.shortDescription || '');
+      if (selectedPimFields.mediamarktNameV1) pimValues.push(product.mediamarktNameV1 || '');
+      if (selectedPimFields.mediamarktNameV2) pimValues.push(product.mediamarktNameV2 || '');
+      
       return [
-        ...originalValues, 
-        product.seoName || '',
-        product.seoDescription || '',
-        product.shortDescription || '',
-        product.mediamarktNameV1 || '',
-        product.mediamarktNameV2 || '',
+        ...originalValues,
+        ...pimValues,
         product.descriptionText || '', 
         product.descriptionHtml || ''
       ];
@@ -422,48 +439,128 @@ export default function CSVBulkDescription() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-12 gap-4 items-center pb-2 border-b">
-                  <div className="col-span-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase">Benötigtes Feld</p>
-                  </div>
-                  <div className="col-span-4">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase">Ihre CSV-Spalte</p>
-                  </div>
-                  <div className="col-span-5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase">Vorschau</p>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">
+                    1. Benötigte Felder für Produktbeschreibung
+                  </h3>
+                  <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+                    <div className="grid grid-cols-12 gap-4 items-center pb-2 border-b">
+                      <div className="col-span-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase">Benötigtes Feld</p>
+                      </div>
+                      <div className="col-span-4">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase">Ihre CSV-Spalte</p>
+                      </div>
+                      <div className="col-span-5">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase">Vorschau</p>
+                      </div>
+                    </div>
+                    {columnMappings.map(mapping => (
+                      <div key={mapping.field} className="grid grid-cols-12 gap-4 items-center">
+                        <div className="col-span-3">
+                          <Label className="text-sm font-medium">
+                            {mapping.label}
+                            {mapping.required && <span className="text-red-500 ml-1">*</span>}
+                          </Label>
+                        </div>
+                        <div className="col-span-4">
+                          <Select value={mapping.csvColumn || "__NONE__"} onValueChange={(value) => updateMapping(mapping.field, value === "__NONE__" ? "" : value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Nicht zugeordnet" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__NONE__">Nicht zugeordnet</SelectItem>
+                              {csvColumns.map(col => (
+                                <SelectItem key={col} value={col}>{col}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-5">
+                          {mapping.preview && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              Vorschau: "{mapping.preview}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                {columnMappings.map(mapping => (
-                  <div key={mapping.field} className="grid grid-cols-12 gap-4 items-center">
-                    <div className="col-span-3">
-                      <Label className="text-sm font-medium">
-                        {mapping.label}
-                        {mapping.required && <span className="text-red-500 ml-1">*</span>}
-                      </Label>
-                    </div>
-                    <div className="col-span-4">
-                      <Select value={mapping.csvColumn || "__NONE__"} onValueChange={(value) => updateMapping(mapping.field, value === "__NONE__" ? "" : value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Nicht zugeordnet" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__NONE__">Nicht zugeordnet</SelectItem>
-                          {csvColumns.map(col => (
-                            <SelectItem key={col} value={col}>{col}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-5">
-                      {mapping.preview && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Vorschau: "{mapping.preview}"
-                        </p>
-                      )}
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">
+                    2. Benötigte Attribute für PIM (CSV-Export)
+                  </h3>
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Wählen Sie die PIM-Felder aus, die beim CSV-Export automatisch hinzugefügt werden sollen:
+                    </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="pim-seoName"
+                          checked={selectedPimFields.seoName}
+                          onChange={(e) => setSelectedPimFields({...selectedPimFields, seoName: e.target.checked})}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="pim-seoName" className="text-sm font-medium cursor-pointer">
+                          SEO Name <span className="text-muted-foreground">(= Produktname)</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="pim-seoDescription"
+                          checked={selectedPimFields.seoDescription}
+                          onChange={(e) => setSelectedPimFields({...selectedPimFields, seoDescription: e.target.checked})}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="pim-seoDescription" className="text-sm font-medium cursor-pointer">
+                          SEO Beschreibung <span className="text-muted-foreground">(150 Zeichen, Meta-Description)</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="pim-shortDescription"
+                          checked={selectedPimFields.shortDescription}
+                          onChange={(e) => setSelectedPimFields({...selectedPimFields, shortDescription: e.target.checked})}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="pim-shortDescription" className="text-sm font-medium cursor-pointer">
+                          Kurzbeschreibung <span className="text-muted-foreground">(300 Zeichen, Produktlisten)</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="pim-mmv1"
+                          checked={selectedPimFields.mediamarktNameV1}
+                          onChange={(e) => setSelectedPimFields({...selectedPimFields, mediamarktNameV1: e.target.checked})}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="pim-mmv1" className="text-sm font-medium cursor-pointer">
+                          Mediamarktname V1 <span className="text-muted-foreground">(max. 60 Zeichen)</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="pim-mmv2"
+                          checked={selectedPimFields.mediamarktNameV2}
+                          onChange={(e) => setSelectedPimFields({...selectedPimFields, mediamarktNameV2: e.target.checked})}
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="pim-mmv2" className="text-sm font-medium cursor-pointer">
+                          Mediamarktname V2 <span className="text-muted-foreground">(max. 40 Zeichen, kompakt)</span>
+                        </Label>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </Card>
           </div>
