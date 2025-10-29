@@ -35,6 +35,9 @@ interface ProcessedProduct {
   descriptionHtml?: string;
   seoName?: string;
   seoDescription?: string;
+  mediamarktNameV1?: string;
+  mediamarktNameV2?: string;
+  shortDescription?: string;
   usps?: string[];
 }
 
@@ -216,11 +219,29 @@ export default function CSVBulkDescription() {
 
         const result = await response.json();
         
+        // Generiere SEO-Beschreibung und Kurzbeschreibung aus dem Text
+        const plainText = stripHtml(result.description || '');
+        const sentences = plainText.split('.').filter(s => s.trim().length > 10);
+        const seoDesc = sentences[0] ? sentences[0].substring(0, 150) + (sentences[0].length > 150 ? '...' : '') : '';
+        const shortDesc = sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
+        
+        // Generiere MediaMarkt-Namen
+        const capacity = productData.capacity_mah || productData.capacity || '';
+        const voltage = productData.voltage || '';
+        const model = productData.model || '';
+        
+        const mmNameV1 = `Akku ${model} ${capacity ? capacity + ' mAh' : ''} ${voltage ? voltage + 'V' : ''}`.trim();
+        const mmNameV2 = `${model} ${capacity ? capacity + 'mAh' : ''}`.trim();
+        
         results.push({
           originalData: row,
           descriptionHtml: result.description || '',
-          descriptionText: stripHtml(result.description || ''),
-          seoName: productData.productName,
+          descriptionText: plainText,
+          seoName: productData.productName || '',
+          seoDescription: seoDesc,
+          shortDescription: shortDesc.substring(0, 300),
+          mediamarktNameV1: mmNameV1.substring(0, 60),
+          mediamarktNameV2: mmNameV2.substring(0, 40),
         });
       } catch (err) {
         results.push({
@@ -244,10 +265,28 @@ export default function CSVBulkDescription() {
   };
 
   const exportToCSV = () => {
-    const headers = [...csvColumns, 'Beschreibung_Text', 'Beschreibung_HTML'];
+    const headers = [
+      ...csvColumns, 
+      'SEO_Name',
+      'SEO_Beschreibung',
+      'Kurzbeschreibung',
+      'Mediamarktname_V1',
+      'Mediamarktname_V2',
+      'Beschreibung_Text', 
+      'Beschreibung_HTML'
+    ];
     const rows = processedData.map(product => {
       const originalValues = csvColumns.map(col => product.originalData[col] || '');
-      return [...originalValues, product.descriptionText || '', product.descriptionHtml || ''];
+      return [
+        ...originalValues, 
+        product.seoName || '',
+        product.seoDescription || '',
+        product.shortDescription || '',
+        product.mediamarktNameV1 || '',
+        product.mediamarktNameV2 || '',
+        product.descriptionText || '', 
+        product.descriptionHtml || ''
+      ];
     });
 
     const csvContent = [
