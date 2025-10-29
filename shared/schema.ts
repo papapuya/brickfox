@@ -185,6 +185,16 @@ export const suppliers = sqliteTable("suppliers", {
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
+// Temporary scrape session - stores scraped products until new scrape or manual clear
+export const scrapeSession = sqliteTable("scrape_session", {
+  id: text("id").primaryKey(),
+  scrapedProducts: text("scraped_products").notNull(), // JSON string of ScrapedProduct[]
+  scrapedProduct: text("scraped_product"), // JSON string of single ScrapedProduct
+  generatedDescription: text("generated_description"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 // Relations
 export const projectsRelations = relations(projects, ({ many }) => ({
   products: many(productsInProjects),

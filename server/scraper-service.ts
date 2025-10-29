@@ -10,6 +10,17 @@ export interface ScraperSelectors {
   images?: string;
   weight?: string;
   category?: string;
+  length?: string;
+  bodyDiameter?: string;
+  headDiameter?: string;
+  weightWithoutBattery?: string;
+  totalWeight?: string;
+  powerSupply?: string;
+  led1?: string;
+  led2?: string;
+  spotIntensity?: string;
+  maxLuminosity?: string;
+  maxBeamDistance?: string;
 }
 
 export interface ScrapedProduct {
@@ -22,6 +33,17 @@ export interface ScrapedProduct {
   images: string[];
   weight?: string;
   category?: string;
+  length?: string;
+  bodyDiameter?: string;
+  headDiameter?: string;
+  weightWithoutBattery?: string;
+  totalWeight?: string;
+  powerSupply?: string;
+  led1?: string;
+  led2?: string;
+  spotIntensity?: string;
+  maxLuminosity?: string;
+  maxBeamDistance?: string;
   rawHtml?: string;
 }
 
@@ -266,6 +288,62 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   if (selectors.category) {
     const element = $(selectors.category).first();
     product.category = element.text().trim() || '';
+  }
+
+  // Nitecore Technical Fields - extract text only
+  if (selectors.length) {
+    const element = $(selectors.length).first();
+    product.length = element.text().trim() || '';
+  }
+
+  if (selectors.bodyDiameter) {
+    const element = $(selectors.bodyDiameter).first();
+    product.bodyDiameter = element.text().trim() || '';
+  }
+
+  if (selectors.headDiameter) {
+    const element = $(selectors.headDiameter).first();
+    product.headDiameter = element.text().trim() || '';
+  }
+
+  if (selectors.weightWithoutBattery) {
+    const element = $(selectors.weightWithoutBattery).first();
+    product.weightWithoutBattery = element.text().trim() || '';
+  }
+
+  if (selectors.totalWeight) {
+    const element = $(selectors.totalWeight).first();
+    product.totalWeight = element.text().trim() || '';
+  }
+
+  if (selectors.powerSupply) {
+    const element = $(selectors.powerSupply).first();
+    product.powerSupply = element.text().trim() || '';
+  }
+
+  if (selectors.led1) {
+    const element = $(selectors.led1).first();
+    product.led1 = element.text().trim() || '';
+  }
+
+  if (selectors.led2) {
+    const element = $(selectors.led2).first();
+    product.led2 = element.text().trim() || '';
+  }
+
+  if (selectors.spotIntensity) {
+    const element = $(selectors.spotIntensity).first();
+    product.spotIntensity = element.text().trim() || '';
+  }
+
+  if (selectors.maxLuminosity) {
+    const element = $(selectors.maxLuminosity).first();
+    product.maxLuminosity = element.text().trim() || '';
+  }
+
+  if (selectors.maxBeamDistance) {
+    const element = $(selectors.maxBeamDistance).first();
+    product.maxBeamDistance = element.text().trim() || '';
   }
 
   // Store raw HTML for debugging
