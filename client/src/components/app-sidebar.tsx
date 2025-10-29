@@ -1,4 +1,4 @@
-import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap } from "lucide-react";
+import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -32,6 +32,11 @@ const menuItems = [
     title: "URL Webscraper",
     url: "/url-scraper",
     icon: Globe,
+  },
+  {
+    title: "Lieferanten-Profile",
+    url: "/suppliers",
+    icon: Building2,
   },
   {
     title: "API Credentials",

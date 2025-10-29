@@ -1,0 +1,484 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Edit, Trash2, Save } from "lucide-react";
+
+interface Supplier {
+  id: string;
+  name: string;
+  urlPattern?: string;
+  description?: string;
+  selectors: Record<string, string>;
+  productLinkSelector?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function Suppliers() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    urlPattern: "",
+    description: "",
+    productLinkSelector: "",
+    selectors: {
+      articleNumber: "",
+      productName: "",
+      ean: "",
+      manufacturer: "",
+      price: "",
+      description: "",
+      images: "",
+      weight: "",
+      category: ""
+    }
+  });
+
+  useEffect(() => {
+    loadSuppliers();
+  }, []);
+
+  const loadSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers');
+      const data = await response.json();
+      if (data.success) {
+        setSuppliers(data.suppliers);
+      }
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+      toast({
+        title: "Fehler",
+        description: "Lieferanten konnten nicht geladen werden",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenDialog = (supplier?: Supplier) => {
+    if (supplier) {
+      setEditingSupplier(supplier);
+      setFormData({
+        name: supplier.name,
+        urlPattern: supplier.urlPattern || "",
+        description: supplier.description || "",
+        productLinkSelector: supplier.productLinkSelector || "",
+        selectors: { ...formData.selectors, ...supplier.selectors }
+      });
+    } else {
+      setEditingSupplier(null);
+      setFormData({
+        name: "",
+        urlPattern: "",
+        description: "",
+        productLinkSelector: "",
+        selectors: {
+          articleNumber: "",
+          productName: "",
+          ean: "",
+          manufacturer: "",
+          price: "",
+          description: "",
+          images: "",
+          weight: "",
+          category: ""
+        }
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen Namen ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const activeSelectors: Record<string, string> = {};
+      Object.entries(formData.selectors).forEach(([key, value]) => {
+        if (value.trim()) {
+          activeSelectors[key] = value.trim();
+        }
+      });
+
+      const payload = {
+        name: formData.name,
+        urlPattern: formData.urlPattern || undefined,
+        description: formData.description || undefined,
+        productLinkSelector: formData.productLinkSelector || undefined,
+        selectors: activeSelectors
+      };
+
+      const url = editingSupplier 
+        ? `/api/suppliers/${editingSupplier.id}`
+        : '/api/suppliers';
+      
+      const method = editingSupplier ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Erfolg",
+          description: editingSupplier 
+            ? "Lieferant aktualisiert" 
+            : "Lieferant erstellt",
+        });
+        setIsDialogOpen(false);
+        loadSuppliers();
+      } else {
+        throw new Error(data.error || 'Failed to save supplier');
+      }
+    } catch (error) {
+      console.error('Error saving supplier:', error);
+      toast({
+        title: "Fehler",
+        description: "Lieferant konnte nicht gespeichert werden",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Möchten Sie "${name}" wirklich löschen?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/suppliers/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Erfolg",
+          description: "Lieferant gelöscht",
+        });
+        loadSuppliers();
+      } else {
+        throw new Error(data.error || 'Failed to delete supplier');
+      }
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+      toast({
+        title: "Fehler",
+        description: "Lieferant konnte nicht gelöscht werden",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Lieferanten-Profile</h1>
+          <p className="text-muted-foreground mt-2">
+            Verwalten Sie CSS-Selektoren für häufig verwendete Lieferanten
+          </p>
+        </div>
+        <Button onClick={() => handleOpenDialog()}>
+          <Plus className="w-4 h-4 mr-2" />
+          Neuer Lieferant
+        </Button>
+      </div>
+
+      <Card className="p-6">
+        {suppliers.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">
+              Noch keine Lieferanten-Profile vorhanden
+            </p>
+            <Button onClick={() => handleOpenDialog()} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Ersten Lieferanten anlegen
+            </Button>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>URL-Muster</TableHead>
+                <TableHead>Beschreibung</TableHead>
+                <TableHead>Selektoren</TableHead>
+                <TableHead className="text-right">Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {suppliers.map((supplier) => (
+                <TableRow key={supplier.id}>
+                  <TableCell className="font-medium">{supplier.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {supplier.urlPattern || '-'}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {supplier.description || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-1 bg-muted rounded">
+                      {Object.keys(supplier.selectors).length} Selektoren
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenDialog(supplier)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(supplier.id, supplier.name)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingSupplier ? "Lieferant bearbeiten" : "Neuer Lieferant"}
+            </DialogTitle>
+            <DialogDescription>
+              Konfigurieren Sie CSS-Selektoren für einen Lieferanten
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="z.B. Conrad Electronic"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="urlPattern">URL-Muster (optional)</Label>
+              <Input
+                id="urlPattern"
+                value={formData.urlPattern}
+                onChange={(e) => setFormData({ ...formData, urlPattern: e.target.value })}
+                placeholder="z.B. conrad.de, reichelt.de"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Wird verwendet, um den Lieferanten automatisch zu erkennen
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Beschreibung (optional)</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Notizen zu diesem Lieferanten..."
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="productLinkSelector">Produktlink CSS-Selektor (optional)</Label>
+              <Input
+                id="productLinkSelector"
+                value={formData.productLinkSelector}
+                onChange={(e) => setFormData({ ...formData, productLinkSelector: e.target.value })}
+                placeholder="a.product-link"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Für Produktlisten-Scraping
+              </p>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3">Produkt-Selektoren (optional)</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="selector-articleNumber">Artikelnummer</Label>
+                  <Input
+                    id="selector-articleNumber"
+                    value={formData.selectors.articleNumber}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, articleNumber: e.target.value }
+                    })}
+                    placeholder=".product-code"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-productName">Produktname</Label>
+                  <Input
+                    id="selector-productName"
+                    value={formData.selectors.productName}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, productName: e.target.value }
+                    })}
+                    placeholder="h1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-ean">EAN</Label>
+                  <Input
+                    id="selector-ean"
+                    value={formData.selectors.ean}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, ean: e.target.value }
+                    })}
+                    placeholder=".ean"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-manufacturer">Hersteller</Label>
+                  <Input
+                    id="selector-manufacturer"
+                    value={formData.selectors.manufacturer}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, manufacturer: e.target.value }
+                    })}
+                    placeholder=".brand"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-price">Preis</Label>
+                  <Input
+                    id="selector-price"
+                    value={formData.selectors.price}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, price: e.target.value }
+                    })}
+                    placeholder=".price"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-weight">Gewicht</Label>
+                  <Input
+                    id="selector-weight"
+                    value={formData.selectors.weight}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, weight: e.target.value }
+                    })}
+                    placeholder=".weight"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-description">Beschreibung</Label>
+                  <Input
+                    id="selector-description"
+                    value={formData.selectors.description}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, description: e.target.value }
+                    })}
+                    placeholder=".product-description"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-images">Bilder</Label>
+                  <Input
+                    id="selector-images"
+                    value={formData.selectors.images}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, images: e.target.value }
+                    })}
+                    placeholder=".product-image img"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="selector-category">Kategorie</Label>
+                  <Input
+                    id="selector-category"
+                    value={formData.selectors.category}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      selectors: { ...formData.selectors, category: e.target.value }
+                    })}
+                    placeholder=".breadcrumb"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              <Save className="w-4 h-4 mr-2" />
+              {isLoading ? "Speichern..." : "Speichern"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

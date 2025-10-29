@@ -62,6 +62,51 @@ export default function URLScraper() {
     },
   });
 
+  // Load suppliers
+  const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
+    queryKey: ['/api/suppliers'],
+    queryFn: async () => {
+      const response = await fetch('/api/suppliers');
+      if (!response.ok) {
+        throw new Error('Failed to fetch suppliers');
+      }
+      return response.json();
+    },
+  });
+
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+
+  const handleSupplierSelect = (supplierId: string) => {
+    setSelectedSupplierId(supplierId);
+    
+    if (supplierId === "") {
+      // Clear selectors
+      setSelectors({
+        articleNumber: "",
+        productName: "",
+        ean: "",
+        manufacturer: "",
+        price: "",
+        description: "",
+        images: "",
+        weight: "",
+        category: ""
+      });
+      setProductLinkSelector("");
+      return;
+    }
+
+    const supplier = suppliersData?.suppliers?.find(s => s.id === supplierId);
+    if (supplier) {
+      setSelectors({ ...selectors, ...supplier.selectors });
+      setProductLinkSelector(supplier.productLinkSelector || "");
+      toast({
+        title: "Lieferant geladen",
+        description: `Selektoren für "${supplier.name}" wurden geladen`,
+      });
+    }
+  };
+
   // Custom selectors
   const [selectors, setSelectors] = useState({
     articleNumber: "",
@@ -560,6 +605,26 @@ export default function URLScraper() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   URL der Seite mit der Produktliste (z.B. Kategorie- oder Suchseite)
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="supplier-select">Lieferant auswählen (optional)</Label>
+                <Select value={selectedSupplierId} onValueChange={handleSupplierSelect}>
+                  <SelectTrigger id="supplier-select" className="mt-2">
+                    <SelectValue placeholder="Lieferant wählen oder manuell konfigurieren" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Keine Vorlage (Auto-Erkennung)</SelectItem>
+                    {suppliersData?.suppliers?.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Gespeicherte CSS-Selektoren für diesen Lieferanten laden
                 </p>
               </div>
 

@@ -11,6 +11,7 @@ import URLScraper from "@/pages/url-scraper";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
 import CredentialsPage from "@/pages/credentials";
+import Suppliers from "@/pages/suppliers";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/url-scraper" component={URLScraper} />
       <Route path="/projects" component={Projects} />
       <Route path="/project/:id" component={ProjectDetail} />
+      <Route path="/suppliers" component={Suppliers} />
       <Route path="/credentials" component={CredentialsPage} />
       <Route component={NotFound} />
     </Switch>
