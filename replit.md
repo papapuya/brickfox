@@ -73,10 +73,12 @@ This system supports automatic category recognition via keyword matching and dyn
 **Features:**
 - ✅ Kostenlos (keine externen API-Kosten)
 - ✅ Konfigurierbare CSS-Selektoren für flexible Datenextraktion
-- ✅ Timeout-Schutz (15 Sekunden) für zuverlässige Verarbeitung
+- ✅ Timeout-Schutz (20 Sekunden pro Produkt) mit AbortController für robuste Verarbeitung
 - ✅ User-Agent Headers für bessere Kompatibilität
 - ✅ Preis-Parsing mit korrekter Dezimalkomma-Konvertierung (19,99 € → 19.99)
-- ✅ Multi-URL Scraping für Produktlisten
+- ✅ **Produktlisten-Scraping**: Batch-Verarbeitung mehrerer Produkte mit Fortschrittsanzeige
+- ✅ **CSV-Export**: UTF-8 BOM-kodiert für Excel, mit allen Feldern (inkl. Bild-URLs)
+- ✅ **Tabellenvorschau**: Vollständige Ansicht aller gescrapten Daten mit Thumbnails
 - ✅ Direkte Integration mit OpenAI für AI-Beschreibungen
 
 **Limitationen:**
@@ -84,9 +86,14 @@ This system supports automatic category recognition via keyword matching and dyn
 - ⚠️ Kann durch Bot-Schutz blockiert werden
 - ⚠️ Kein PDF-Parsing (nur HTML-Seiten)
 
-**Workflow:**
+**Workflow (Einzelnes Produkt):**
 ```
 URL eingeben → CSS-Selektoren konfigurieren → Scraping → AI-Generierung → Speichern im Projekt
+```
+
+**Workflow (Produktliste):**
+```
+Listen-URL eingeben → Produktlink-Selektor konfigurieren → Batch-Scraping → CSV-Vorschau → Download
 ```
 
 **CSV-Anforderungen (Akku-Kategorie):**
