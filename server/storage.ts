@@ -5,12 +5,16 @@ import {
   projects, 
   productsInProjects, 
   templates,
+  suppliers,
   type Project, 
   type CreateProject, 
   type ProductInProject, 
   type CreateProductInProject, 
   type UpdateProductInProject,
-  type Template
+  type Template,
+  type Supplier,
+  type CreateSupplier,
+  type UpdateSupplier
 } from '@shared/schema';
 
 export interface IStorage {
@@ -32,6 +36,13 @@ export interface IStorage {
   getTemplates(): Promise<Template[]>;
   getTemplate(id: string): Promise<Template | null>;
   deleteTemplate(id: string): Promise<boolean>;
+  
+  // Supplier operations
+  createSupplier(data: CreateSupplier): Promise<Supplier>;
+  getSuppliers(): Promise<Supplier[]>;
+  getSupplier(id: string): Promise<Supplier | null>;
+  updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null>;
+  deleteSupplier(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -226,6 +237,74 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
+  // Supplier operations
+  async createSupplier(data: CreateSupplier): Promise<Supplier> {
+    const [supplier] = await db
+      .insert(suppliers)
+      .values({
+        id: nanoid(),
+        name: data.name,
+        urlPattern: data.urlPattern || null,
+        description: data.description || null,
+        selectors: JSON.stringify(data.selectors || {}),
+        productLinkSelector: data.productLinkSelector || null,
+      })
+      .returning();
+    
+    return this.mapSupplierFromDb(supplier);
+  }
+
+  async getSuppliers(): Promise<Supplier[]> {
+    const result = await db
+      .select()
+      .from(suppliers)
+      .orderBy(suppliers.name);
+    
+    return result.map(s => this.mapSupplierFromDb(s));
+  }
+
+  async getSupplier(id: string): Promise<Supplier | null> {
+    const [supplier] = await db
+      .select()
+      .from(suppliers)
+      .where(eq(suppliers.id, id));
+    
+    if (!supplier) return null;
+    
+    return this.mapSupplierFromDb(supplier);
+  }
+
+  async updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null> {
+    const updateData: any = {
+      updatedAt: new Date().toISOString(),
+    };
+    
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.urlPattern !== undefined) updateData.urlPattern = data.urlPattern;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.selectors !== undefined) updateData.selectors = JSON.stringify(data.selectors);
+    if (data.productLinkSelector !== undefined) updateData.productLinkSelector = data.productLinkSelector;
+    
+    const [supplier] = await db
+      .update(suppliers)
+      .set(updateData)
+      .where(eq(suppliers.id, id))
+      .returning();
+    
+    if (!supplier) return null;
+    
+    return this.mapSupplierFromDb(supplier);
+  }
+
+  async deleteSupplier(id: string): Promise<boolean> {
+    const result = await db
+      .delete(suppliers)
+      .where(eq(suppliers.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+
   // Helper method to map database product to app format
   private mapProductFromDb(product: any): ProductInProject {
     return {
@@ -241,6 +320,20 @@ export class DatabaseStorage implements IStorage {
       exactProductName: product.exactProductName || undefined,
       articleNumber: product.articleNumber || undefined,
       createdAt: typeof product.createdAt === 'string' ? product.createdAt : product.createdAt.toISOString(),
+    };
+  }
+
+  // Helper method to map database supplier to app format
+  private mapSupplierFromDb(supplier: any): Supplier {
+    return {
+      id: supplier.id,
+      name: supplier.name,
+      urlPattern: supplier.urlPattern || undefined,
+      description: supplier.description || undefined,
+      selectors: supplier.selectors ? JSON.parse(supplier.selectors) : {},
+      productLinkSelector: supplier.productLinkSelector || undefined,
+      createdAt: typeof supplier.createdAt === 'string' ? supplier.createdAt : supplier.createdAt.toISOString(),
+      updatedAt: typeof supplier.updatedAt === 'string' ? supplier.updatedAt : supplier.updatedAt.toISOString(),
     };
   }
 

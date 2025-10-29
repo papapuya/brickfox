@@ -656,6 +656,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Supplier Management: Get all suppliers
+  app.get('/api/suppliers', async (req, res) => {
+    try {
+      const suppliers = await storage.getSuppliers();
+      res.json({ success: true, suppliers });
+    } catch (error) {
+      console.error('Get suppliers error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to get suppliers' 
+      });
+    }
+  });
+
+  // Supplier Management: Create supplier
+  app.post('/api/suppliers', async (req, res) => {
+    try {
+      const { createSupplierSchema } = await import('@shared/schema');
+      const validation = createSupplierSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ error: 'Invalid supplier data', details: validation.error });
+      }
+
+      const supplier = await storage.createSupplier(validation.data);
+      res.json({ success: true, supplier });
+    } catch (error) {
+      console.error('Create supplier error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to create supplier' 
+      });
+    }
+  });
+
+  // Supplier Management: Get single supplier
+  app.get('/api/suppliers/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const supplier = await storage.getSupplier(id);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: 'Supplier not found' });
+      }
+
+      res.json({ success: true, supplier });
+    } catch (error) {
+      console.error('Get supplier error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to get supplier' 
+      });
+    }
+  });
+
+  // Supplier Management: Update supplier
+  app.put('/api/suppliers/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { updateSupplierSchema } = await import('@shared/schema');
+      const validation = updateSupplierSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ error: 'Invalid supplier data', details: validation.error });
+      }
+
+      const supplier = await storage.updateSupplier(id, validation.data);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: 'Supplier not found' });
+      }
+
+      res.json({ success: true, supplier });
+    } catch (error) {
+      console.error('Update supplier error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to update supplier' 
+      });
+    }
+  });
+
+  // Supplier Management: Delete supplier
+  app.delete('/api/suppliers/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteSupplier(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Supplier not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete supplier error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to delete supplier' 
+      });
+    }
+  });
+
 
   const httpServer = createServer(app);
 
