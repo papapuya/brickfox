@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,6 +62,10 @@ export default function URLScraper() {
   const [showTestPreview, setShowTestPreview] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
+  
+  // HTML Preview Dialog
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+  const [htmlPreviewContent, setHtmlPreviewContent] = useState("");
 
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -117,7 +121,12 @@ export default function URLScraper() {
     const supplier = suppliersData?.suppliers?.find(s => s.id === supplierId);
     if (supplier) {
       setSelectors({ ...selectors, ...supplier.selectors });
-      setProductLinkSelector(supplier.productLinkSelector || "");
+      // For Nitecore, ALWAYS force .product-image-link (not optional)
+      if (supplier.name === 'Nitecore') {
+        setProductLinkSelector('.product-image-link');
+      } else {
+        setProductLinkSelector(supplier.productLinkSelector || "");
+      }
       setSessionCookies(supplier.sessionCookies || "");
       setUserAgent(supplier.userAgent || "");
       setShowAdvanced(true); // Automatically show selectors when a supplier is selected
@@ -550,33 +559,78 @@ export default function URLScraper() {
   const convertToCSV = (products: ScrapedProduct[]): string => {
     if (products.length === 0) return '';
 
-    // CSV Headers
-    const headers = [
-      'Artikelnummer',
-      'Produktname',
-      'EAN',
-      'Hersteller',
-      'Preis',
-      'Gewicht',
-      'Kategorie',
-      'Beschreibung',
-      'Anzahl_Bilder',
-      'Bild_URLs'
+    // Fixed list of ALL expected fields (21 Nitecore selectors + base fields)
+    // This ensures ALL columns appear in CSV, even if fields are missing
+    const orderedKeys = [
+      'articleNumber',
+      'productName',
+      'ean',
+      'manufacturer',
+      'price',
+      'weight',
+      'category',
+      'description',
+      'technicalTable',
+      'length',
+      'bodyDiameter',
+      'headDiameter',
+      'weightWithoutBattery',
+      'totalWeight',
+      'powerSupply',
+      'led1',
+      'led2',
+      'spotIntensity',
+      'maxLuminosity',
+      'maxBeamDistance',
+      'images'
     ];
 
-    // CSV Rows
-    const rows = products.map(product => [
-      product.articleNumber || '',
-      product.productName || '',
-      product.ean || '',
-      product.manufacturer || '',
-      product.price || '',
-      product.weight || '',
-      product.category || '',
-      (product.description || '').replace(/"/g, '""').replace(/<[^>]*>/g, ''), // Remove HTML tags and escape quotes
-      product.images?.length || '0',
-      product.images?.join(' | ') || '' // Join multiple URLs with pipe separator
-    ]);
+    // Create friendly header names (matching the 21 Nitecore selectors)
+    const headerMap: Record<string, string> = {
+      articleNumber: 'Artikelnummer',
+      productName: 'Produktname',
+      ean: 'EAN',
+      manufacturer: 'Hersteller',
+      price: 'Preis',
+      weight: 'Gewicht',
+      category: 'Kategorie',
+      description: 'Beschreibung_HTML',
+      technicalTable: 'Technische_Tabelle',
+      length: 'Länge_mm',
+      bodyDiameter: 'Gehäusedurchmesser_mm',
+      headDiameter: 'Kopfdurchmesser_mm',
+      weightWithoutBattery: 'Gewicht_ohne_Akku_g',
+      totalWeight: 'Gesamt_Gewicht_g',
+      powerSupply: 'Stromversorgung',
+      led1: 'Leuchtmittel_1',
+      led2: 'Leuchtmittel_2',
+      spotIntensity: 'Spotintensität_cd',
+      maxLuminosity: 'Leuchtleistung_max',
+      maxBeamDistance: 'Leuchtweite_max_m',
+      images: 'Bild_URLs'
+    };
+
+    const headers = orderedKeys.map(key => headerMap[key] || key);
+
+    // CSV Rows - keep HTML in description, escape quotes properly
+    // Fill missing fields with empty strings
+    const rows = products.map(product => 
+      orderedKeys.map(key => {
+        const value = product[key as keyof ScrapedProduct];
+        
+        if (key === 'images' && Array.isArray(value)) {
+          return value.join(' | ');
+        }
+        
+        if (key === 'description') {
+          // Keep HTML, only escape quotes for CSV
+          return (value as string || '').replace(/"/g, '""');
+        }
+        
+        // Return empty string if field is missing
+        return (value as string || '').replace(/"/g, '""');
+      })
+    );
 
     // Combine headers and rows
     const csvContent = [
@@ -1145,27 +1199,38 @@ export default function URLScraper() {
             </div>
             
             <div className="border rounded-lg overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-96 overflow-x-auto overflow-y-auto">
                 <Table>
-                  <TableHeader className="bg-muted">
+                  <TableHeader className="bg-muted sticky top-0 z-10">
                     <TableRow>
-                      <TableHead className="w-12">#</TableHead>
-                      <TableHead>Bild</TableHead>
-                      <TableHead>Artikelnummer</TableHead>
-                      <TableHead>Produktname</TableHead>
-                      <TableHead>EAN</TableHead>
-                      <TableHead>Hersteller</TableHead>
-                      <TableHead>Preis</TableHead>
-                      <TableHead>Gewicht</TableHead>
-                      <TableHead>Kategorie</TableHead>
-                      <TableHead>Beschreibung</TableHead>
+                      <TableHead className="w-12 sticky left-0 bg-muted z-20">#</TableHead>
+                      <TableHead className="sticky left-12 bg-muted z-20">Bild</TableHead>
+                      <TableHead className="min-w-[120px]">Artikelnummer</TableHead>
+                      <TableHead className="min-w-[200px]">Produktname</TableHead>
+                      <TableHead className="min-w-[120px]">EAN</TableHead>
+                      <TableHead className="min-w-[120px]">Hersteller</TableHead>
+                      <TableHead className="min-w-[80px]">Preis</TableHead>
+                      <TableHead className="min-w-[80px]">Gewicht</TableHead>
+                      <TableHead className="min-w-[150px]">Kategorie</TableHead>
+                      <TableHead className="min-w-[100px]">Länge (mm)</TableHead>
+                      <TableHead className="min-w-[140px]">Gehäusedurchmesser (mm)</TableHead>
+                      <TableHead className="min-w-[140px]">Kopfdurchmesser (mm)</TableHead>
+                      <TableHead className="min-w-[150px]">Gewicht ohne Akku (g)</TableHead>
+                      <TableHead className="min-w-[130px]">Gesamt Gewicht (g)</TableHead>
+                      <TableHead className="min-w-[140px]">Stromversorgung</TableHead>
+                      <TableHead className="min-w-[130px]">Leuchtmittel 1</TableHead>
+                      <TableHead className="min-w-[130px]">Leuchtmittel 2</TableHead>
+                      <TableHead className="min-w-[130px]">Spotintensität (cd)</TableHead>
+                      <TableHead className="min-w-[140px]">Leuchtleistung max.</TableHead>
+                      <TableHead className="min-w-[150px]">Leuchtweite max. (m)</TableHead>
+                      <TableHead className="min-w-[250px]">Beschreibung</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {scrapedProducts.map((product, index) => (
                       <TableRow key={index}>
-                        <TableCell className="font-mono text-sm">{index + 1}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-mono text-sm sticky left-0 bg-white z-10">{index + 1}</TableCell>
+                        <TableCell className="sticky left-12 bg-white z-10">
                           {product.images && product.images.length > 0 ? (
                             <img 
                               src={product.images[0]} 
@@ -1189,8 +1254,36 @@ export default function URLScraper() {
                         <TableCell className="font-semibold">{product.price || '-'}</TableCell>
                         <TableCell>{product.weight || '-'}</TableCell>
                         <TableCell className="text-xs">{product.category || '-'}</TableCell>
-                        <TableCell className="text-xs max-w-xs truncate" title={product.description || ''}>
-                          {product.description ? product.description.substring(0, 100) + '...' : '-'}
+                        <TableCell className="text-sm">{(product as any).length || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).bodyDiameter || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).headDiameter || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).weightWithoutBattery || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).totalWeight || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).powerSupply || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).led1 || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).led2 || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).spotIntensity || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).maxLuminosity || '-'}</TableCell>
+                        <TableCell className="text-sm">{(product as any).maxBeamDistance || '-'}</TableCell>
+                        <TableCell className="text-xs">
+                          {product.description ? (
+                            <div className="flex items-center gap-2">
+                              <span className="max-w-xs truncate" title={product.description}>
+                                {product.description.replace(/<[^>]*>/g, '').substring(0, 50) + '...'}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setHtmlPreviewContent(product.description || '');
+                                  setShowHtmlPreview(true);
+                                }}
+                                title="HTML Vorschau anzeigen"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : '-'}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1200,12 +1293,14 @@ export default function URLScraper() {
             </div>
 
             <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-              <p className="font-semibold mb-1">CSV-Export beinhaltet:</p>
+              <p className="font-semibold mb-1">📊 Tabelle & CSV-Export:</p>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                <li>Artikelnummer, Produktname, EAN, Hersteller</li>
-                <li>Preis, Gewicht, Kategorie, Beschreibung</li>
-                <li>Anzahl Bilder + Bild-URLs (pipe-getrennt)</li>
-                <li>UTF-8 kodiert - kompatibel mit Excel, Google Sheets und CSV-Tools</li>
+                <li>✅ Alle 21 Spalten sichtbar - horizontal scrollen für technische Daten</li>
+                <li>✅ CSV mit allen Feldern: Artikelnummer, EAN, Hersteller, Preis, Gewicht, Kategorie</li>
+                <li>✅ Nitecore-Spezifikationen: Länge, Durchmesser, LED-Typen, Leuchtweite, etc.</li>
+                <li>✅ HTML-Beschreibung vollständig im CSV (nicht gekürzt)</li>
+                <li>✅ Bild-URLs pipe-getrennt | UTF-8 kodiert für Excel & Google Sheets</li>
+                <li>👁️ Augen-Icon: HTML-Beschreibung als Vorschau anzeigen</li>
               </ul>
             </div>
           </Card>
@@ -1477,6 +1572,40 @@ export default function URLScraper() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* HTML Preview Dialog */}
+        <Dialog open={showHtmlPreview} onOpenChange={setShowHtmlPreview}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>HTML Produktbeschreibung Vorschau</DialogTitle>
+              <DialogDescription>
+                So sieht die HTML-Beschreibung gerendert aus
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Gerenderte Ansicht</Label>
+                <div className="p-4 bg-white border rounded-lg max-h-96 overflow-y-auto">
+                  <div dangerouslySetInnerHTML={{ __html: htmlPreviewContent }} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">HTML-Code</Label>
+                <Textarea
+                  value={htmlPreviewContent}
+                  readOnly
+                  className="font-mono text-sm"
+                  rows={10}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => setShowHtmlPreview(false)}>
+                  Schließen
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
