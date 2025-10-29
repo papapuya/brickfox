@@ -144,13 +144,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'URL is required' });
       }
 
-      if (!productLinkSelector || typeof productLinkSelector !== 'string') {
-        return res.status(400).json({ error: 'Product link selector is required' });
-      }
-
+      // productLinkSelector is now optional - will use auto-detection if not provided
       console.log(`Scraping product list from: ${url}`);
 
-      const productUrls = await scrapeProductList(url, productLinkSelector, maxProducts || 50);
+      const productUrls = await scrapeProductList(
+        url, 
+        productLinkSelector || null, 
+        maxProducts || 50
+      );
 
       res.json({
         success: true,

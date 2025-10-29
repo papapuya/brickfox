@@ -73,6 +73,7 @@ This system supports automatic category recognition via keyword matching and dyn
 **Features:**
 - ✅ Kostenlos (keine externen API-Kosten)
 - ✅ Konfigurierbare CSS-Selektoren für flexible Datenextraktion
+- ✅ **Intelligente Auto-Erkennung**: Findet automatisch Produktlinks ohne manuelle Selektoren (16 gängige Muster)
 - ✅ Timeout-Schutz (20 Sekunden pro Produkt) mit AbortController für robuste Verarbeitung
 - ✅ User-Agent Headers für bessere Kompatibilität
 - ✅ Preis-Parsing mit korrekter Dezimalkomma-Konvertierung (19,99 € → 19.99)

@@ -564,16 +564,16 @@ export default function URLScraper() {
               </div>
 
               <div>
-                <Label htmlFor="product-link-selector">Produktlink CSS-Selektor *</Label>
+                <Label htmlFor="product-link-selector">Produktlink CSS-Selektor (optional)</Label>
                 <Input
                   id="product-link-selector"
-                  placeholder="a.product-link"
+                  placeholder="a.product-link (leer lassen für automatische Erkennung)"
                   value={productLinkSelector}
                   onChange={(e) => setProductLinkSelector(e.target.value)}
                   className="mt-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  CSS-Selektor für die Links zu einzelnen Produktseiten
+                  💡 Leer lassen für intelligente Auto-Erkennung. Nur ausfüllen, wenn die automatische Erkennung fehlschlägt.
                 </p>
               </div>
 

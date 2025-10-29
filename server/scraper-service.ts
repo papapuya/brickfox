@@ -187,11 +187,65 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
 }
 
 /**
+ * Common product link selector patterns to try automatically
+ */
+const AUTO_DETECT_SELECTORS = [
+  'a.product-link',
+  'a.product-item-link',
+  'a[href*="/product/"]',
+  'a[href*="/products/"]',
+  'a[href*="/p/"]',
+  'a[href*="/item/"]',
+  'a[href*="/artikel/"]',
+  '.product-item a',
+  '.product-card a',
+  '.product a',
+  'article a',
+  'a[itemprop="url"]',
+  'a.productTitle',
+  'a.product-name',
+  'h3 a',
+  'h2 a'
+];
+
+/**
+ * Auto-detect product link selector by trying common patterns
+ */
+function autoDetectProductLinks($: cheerio.CheerioAPI, url: string): string[] {
+  const productUrls: string[] = [];
+  
+  for (const selector of AUTO_DETECT_SELECTORS) {
+    try {
+      const links: string[] = [];
+      $(selector).each((_, el) => {
+        const href = $(el).attr('href');
+        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+          const absoluteUrl = href.startsWith('http') ? href : new URL(href, url).toString();
+          links.push(absoluteUrl);
+        }
+      });
+      
+      // If we found at least 3 links with this selector, consider it successful
+      if (links.length >= 3) {
+        console.log(`Auto-detected product links using selector: ${selector} (${links.length} found)`);
+        return links;
+      }
+    } catch (error) {
+      // Skip invalid selectors
+      continue;
+    }
+  }
+  
+  console.log('Auto-detection found no suitable product links');
+  return productUrls;
+}
+
+/**
  * Scrape multiple products from a listing page
  */
 export async function scrapeProductList(
   url: string,
-  productLinkSelector: string,
+  productLinkSelector: string | null,
   maxProducts: number = 50,
   options?: Partial<ScrapeOptions>
 ): Promise<string[]> {
@@ -233,16 +287,26 @@ export async function scrapeProductList(
   }
   const $ = cheerio.load(html);
 
-  // Extract product URLs
-  const productUrls: string[] = [];
-  $(productLinkSelector).each((_, el) => {
-    const href = $(el).attr('href');
-    if (href) {
-      // Make absolute URL if relative
-      const absoluteUrl = href.startsWith('http') ? href : new URL(href, url).toString();
-      productUrls.push(absoluteUrl);
-    }
-  });
+  let productUrls: string[] = [];
+
+  // Use auto-detection if no selector provided
+  if (!productLinkSelector || productLinkSelector.trim() === '') {
+    console.log('No selector provided, using auto-detection...');
+    productUrls = autoDetectProductLinks($, url);
+  } else {
+    // Extract product URLs using provided selector
+    $(productLinkSelector).each((_, el) => {
+      const href = $(el).attr('href');
+      if (href) {
+        // Make absolute URL if relative
+        const absoluteUrl = href.startsWith('http') ? href : new URL(href, url).toString();
+        productUrls.push(absoluteUrl);
+      }
+    });
+  }
+
+  // Remove duplicates
+  productUrls = Array.from(new Set(productUrls));
 
   // Limit results
   const limitedUrls = productUrls.slice(0, maxProducts);
