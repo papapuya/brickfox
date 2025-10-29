@@ -127,14 +127,13 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.manufacturer = element.text().trim() || element.attr('content')?.trim() || '';
   }
 
-  // Price
+  // Price - Format for Brickfox: English decimal format (19.99)
   if (selectors.price) {
     const element = $(selectors.price).first();
     let priceText = element.text().trim() || element.attr('content')?.trim() || '';
     
     if (priceText) {
       // Step 1: Extract only the numeric portion with separators
-      // Match pattern: optional digits, separator, digits (supports various formats)
       const numericMatch = priceText.match(/[\d,.]+/);
       if (numericMatch) {
         priceText = numericMatch[0];
@@ -143,7 +142,7 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
       }
       
       if (priceText) {
-        // Step 2: Normalize to German format (comma as decimal separator)
+        // Step 2: Normalize to English format (dot as decimal separator)
         const hasComma = priceText.includes(',');
         const hasDot = priceText.includes('.');
         
@@ -153,19 +152,18 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
           const lastDot = priceText.lastIndexOf('.');
           
           if (lastComma > lastDot) {
-            // German format: 1.234,56 -> comma is decimal
+            // German format: 1.234,56 -> convert to English
             priceText = priceText.replace(/\./g, ''); // Remove thousands separators (dots)
+            priceText = priceText.replace(',', '.'); // Convert decimal comma to dot
           } else {
-            // English format: 1,234.56 -> dot is decimal
+            // English format: 1,234.56 -> keep dot, remove comma
             priceText = priceText.replace(/,/g, ''); // Remove thousands separators (commas)
-            priceText = priceText.replace('.', ','); // Convert decimal dot to comma
           }
         } else if (hasDot && !hasComma) {
           // Only dot: check if it's thousands separator or decimal
           const dotParts = priceText.split('.');
           if (dotParts.length === 2 && dotParts[1].length <= 2) {
-            // Likely decimal: 89.90 -> 89,90
-            priceText = priceText.replace('.', ',');
+            // Likely decimal: 89.90 -> keep as is
           } else {
             // Likely thousands separator: 1.234 -> 1234
             priceText = priceText.replace(/\./g, '');
@@ -174,7 +172,8 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
           // Only comma: check if it's thousands separator or decimal
           const commaParts = priceText.split(',');
           if (commaParts.length === 2 && commaParts[1].length <= 2) {
-            // Likely decimal: 89,90 -> keep as is
+            // Likely decimal: 89,90 -> convert to 89.90
+            priceText = priceText.replace(',', '.');
           } else {
             // Likely thousands separator: 1,234 -> 1234
             priceText = priceText.replace(/,/g, '');
@@ -182,18 +181,18 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
         }
         
         // Step 3: Ensure exactly 2 decimal places
-        if (!priceText.includes(',')) {
-          // No decimals: add ,00
-          priceText = priceText + ',00';
+        if (!priceText.includes('.')) {
+          // No decimals: add .00
+          priceText = priceText + '.00';
         } else {
-          const parts = priceText.split(',');
+          const parts = priceText.split('.');
           if (parts[1]) {
             // Pad or truncate to exactly 2 decimals
             parts[1] = parts[1].padEnd(2, '0').substring(0, 2);
           } else {
             parts[1] = '00';
           }
-          priceText = parts.join(',');
+          priceText = parts.join('.');
         }
       }
     }
@@ -218,18 +217,49 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }).get().filter(Boolean);
   }
 
-  // Weight (with regex fallback like PHP)
+  // Weight - Format for Brickfox: English decimal format (0.25)
   if (selectors.weight) {
     const element = $(selectors.weight).first();
-    product.weight = element.text().trim() || '';
+    let weightText = element.text().trim() || '';
     
     // Fallback: Search for "gewicht: XXXg" in HTML
-    if (!product.weight) {
-      const weightMatch = html.match(/gewicht:\s*(\d+)\s*g/i);
+    if (!weightText) {
+      const weightMatch = html.match(/gewicht:\s*([\d,\.]+)\s*[gk]/i);
       if (weightMatch) {
-        product.weight = weightMatch[1];
+        weightText = weightMatch[1];
       }
     }
+    
+    if (weightText) {
+      // Extract only numeric portion with separators
+      const numericMatch = weightText.match(/[\d,.]+/);
+      if (numericMatch) {
+        weightText = numericMatch[0];
+        
+        // Normalize to English format (dot as decimal separator)
+        const hasComma = weightText.includes(',');
+        const hasDot = weightText.includes('.');
+        
+        if (hasComma && hasDot) {
+          const lastComma = weightText.lastIndexOf(',');
+          const lastDot = weightText.lastIndexOf('.');
+          
+          if (lastComma > lastDot) {
+            // German format: 1.234,56 -> convert to English
+            weightText = weightText.replace(/\./g, '').replace(',', '.');
+          } else {
+            // English format: 1,234.56 -> remove commas
+            weightText = weightText.replace(/,/g, '');
+          }
+        } else if (hasComma && !hasDot) {
+          // Only comma: convert to dot (e.g. 0,25 -> 0.25)
+          weightText = weightText.replace(',', '.');
+        }
+        // If only dot or neither: keep as is
+      }
+    }
+    
+    product.weight = weightText;
   }
 
   // Category
