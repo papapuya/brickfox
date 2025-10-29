@@ -592,7 +592,20 @@ function findNextPageUrl($: cheerio.CheerioAPI, currentUrl: string, paginationSe
     }
   }
 
-  // Method 2: Auto-detect common pagination patterns
+  // Method 2: Check for input-based pagination (Nitecore-style)
+  // <li class="page-item page-next"><input type="radio" name="p" id="p-next" value="2">
+  const nextInput = $('.page-next:not(.disabled) input[name="p"], input#p-next').first();
+  if (nextInput.length > 0) {
+    const nextPageValue = nextInput.attr('value');
+    if (nextPageValue) {
+      const urlObj = new URL(currentUrl);
+      urlObj.searchParams.set('p', nextPageValue);
+      console.log(`Found next page using input pagination: p=${nextPageValue}`);
+      return urlObj.toString();
+    }
+  }
+
+  // Method 3: Auto-detect common link-based pagination patterns
   const commonSelectors = [
     'a[rel="next"]',
     '.pagination .next:not(.disabled) a',
@@ -622,7 +635,7 @@ function findNextPageUrl($: cheerio.CheerioAPI, currentUrl: string, paginationSe
     }
   }
 
-  // Method 3: Try URL pattern increment (e.g., ?page=1 → ?page=2)
+  // Method 4: Try URL pattern increment (e.g., ?page=1 → ?page=2)
   const urlObj = new URL(currentUrl);
   const pageParam = urlObj.searchParams.get('page') || urlObj.searchParams.get('p');
   
