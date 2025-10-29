@@ -131,8 +131,19 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   if (selectors.price) {
     const element = $(selectors.price).first();
     let priceText = element.text().trim() || element.attr('content')?.trim() || '';
-    // Clean price: first convert comma to dot, then remove currency symbols/whitespace
-    priceText = priceText.replace(',', '.').replace(/[€$£\s]/g, '');
+    
+    // Keep German format with comma and Euro symbol
+    // Just clean up extra whitespace but preserve "89,90 €" format
+    priceText = priceText.replace(/\s+/g, ' ').trim();
+    
+    // If we only got a number without currency, add " €" 
+    if (priceText && !priceText.includes('€') && !priceText.includes('$') && !priceText.includes('£')) {
+      // If it's just a number with comma, format as German price
+      if (/^\d+[,.]?\d*$/.test(priceText)) {
+        priceText = priceText.replace('.', ',') + ' €';
+      }
+    }
+    
     product.price = priceText;
   }
 
