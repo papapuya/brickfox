@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon, Eye } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon, Eye, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1192,10 +1192,16 @@ export default function URLScraper() {
           <Card className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Gescrapte Produkte ({scrapedProducts.length})</h3>
-              <Button onClick={downloadCSV} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Als CSV herunterladen
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => {/* TODO: Generate all descriptions */}} variant="default">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Alle AI-Beschreibungen generieren
+                </Button>
+                <Button onClick={downloadCSV} variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  Als CSV herunterladen
+                </Button>
+              </div>
             </div>
             
             <div className="border rounded-lg overflow-hidden">

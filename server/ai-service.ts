@@ -2,56 +2,58 @@ import OpenAI from 'openai';
 
 // Helper function to clean HTML responses from markdown code blocks
 function cleanHTMLResponse(content: string): string {
-  // Remove markdown code blocks (```html, ```, etc.) - more comprehensive cleaning
+  // Remove markdown code blocks (```html, ```, etc.)
   let cleaned = content.replace(/^```(?:html|HTML)?\s*\n?/gm, '');
   cleaned = cleaned.replace(/\n?```\s*$/gm, '');
-  
-  // Remove any remaining ```html at the beginning
   cleaned = cleaned.replace(/^```html\s*\n?/gm, '');
   cleaned = cleaned.replace(/^```\s*\n?/gm, '');
   
-  // KRITISCH: Entferne ✅ Icons aus Überschriften
+  // KRITISCH: Entferne ✅ Icons aus Überschriften (MediaMarkt: nur in <li>)
   cleaned = cleaned.replace(/<h[1-6]>✅\s*([^<]+)<\/h[1-6]>/g, '<h3>$1</h3>');
   cleaned = cleaned.replace(/<h[1-6]>\s*✅\s*([^<]+)<\/h[1-6]>/g, '<h3>$1</h3>');
   
-  // Remove unwanted accessibility USPs
+  // MediaMarkt: Fix wrong h4 to h3
+  cleaned = cleaned.replace(/<h4>/g, '<h3>');
+  cleaned = cleaned.replace(/<\/h4>/g, '</h3>');
+  
+  // Remove unwanted accessibility USPs (in <li> or <p>)
   const unwantedPatterns = [
+    /<li>✅\s*Drücken Sie die Eingabetaste.*?<\/li>/gi,
+    /<li>✅\s*Barrierefreiheit.*?<\/li>/gi,
+    /<li>✅\s*Screenreader.*?<\/li>/gi,
+    /<li>✅\s*Menü.*?<\/li>/gi,
+    /<li>✅\s*Eingabetaste.*?<\/li>/gi,
+    /<li>✅\s*Blinde.*?<\/li>/gi,
     /<p>✅\s*Drücken Sie die Eingabetaste.*?<\/p>/gi,
     /<p>✅\s*Barrierefreiheit.*?<\/p>/gi,
-    /<p>✅\s*Screenreader.*?<\/p>/gi,
-    /<p>✅\s*Menü.*?<\/p>/gi,
-    /<p>✅\s*Eingabetaste.*?<\/p>/gi,
-    /<p>✅\s*Blinde.*?<\/p>/gi
   ];
   
   unwantedPatterns.forEach(pattern => {
     cleaned = cleaned.replace(pattern, '');
   });
   
-  // Count remaining USPs and add fallback USPs if needed
-  const uspMatches = cleaned.match(/<p>✅.*?<\/p>/g);
+  // MediaMarkt: Count <li> items in Vorteile section (should be 5)
+  const uspMatches = cleaned.match(/<li>✅.*?<\/li>/g);
   const uspCount = uspMatches ? uspMatches.length : 0;
   
   if (uspCount < 5) {
     const fallbackUSPs = [
-      '<p>✅ Hochwertige Verarbeitung</p>',
-      '<p>✅ Langlebige Konstruktion</p>',
-      '<p>✅ Einfache Bedienung</p>',
-      '<p>✅ Zuverlässige Leistung</p>',
-      '<p>✅ Gutes Preis-Leistungs-Verhältnis</p>'
+      '<li>✅ Hochwertige Verarbeitung für lange Lebensdauer</li>',
+      '<li>✅ Zuverlässige Leistung im Dauereinsatz</li>',
+      '<li>✅ Einfache Handhabung und Bedienung</li>',
+      '<li>✅ Optimales Preis-Leistungs-Verhältnis</li>',
+      '<li>✅ Vielseitig einsetzbar</li>'
     ];
     
-    // Find the Vorteile section and replace it
-    const vorteileSection = cleaned.match(/<h4>Vorteile & Eigenschaften:<\/h4>[\s\S]*?(?=<h4>|$)/);
+    // Find Vorteile section and ensure it has <ul>
+    const vorteileSection = cleaned.match(/<h3>Vorteile & Eigenschaften<\/h3>[\s\S]*?(?=<h3>|$)/);
     if (vorteileSection) {
-      const newVorteileSection = '<h4>Vorteile & Eigenschaften:</h4>\n' + fallbackUSPs.join('\n');
+      const newVorteileSection = `<h3>Vorteile & Eigenschaften</h3>\n<ul>\n${fallbackUSPs.join('\n')}\n</ul>`;
       cleaned = cleaned.replace(vorteileSection[0], newVorteileSection);
     }
   }
   
-  // Remove any remaining markdown formatting
   cleaned = cleaned.trim();
-  
   return cleaned;
 }
 
@@ -256,29 +258,52 @@ export async function convertTextToHTML(
       messages: [
         {
           role: 'system',
-          content: `Du bist ein Experte für Produktbeschreibungen. Konvertiere den gegebenen Fließtext in eine professionelle HTML-Beschreibung.
+          content: `Du bist ein Experte für MediaMarkt-Produktbeschreibungen. Erstelle eine HTML-Produktbeschreibung nach MediaMarkt-Standard.
 
-WICHTIG: Erstelle KEINE feste Struktur! Passe die Struktur an die verfügbaren Daten an.
+MEDIAMARKT HTML-STRUKTUR (EXAKT SO):
 
-REGELN:
-- Verwende strukturierte HTML-Tags (<h2>, <h4>, <p>, <table>, <tr>, <td>)
-- Erstelle IMMER GENAU 5 grüne Bulletpoints mit ✅ für verkaufsfördernde USPs (Überschrift OHNE Icon)
+<h2>Produktname</h2>
+<p>Einleitungstext (1-2 Sätze über das Produkt)</p>
 
-KRITISCH - Die 5 Bulletpoints müssen IMMER verkaufsfördernde USPs sein:
-❌ VERBOTEN in Bulletpoints: Spannung, Kapazität, Gewicht, Abmessungen, Strom, etc.
-✅ ERLAUBT in Bulletpoints: "Wiederaufladbar - spart Geld", "Schutzschaltung - maximale Sicherheit", "Langlebig", "Zuverlässig", etc.
+<h3>Vorteile & Eigenschaften</h3>
+<ul>
+<li>✅ Vorteil 1 - verkaufsfördernde Beschreibung</li>
+<li>✅ Vorteil 2 - verkaufsfördernde Beschreibung</li>
+<li>✅ Vorteil 3 - verkaufsfördernde Beschreibung</li>
+<li>✅ Vorteil 4 - verkaufsfördernde Beschreibung</li>
+<li>✅ Vorteil 5 - verkaufsfördernde Beschreibung</li>
+</ul>
 
-- VERBOTEN: Keine UI-Anweisungen, keine Barrierefreiheits-Hinweise
-- Technische Daten (Spannung, mAh, Gewicht, etc.) gehören NUR in die Tabelle
-- Erstelle eine logische, verkaufsfördernde Struktur ohne feste Vorlage
-- Passe die Struktur an die verfügbaren Daten an
-- KEINE festen Sektionen - nur das was Daten hat
+<h3>Technische Daten</h3>
+<table border="0" cellspacing="0" cellpadding="4">
+<tbody>
+<tr><td><strong>Feldname:</strong></td><td>Wert</td></tr>
+...
+</tbody>
+</table>
 
-Gib NUR den reinen HTML-Code zurück, OHNE \`\`\`html am Anfang oder \`\`\` am Ende.`,
+<h3>Sicherheit & Technologie</h3>
+<p>Beschreibung (NUR wenn relevante Daten vorhanden)</p>
+
+<h3>Lieferumfang</h3>
+<p>1 × Produktname</p>
+
+KRITISCHE REGELN:
+- IMMER <h2> für Produktname, IMMER <h3> für Überschriften
+- Vorteile IMMER als <ul><li>✅ Text</li></ul> (NICHT als <p>)
+- ✅ Icons NUR in <li>, NIEMALS in Überschriften
+- Technische Daten IMMER in <table> (1:1 vom Lieferanten kopiert)
+- "Sicherheit & Technologie" NUR wenn relevante Daten vorhanden
+- Lieferumfang immer am Ende
+
+❌ VERBOTEN in Vorteilen: Technische Specs (Volt, mAh, Gramm, mm, etc.)
+✅ ERLAUBT in Vorteilen: Verkaufsargumente ("Lange Laufzeit", "Sicher durch Schutzschaltung", etc.)
+
+Gib NUR den reinen HTML-Code zurück, OHNE \`\`\`html oder \`\`\`.`,
         },
         {
           role: 'user',
-          content: `Konvertiere diesen Text in HTML:\n\n${plainText}${dataContext}`,
+          content: `Erstelle MediaMarkt-Produktbeschreibung aus:\n\n${plainText}${dataContext}`,
         },
       ],
       max_tokens: 2000,
