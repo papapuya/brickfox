@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon, Eye, Sparkles } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon, Eye, Sparkles, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -667,10 +667,12 @@ export default function URLScraper() {
       'spotIntensity',
       'maxLuminosity',
       'maxBeamDistance',
+      'pdfManualUrl',
+      'safetyWarnings',
       'images'
     ];
 
-    // Create friendly header names (matching the 21 Nitecore selectors)
+    // Create friendly header names (matching the 23 Nitecore selectors)
     const headerMap: Record<string, string> = {
       articleNumber: 'Artikelnummer',
       productName: 'Produktname',
@@ -693,6 +695,8 @@ export default function URLScraper() {
       spotIntensity: 'Spotintensität_cd',
       maxLuminosity: 'Leuchtleistung_max',
       maxBeamDistance: 'Leuchtweite_max_m',
+      pdfManualUrl: 'PDF_Bedienungsanleitung_URL',
+      safetyWarnings: 'Sicherheitshinweise',
       images: 'Bild_URLs'
     };
 
@@ -1344,6 +1348,8 @@ export default function URLScraper() {
                       <TableHead className="min-w-[130px]">Spotintensität (cd)</TableHead>
                       <TableHead className="min-w-[140px]">Leuchtleistung max.</TableHead>
                       <TableHead className="min-w-[150px]">Leuchtweite max. (m)</TableHead>
+                      <TableHead className="min-w-[200px]">PDF Bedienungsanleitung</TableHead>
+                      <TableHead className="min-w-[250px]">Sicherheitshinweise</TableHead>
                       <TableHead className="min-w-[250px]">Beschreibung</TableHead>
                       <TableHead className="min-w-[100px]">AI Status</TableHead>
                     </TableRow>
@@ -1387,6 +1393,29 @@ export default function URLScraper() {
                         <TableCell className="text-sm">{(product as any).spotIntensity || '-'}</TableCell>
                         <TableCell className="text-sm">{(product as any).maxLuminosity || '-'}</TableCell>
                         <TableCell className="text-sm">{(product as any).maxBeamDistance || '-'}</TableCell>
+                        <TableCell className="text-sm">
+                          {(product as any).pdfManualUrl ? (
+                            <a 
+                              href={(product as any).pdfManualUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline flex items-center gap-1"
+                              title="Bedienungsanleitung öffnen"
+                            >
+                              <FileText className="w-4 h-4" />
+                              PDF
+                            </a>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {(product as any).safetyWarnings ? (
+                            <div className="max-w-xs">
+                              <div className="line-clamp-2" title={(product as any).safetyWarnings}>
+                                {(product as any).safetyWarnings}
+                              </div>
+                            </div>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {product.description ? (
                             <div className="flex items-center gap-2">
@@ -1427,12 +1456,14 @@ export default function URLScraper() {
             <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
               <p className="font-semibold mb-1">📊 Tabelle & CSV-Export:</p>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                <li>✅ Alle 21 Spalten sichtbar - horizontal scrollen für technische Daten</li>
+                <li>✅ Alle 24 Spalten sichtbar - horizontal scrollen für technische Daten</li>
                 <li>✅ CSV mit allen Feldern: Artikelnummer, EAN, Hersteller, Preis, Gewicht, Kategorie</li>
                 <li>✅ Nitecore-Spezifikationen: Länge, Durchmesser, LED-Typen, Leuchtweite, etc.</li>
+                <li>✅ **NEU:** PDF-Bedienungsanleitung & Sicherheitshinweise automatisch extrahiert</li>
                 <li>✅ HTML-Beschreibung vollständig im CSV (nicht gekürzt)</li>
                 <li>✅ Bild-URLs pipe-getrennt | UTF-8 kodiert für Excel & Google Sheets</li>
                 <li>👁️ Augen-Icon: HTML-Beschreibung als Vorschau anzeigen</li>
+                <li>📄 PDF-Icon: Bedienungsanleitung direkt öffnen</li>
               </ul>
             </div>
           </Card>

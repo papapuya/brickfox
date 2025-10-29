@@ -44,6 +44,8 @@ export interface ScrapedProduct {
   spotIntensity?: string;
   maxLuminosity?: string;
   maxBeamDistance?: string;
+  pdfManualUrl?: string;
+  safetyWarnings?: string;
   rawHtml?: string;
   technicalDataTable?: string;
   autoExtractedDescription?: string;
@@ -351,13 +353,19 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   // Store raw HTML for debugging
   product.rawHtml = html.substring(0, 1000); // First 1000 chars
 
-  // SMART AUTO-EXTRACTION: Description + Technical Data Table
+  // SMART AUTO-EXTRACTION: Description + Technical Data Table + PDF + Safety Warnings
   const smartExtraction = autoExtractProductDetails($, html);
   if (smartExtraction.description) {
     product.autoExtractedDescription = smartExtraction.description;
   }
   if (smartExtraction.technicalDataTable) {
     product.technicalDataTable = smartExtraction.technicalDataTable;
+  }
+  if (smartExtraction.pdfManualUrl) {
+    product.pdfManualUrl = smartExtraction.pdfManualUrl;
+  }
+  if (smartExtraction.safetyWarnings) {
+    product.safetyWarnings = smartExtraction.safetyWarnings;
   }
 
   // INTELLIGENT TABLE PARSER: Extract structured technical data from properties tables
@@ -369,21 +377,25 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     ean: product.ean,
     imagesCount: product.images.length,
     autoExtractedDescription: !!product.autoExtractedDescription,
-    technicalDataTable: !!product.technicalDataTable
+    technicalDataTable: !!product.technicalDataTable,
+    pdfManualUrl: !!product.pdfManualUrl,
+    safetyWarnings: !!product.safetyWarnings
   });
 
   return product;
 }
 
 /**
- * SMART AUTO-EXTRACTION: Automatically find and extract description + technical data table
- * Searches for common tab patterns like "Beschreibung", "Technische Daten", etc.
+ * SMART AUTO-EXTRACTION: Automatically find and extract description + technical data table + PDF + safety warnings
+ * Searches for common tab patterns like "Beschreibung", "Technische Daten", "Bedienungsanleitungen", "Produktsicherheit"
  */
 function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
   description?: string;
   technicalDataTable?: string;
+  pdfManualUrl?: string;
+  safetyWarnings?: string;
 } {
-  const result: { description?: string; technicalDataTable?: string } = {};
+  const result: { description?: string; technicalDataTable?: string; pdfManualUrl?: string; safetyWarnings?: string } = {};
 
   // 1. AUTO-EXTRACT DESCRIPTION (look for "Beschreibung" tab or section)
   const descriptionSelectors = [
@@ -455,6 +467,60 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
         return false; // Break loop
       }
     });
+  }
+
+  // 3. AUTO-EXTRACT PDF MANUAL URL (look for "Bedienungsanleitungen" download button)
+  // Nitecore uses: <button onclick="download('https://www.nitecore.de/media/.../MANUAL.PDF')">
+  const pdfButtons = $('button.downloadimg, button[onclick*="download"]');
+  pdfButtons.each((_, btn) => {
+    const onclick = $(btn).attr('onclick');
+    if (onclick) {
+      // Extract URL from onclick="download('URL')"
+      const match = onclick.match(/download\(['"]([^'"]+)['"]\)/);
+      if (match && match[1] && (match[1].toLowerCase().includes('.pdf') || match[1].toLowerCase().includes('bedienungsanleitung'))) {
+        result.pdfManualUrl = match[1];
+        console.log(`Auto-extracted PDF manual URL: ${result.pdfManualUrl}`);
+        return false; // Found first PDF, break loop
+      }
+    }
+  });
+
+  // Fallback: Look for direct PDF links
+  if (!result.pdfManualUrl) {
+    const pdfLinks = $('a[href$=".pdf"], a[href*=".PDF"], a[href*="bedienungsanleitung"]');
+    if (pdfLinks.length > 0) {
+      const href = pdfLinks.first().attr('href');
+      if (href) {
+        result.pdfManualUrl = href.startsWith('http') ? href : `https://${new URL(html).hostname}${href}`;
+        console.log(`Auto-extracted PDF manual URL (fallback): ${result.pdfManualUrl}`);
+      }
+    }
+  }
+
+  // 4. AUTO-EXTRACT SAFETY WARNINGS (look for "Produktsicherheit" / "PRODUKT HINWEIS")
+  const safetyWarnings: string[] = [];
+  
+  // Nitecore uses: <div class="custom-hint-text">Warning text here</div>
+  $('.custom-hint-text, .safety-warning, .product-safety, [class*="warning"], [class*="hinweis"]').each((_, el) => {
+    const text = $(el).text().trim();
+    // Filter out short texts and navigation items
+    if (text.length > 20 && !text.toLowerCase().includes('navigation') && !text.toLowerCase().includes('menu')) {
+      safetyWarnings.push(text);
+    }
+  });
+
+  // Also check for explicit safety icons/symbols
+  $('img[src*="warning"], img[src*="hinweis"], img[src*="heat"], img[src*="strahlung"]').each((_, img) => {
+    const parent = $(img).parent();
+    const siblingText = parent.find('.custom-hint-text, p, span').text().trim();
+    if (siblingText.length > 20 && !safetyWarnings.includes(siblingText)) {
+      safetyWarnings.push(siblingText);
+    }
+  });
+
+  if (safetyWarnings.length > 0) {
+    result.safetyWarnings = safetyWarnings.join('\n\n');
+    console.log(`Auto-extracted ${safetyWarnings.length} safety warning(s)`);
   }
 
   return result;
