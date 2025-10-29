@@ -45,9 +45,9 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto md:items-stretch">
             {/* PIMPilot CSV Bulk Tool */}
-            <Card className="hover-elevate transition-all" data-testid="card-csv-bulk">
+            <Card className="hover-elevate transition-all flex flex-col" data-testid="card-csv-bulk">
               <CardHeader className="space-y-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-md flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-primary" />
@@ -59,8 +59,8 @@ export default function Landing() {
                   </CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
+              <CardContent className="space-y-6 flex-1 flex flex-col">
+                <div className="space-y-3 flex-1">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
@@ -95,7 +95,7 @@ export default function Landing() {
             </Card>
 
             {/* Produktbeschreibungen Tool */}
-            <Card className="hover-elevate transition-all" data-testid="card-product-creator">
+            <Card className="hover-elevate transition-all flex flex-col" data-testid="card-product-creator">
               <CardHeader className="space-y-4">
                 <div className="w-12 h-12 bg-chart-2/10 rounded-md flex items-center justify-center">
                   <ImagePlus className="w-6 h-6 text-chart-2" />
@@ -107,8 +107,8 @@ export default function Landing() {
                   </CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
+              <CardContent className="space-y-6 flex-1 flex flex-col">
+                <div className="space-y-3 flex-1">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-chart-2 flex-shrink-0 mt-0.5" />
                     <div>
