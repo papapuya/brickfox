@@ -652,7 +652,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Project not found' });
       }
 
-      const validation = createProductInProjectSchema.safeParse(req.body);
+      // Add projectId to request body for validation
+      const productData = { ...req.body, projectId };
+
+      const validation = createProductInProjectSchema.safeParse(productData);
       if (!validation.success) {
         return res.status(400).json({ error: 'Invalid product data', details: validation.error });
       }
