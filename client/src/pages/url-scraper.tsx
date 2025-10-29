@@ -49,6 +49,11 @@ export default function URLScraper() {
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
   
+  // Batch AI Generation
+  const [generatedDescriptions, setGeneratedDescriptions] = useState<Map<string, string>>(new Map());
+  const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
+  const [aiGenerationProgress, setAiGenerationProgress] = useState({ current: 0, total: 0 });
+  
   // Pagination options for multi-page scraping
   const [enablePagination, setEnablePagination] = useState(false);
   const [paginationSelector, setPaginationSelector] = useState("");
@@ -559,10 +564,86 @@ export default function URLScraper() {
     }
   };
 
+  // BATCH AI GENERATION: Generate descriptions for all scraped products
+  const handleGenerateAllDescriptions = async () => {
+    if (scrapedProducts.length === 0) return;
+
+    setIsGeneratingBatch(true);
+    setAiGenerationProgress({ current: 0, total: scrapedProducts.length });
+
+    const newDescriptions = new Map<string, string>();
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (let i = 0; i < scrapedProducts.length; i++) {
+        const product = scrapedProducts[i];
+        setAiGenerationProgress({ current: i + 1, total: scrapedProducts.length });
+
+        try {
+          const productData = {
+            productName: product.productName,
+            articleNumber: product.articleNumber,
+            ean: product.ean,
+            manufacturer: product.manufacturer,
+            price: product.price,
+            weight: product.weight,
+            category: product.category,
+            description: product.description,
+          };
+
+          const response = await fetch('/api/generate-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              extractedData: [{ extractedText: JSON.stringify(productData) }],
+              customAttributes: {
+                exactProductName: product.productName,
+              },
+              autoExtractedDescription: (product as any).autoExtractedDescription,
+              technicalDataTable: (product as any).technicalDataTable,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('AI-Generierung fehlgeschlagen');
+          }
+
+          const data = await response.json();
+          newDescriptions.set(product.articleNumber, data.description || '');
+          successCount++;
+
+        } catch (error) {
+          console.error(`Error generating description for ${product.productName}:`, error);
+          errorCount++;
+          // Continue with next product
+        }
+      }
+
+      setGeneratedDescriptions(newDescriptions);
+
+      toast({
+        title: "Batch-Generierung abgeschlossen",
+        description: `${successCount} Beschreibungen erfolgreich generiert${errorCount > 0 ? `, ${errorCount} Fehler` : ''}`,
+      });
+
+    } catch (error) {
+      console.error('Batch AI generation error:', error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : 'Batch-Generierung fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingBatch(false);
+      setAiGenerationProgress({ current: 0, total: 0 });
+    }
+  };
+
   const convertToCSV = (products: ScrapedProduct[]): string => {
     if (products.length === 0) return '';
 
-    // Fixed list of ALL expected fields (21 Nitecore selectors + base fields)
+    // Fixed list of ALL expected fields (21 Nitecore selectors + base fields + AI description)
     // This ensures ALL columns appear in CSV, even if fields are missing
     const orderedKeys = [
       'articleNumber',
@@ -573,6 +654,7 @@ export default function URLScraper() {
       'weight',
       'category',
       'description',
+      'aiDescription',
       'technicalTable',
       'length',
       'bodyDiameter',
@@ -598,6 +680,7 @@ export default function URLScraper() {
       weight: 'Gewicht',
       category: 'Kategorie',
       description: 'Beschreibung_HTML',
+      aiDescription: 'AI_MediaMarkt_Beschreibung',
       technicalTable: 'Technische_Tabelle',
       length: 'Länge_mm',
       bodyDiameter: 'Gehäusedurchmesser_mm',
@@ -619,6 +702,12 @@ export default function URLScraper() {
     // Fill missing fields with empty strings
     const rows = products.map(product => 
       orderedKeys.map(key => {
+        // Special handling for AI-generated description
+        if (key === 'aiDescription') {
+          const aiDesc = generatedDescriptions.get(product.articleNumber) || '';
+          return aiDesc.replace(/"/g, '""');
+        }
+        
         const value = product[key as keyof ScrapedProduct];
         
         if (key === 'images' && Array.isArray(value)) {
@@ -1196,9 +1285,22 @@ export default function URLScraper() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Gescrapte Produkte ({scrapedProducts.length})</h3>
               <div className="flex gap-2">
-                <Button onClick={() => {/* TODO: Generate all descriptions */}} variant="default">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Alle AI-Beschreibungen generieren
+                <Button 
+                  onClick={handleGenerateAllDescriptions} 
+                  variant="default"
+                  disabled={isGeneratingBatch}
+                >
+                  {isGeneratingBatch ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {aiGenerationProgress.current}/{aiGenerationProgress.total} generiert...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Alle AI-Beschreibungen generieren
+                    </>
+                  )}
                 </Button>
                 <Button onClick={downloadCSV} variant="outline">
                   <Download className="w-4 h-4 mr-2" />
@@ -1206,6 +1308,16 @@ export default function URLScraper() {
                 </Button>
               </div>
             </div>
+            
+            {/* AI Generation Progress Bar */}
+            {isGeneratingBatch && (
+              <div className="mb-4">
+                <Progress value={(aiGenerationProgress.current / aiGenerationProgress.total) * 100} className="h-2" />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Generiere MediaMarkt-Beschreibungen: {aiGenerationProgress.current} von {aiGenerationProgress.total}
+                </p>
+              </div>
+            )}
             
             <div className="border rounded-lg overflow-hidden">
               <div className="max-h-96 overflow-x-auto overflow-y-auto">
@@ -1233,6 +1345,7 @@ export default function URLScraper() {
                       <TableHead className="min-w-[140px]">Leuchtleistung max.</TableHead>
                       <TableHead className="min-w-[150px]">Leuchtweite max. (m)</TableHead>
                       <TableHead className="min-w-[250px]">Beschreibung</TableHead>
+                      <TableHead className="min-w-[100px]">AI Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1293,6 +1406,16 @@ export default function URLScraper() {
                               </Button>
                             </div>
                           ) : '-'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {generatedDescriptions.has(product.articleNumber) ? (
+                            <span className="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                              <Sparkles className="w-3 h-3" />
+                              Fertig
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
