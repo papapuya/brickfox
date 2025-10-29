@@ -3,12 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import type { Project } from "@shared/schema";
@@ -39,6 +42,13 @@ export default function URLScraper() {
   const [projectName, setProjectName] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Multi-Product Scraping
+  const [scrapingMode, setScrapingMode] = useState<"single" | "list">("single");
+  const [productLinkSelector, setProductLinkSelector] = useState("");
+  const [maxProducts, setMaxProducts] = useState(50);
+  const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
+
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
     queryKey: ['/api/projects'],
@@ -64,6 +74,145 @@ export default function URLScraper() {
     weight: "",
     category: ""
   });
+
+  const handleScrapeProductList = async () => {
+    if (!url.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine URL ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!productLinkSelector.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen CSS-Selektor für Produktlinks ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setScrapedProducts([]);
+    setBatchProgress({ current: 0, total: 0, status: "Suche nach Produkten..." });
+
+    try {
+      // Step 1: Get all product URLs from listing page
+      const listResponse = await fetch('/api/scrape-product-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: url.trim(),
+          productLinkSelector: productLinkSelector.trim(),
+          maxProducts
+        }),
+      });
+
+      if (!listResponse.ok) {
+        const error = await listResponse.json();
+        throw new Error(error.error || 'Fehler beim Abrufen der Produktliste');
+      }
+
+      const { productUrls } = await listResponse.json();
+
+      if (!productUrls || productUrls.length === 0) {
+        toast({
+          title: "Keine Produkte gefunden",
+          description: "Überprüfen Sie den CSS-Selektor für Produktlinks",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Produktliste gefunden",
+        description: `${productUrls.length} Produkte gefunden. Starte Scraping...`,
+      });
+
+      setBatchProgress({ current: 0, total: productUrls.length, status: "Scraping gestartet..." });
+
+      // Step 2: Scrape each product
+      const products: ScrapedProduct[] = [];
+      const activeSelectors: any = {};
+      Object.entries(selectors).forEach(([key, value]) => {
+        if (value.trim()) activeSelectors[key] = value;
+      });
+
+      let failedCount = 0;
+      for (let i = 0; i < productUrls.length; i++) {
+        const productUrl = productUrls[i];
+        setBatchProgress({ 
+          current: i + 1, 
+          total: productUrls.length, 
+          status: `Scrape Produkt ${i + 1}/${productUrls.length}...` 
+        });
+
+        try {
+          // Add timeout protection (20 seconds per product)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+          const response = await fetch('/api/scrape-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: productUrl,
+              selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined
+            }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json();
+            products.push(data.product);
+          } else {
+            console.error(`Fehler beim Scrapen von ${productUrl}`);
+            failedCount++;
+          }
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.error(`Timeout beim Scrapen von ${productUrl}`);
+          } else {
+            console.error(`Fehler beim Scrapen von ${productUrl}:`, err);
+          }
+          failedCount++;
+        }
+
+        // Small delay to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      if (failedCount > 0) {
+        toast({
+          title: "Teilweise erfolgreich",
+          description: `${products.length} erfolgreich, ${failedCount} fehlgeschlagen`,
+          variant: "destructive",
+        });
+      }
+
+      setScrapedProducts(products);
+      setBatchProgress({ current: products.length, total: productUrls.length, status: "Fertig!" });
+
+      toast({
+        title: "Scraping abgeschlossen",
+        description: `${products.length} von ${productUrls.length} Produkten erfolgreich gescraped`,
+      });
+
+    } catch (error) {
+      console.error('Product list scraping error:', error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : 'Scraping fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleScrape = async () => {
     if (!url.trim()) {
@@ -170,6 +319,68 @@ export default function URLScraper() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const convertToCSV = (products: ScrapedProduct[]): string => {
+    if (products.length === 0) return '';
+
+    // CSV Headers
+    const headers = [
+      'Artikelnummer',
+      'Produktname',
+      'EAN',
+      'Hersteller',
+      'Preis',
+      'Gewicht',
+      'Kategorie',
+      'Beschreibung',
+      'Anzahl_Bilder',
+      'Bild_URLs'
+    ];
+
+    // CSV Rows
+    const rows = products.map(product => [
+      product.articleNumber || '',
+      product.productName || '',
+      product.ean || '',
+      product.manufacturer || '',
+      product.price || '',
+      product.weight || '',
+      product.category || '',
+      (product.description || '').replace(/"/g, '""').replace(/<[^>]*>/g, ''), // Remove HTML tags and escape quotes
+      product.images?.length || '0',
+      product.images?.join(' | ') || '' // Join multiple URLs with pipe separator
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    return csvContent;
+  };
+
+  const downloadCSV = () => {
+    const csv = convertToCSV(scrapedProducts);
+    // Add UTF-8 BOM for Excel compatibility
+    const csvWithBOM = '\ufeff' + csv;
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `produktliste_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "CSV heruntergeladen",
+      description: `${scrapedProducts.length} Produkte exportiert`,
+    });
   };
 
   const handleSaveToProject = async () => {
@@ -289,41 +500,124 @@ export default function URLScraper() {
           </p>
         </div>
 
-        {/* URL Input */}
+        {/* URL Input with Tabs */}
         <Card className="p-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="url">Produkt-URL</Label>
-              <div className="flex gap-2 mt-2">
+          <Tabs value={scrapingMode} onValueChange={(value) => setScrapingMode(value as "single" | "list")}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="single">
+                <Package className="w-4 h-4 mr-2" />
+                Einzelnes Produkt
+              </TabsTrigger>
+              <TabsTrigger value="list">
+                <List className="w-4 h-4 mr-2" />
+                Produktliste
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="single" className="space-y-4">
+              <div>
+                <Label htmlFor="url">Produkt-URL</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="url"
+                    type="url"
+                    placeholder="https://www.beispiel.de/produkt/akku-123"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isLoading) {
+                        handleScrape();
+                      }
+                    }}
+                  />
+                  <Button onClick={handleScrape} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Scraping...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="w-4 h-4 mr-2" />
+                        Scrapen
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="list" className="space-y-4">
+              <div>
+                <Label htmlFor="list-url">Kategorieseiten-URL</Label>
                 <Input
-                  id="url"
+                  id="list-url"
                   type="url"
-                  placeholder="https://www.beispiel.de/produkt/akku-123"
+                  placeholder="https://www.beispiel.de/kategorie/akkus"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isLoading) {
-                      handleScrape();
-                    }
-                  }}
+                  className="mt-2"
                 />
-                <Button onClick={handleScrape} disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Scraping...
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="w-4 h-4 mr-2" />
-                      Scrapen
-                    </>
-                  )}
-                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  URL der Seite mit der Produktliste (z.B. Kategorie- oder Suchseite)
+                </p>
               </div>
-            </div>
 
-            {/* Advanced Selectors */}
+              <div>
+                <Label htmlFor="product-link-selector">Produktlink CSS-Selektor *</Label>
+                <Input
+                  id="product-link-selector"
+                  placeholder="a.product-link"
+                  value={productLinkSelector}
+                  onChange={(e) => setProductLinkSelector(e.target.value)}
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  CSS-Selektor für die Links zu einzelnen Produktseiten
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="max-products">Maximale Anzahl Produkte</Label>
+                <Input
+                  id="max-products"
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={maxProducts}
+                  onChange={(e) => setMaxProducts(parseInt(e.target.value) || 50)}
+                  className="mt-2"
+                />
+              </div>
+
+              <Button onClick={handleScrapeProductList} disabled={isLoading} className="w-full">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {batchProgress.status}
+                  </>
+                ) : (
+                  <>
+                    <List className="w-4 h-4 mr-2" />
+                    Produktliste scrapen
+                  </>
+                )}
+              </Button>
+
+              {isLoading && batchProgress.total > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{batchProgress.status}</span>
+                    <span>{batchProgress.current} / {batchProgress.total}</span>
+                  </div>
+                  <Progress value={(batchProgress.current / batchProgress.total) * 100} />
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          {/* Advanced Selectors */}
+          <div className="mt-4 space-y-4">
             <div>
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -508,6 +802,84 @@ export default function URLScraper() {
               >
                 Zu Projekt hinzufügen
               </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Product List Preview */}
+        {scrapedProducts.length > 0 && (
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Gescrapte Produkte ({scrapedProducts.length})</h3>
+              <Button onClick={downloadCSV} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Als CSV herunterladen
+              </Button>
+            </div>
+            
+            <div className="border rounded-lg overflow-hidden">
+              <div className="max-h-96 overflow-y-auto">
+                <Table>
+                  <TableHeader className="bg-muted">
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Bild</TableHead>
+                      <TableHead>Artikelnummer</TableHead>
+                      <TableHead>Produktname</TableHead>
+                      <TableHead>EAN</TableHead>
+                      <TableHead>Hersteller</TableHead>
+                      <TableHead>Preis</TableHead>
+                      <TableHead>Gewicht</TableHead>
+                      <TableHead>Kategorie</TableHead>
+                      <TableHead>Beschreibung</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scrapedProducts.map((product, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-mono text-sm">{index + 1}</TableCell>
+                        <TableCell>
+                          {product.images && product.images.length > 0 ? (
+                            <img 
+                              src={product.images[0]} 
+                              alt={product.productName}
+                              className="w-12 h-12 object-cover rounded border"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%23e5e7eb"/><text x="24" y="24" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">-</text></svg>';
+                              }}
+                              title={`${product.images.length} Bild(er)`}
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded border flex items-center justify-center text-muted-foreground text-xs">
+                              -
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{product.articleNumber || '-'}</TableCell>
+                        <TableCell className="font-medium">{product.productName || '-'}</TableCell>
+                        <TableCell className="font-mono text-sm">{product.ean || '-'}</TableCell>
+                        <TableCell>{product.manufacturer || '-'}</TableCell>
+                        <TableCell className="font-semibold">{product.price || '-'}</TableCell>
+                        <TableCell>{product.weight || '-'}</TableCell>
+                        <TableCell className="text-xs">{product.category || '-'}</TableCell>
+                        <TableCell className="text-xs max-w-xs truncate" title={product.description || ''}>
+                          {product.description ? product.description.substring(0, 100) + '...' : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+              <p className="font-semibold mb-1">CSV-Export beinhaltet:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                <li>Artikelnummer, Produktname, EAN, Hersteller</li>
+                <li>Preis, Gewicht, Kategorie, Beschreibung</li>
+                <li>Anzahl Bilder + Bild-URLs (pipe-getrennt)</li>
+                <li>UTF-8 kodiert - kompatibel mit Excel, Google Sheets und CSV-Tools</li>
+              </ul>
             </div>
           </Card>
         )}
