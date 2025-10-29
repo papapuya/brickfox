@@ -441,51 +441,40 @@ export default function CSVBulkDescription() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-foreground">
+                  <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
                     1. Benötigte Felder für Produktbeschreibung
+                    <span className="text-xs font-normal text-green-600 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                      ✨ Automatisch zugeordnet
+                    </span>
                   </h3>
                   <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
-                    <div className="grid grid-cols-12 gap-4 items-center pb-2 border-b">
-                      <div className="col-span-3">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">Benötigtes Feld</p>
-                      </div>
-                      <div className="col-span-4">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">Ihre CSV-Spalte</p>
-                      </div>
-                      <div className="col-span-5">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">Vorschau</p>
-                      </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Die Felder wurden automatisch aus Ihrer CSV zugeordnet:
+                    </p>
+                    <div className="space-y-3">
+                      {columnMappings.map(mapping => (
+                        <div key={mapping.field} className="flex items-center justify-between py-2 px-3 bg-background rounded-md border">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-medium">
+                              {mapping.label}
+                              {mapping.required && <span className="text-red-500 ml-1">*</span>}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground">←</span>
+                            <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                              {mapping.csvColumn || "Nicht gefunden"}
+                            </span>
+                            {mapping.preview && (
+                              <span className="text-xs text-muted-foreground max-w-xs truncate">
+                                "{mapping.preview}"
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    {columnMappings.map(mapping => (
-                      <div key={mapping.field} className="grid grid-cols-12 gap-4 items-center">
-                        <div className="col-span-3">
-                          <Label className="text-sm font-medium">
-                            {mapping.label}
-                            {mapping.required && <span className="text-red-500 ml-1">*</span>}
-                          </Label>
-                        </div>
-                        <div className="col-span-4">
-                          <Select value={mapping.csvColumn || "__NONE__"} onValueChange={(value) => updateMapping(mapping.field, value === "__NONE__" ? "" : value)}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Nicht zugeordnet" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__NONE__">Nicht zugeordnet</SelectItem>
-                              {csvColumns.map(col => (
-                                <SelectItem key={col} value={col}>{col}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="col-span-5">
-                          {mapping.preview && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              Vorschau: "{mapping.preview}"
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
 
