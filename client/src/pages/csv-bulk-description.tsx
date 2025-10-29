@@ -490,12 +490,15 @@ export default function CSVBulkDescription() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-foreground">
+                  <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
                     2. Benötigte Attribute für PIM (CSV-Export)
+                    <span className="text-xs font-normal text-green-600 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                      ✨ Automatisch generiert
+                    </span>
                   </h3>
                   <div className="bg-muted/30 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Wählen Sie die PIM-Felder aus, die beim CSV-Export automatisch hinzugefügt werden sollen:
+                      Diese Felder werden <strong>automatisch</strong> aus der AI-generierten Produktbeschreibung extrahiert - <strong>keine manuelle Zuordnung nötig!</strong> Wählen Sie nur aus, welche Felder Sie im CSV-Export benötigen:
                     </p>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
