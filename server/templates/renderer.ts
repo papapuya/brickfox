@@ -81,24 +81,29 @@ function buildTechnicalSpecsTable(
 ): Array<{label: string, value: string}> {
   const result: Array<{label: string, value: string}> = [];
 
-  for (const field of fields) {
-    let value = specs[field.label] || specs[field.key];
-    
-    if (value && value !== 'Nicht angegeben' && value !== 'Nicht sichtbar') {
-      value = cleanMarkdown(value);
-      
+  // 1:1 ÜBERNAHME: Alle Felder aus specs übernehmen (nicht nur vordefinierte!)
+  for (const [label, value] of Object.entries(specs)) {
+    if (value && value !== 'Nicht angegeben' && value !== 'Nicht sichtbar' && value !== '-') {
       result.push({
-        label: field.label,
-        value: value
-      });
-    } else if (field.required && field.fallback) {
-      result.push({
-        label: field.label,
-        value: cleanMarkdown(field.fallback)
+        label: label,
+        value: cleanMarkdown(value)
       });
     }
   }
 
+  // Falls keine Specs vorhanden, füge required Felder mit Fallbacks hinzu
+  if (result.length === 0) {
+    for (const field of fields) {
+      if (field.required && field.fallback) {
+        result.push({
+          label: field.label,
+          value: cleanMarkdown(field.fallback)
+        });
+      }
+    }
+  }
+
+  console.log(`📊 Technische Daten: ${result.length} Felder 1:1 übernommen`);
   return result;
 }
 
@@ -125,16 +130,19 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
 `
     : '';
 
+  // SICHERHEITSHINWEISE: Ohne Icons vom Lieferanten übernehmen
+  const safetyHtml = data.safetyNotice 
+    ? `<h3>Sicherheitshinweise</h3>
+<p>${data.safetyNotice.replace(/⚠️/g, '').replace(/[🔥⚡☢️]/g, '').trim()}</p>
+
+`
+    : '';
+
   return `<h2>${data.productName}</h2>
 <p>${data.narrative}</p>
 
 <p>${uspHtml}</p>
 
-${techTableHtml}
-
-<h3>Sicherheitshinweise</h3>
-<p>${data.safetyNotice}</p>
-
-<h3>Lieferumfang</h3>
+${techTableHtml}${safetyHtml}<h3>Lieferumfang</h3>
 <p>${data.packageContents}</p>`;
 }
