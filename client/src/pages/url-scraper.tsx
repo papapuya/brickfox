@@ -417,7 +417,7 @@ export default function URLScraper() {
       }
 
       const data = await response.json();
-      setGeneratedDescription(data.htmlCode || '');
+      setGeneratedDescription(data.description || '');
       
       toast({
         title: "Erfolgreich",
