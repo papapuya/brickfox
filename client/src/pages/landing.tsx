@@ -24,10 +24,10 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/csv-enricher">
+              <Link href="/csv-bulk-description">
                 <Button size="lg" className="w-full sm:w-auto">
-                  <FileSpreadsheet className="w-5 h-5 mr-2" />
-                  CSV Anreicherung starten
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  PIMPilot starten
                 </Button>
               </Link>
             </div>
@@ -45,17 +45,17 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {/* CSV Anreicherung Tool */}
-            <Card className="hover-elevate transition-all" data-testid="card-csv-enricher">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
+            {/* PIMPilot CSV Bulk Tool */}
+            <Card className="hover-elevate transition-all" data-testid="card-csv-bulk">
               <CardHeader className="space-y-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-md flex items-center justify-center">
-                  <FileSpreadsheet className="w-6 h-6 text-primary" />
+                  <Sparkles className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl mb-2">CSV Anreicherung</CardTitle>
+                  <CardTitle className="text-2xl mb-2">PIMPilot</CardTitle>
                   <CardDescription className="text-base">
-                    KI-gestützte Anreicherung von Produktdaten aus CSV-Dateien
+                    Automatische PIM-Daten Generierung aus CSV-Dateien
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -64,30 +64,30 @@ export default function Landing() {
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-medium">Automatische KI-Analyse</h4>
-                      <p className="text-sm text-muted-foreground">Produktdaten werden intelligent analysiert und angereichert</p>
+                      <h4 className="font-medium">Vollautomatische Generierung</h4>
+                      <p className="text-sm text-muted-foreground">AI generiert alle PIM-Felder automatisch aus CSV-Daten</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-medium">Flexible Spaltenauswahl</h4>
-                      <p className="text-sm text-muted-foreground">Wählen Sie genau die Spalten aus, die Sie benötigen</p>
+                      <h4 className="font-medium">MediaMarkt-konforme Titel</h4>
+                      <p className="text-sm text-muted-foreground">Automatische Generierung von TTL/TTB Produktnamen</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-medium">Export in verschiedenen Formaten</h4>
-                      <p className="text-sm text-muted-foreground">CSV, Excel und andere Formate verfügbar</p>
+                      <h4 className="font-medium">Massenverarbeitung</h4>
+                      <p className="text-sm text-muted-foreground">2000+ Produkte in wenigen Minuten verarbeiten</p>
                     </div>
                   </div>
                 </div>
                 <div className="pt-4">
-                  <Link href="/csv-enricher">
-                    <Button className="w-full" data-testid="button-csv-enricher">
-                      <FileSpreadsheet className="w-4 h-4 mr-2" />
-                      CSV Anreicherung starten
+                  <Link href="/csv-bulk-description">
+                    <Button className="w-full" data-testid="button-csv-bulk">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      PIMPilot starten
                     </Button>
                   </Link>
                 </div>

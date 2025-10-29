@@ -1,7 +1,7 @@
-# MediaMarkt Tools - Produktmanagement
+# PIMPilot - Produktmanagement
 
 ## Overview
-This full-stack web application automates the generation of AI-powered product descriptions from supplier data. It leverages OpenAI for intelligent text generation and Firecrawl for website analysis, aiming to streamline content creation for MediaMarkt. The system is designed for efficient mass processing of product data, primarily through CSV uploads, offering significant cost and speed advantages over image analysis. It supports dynamic, product-specific AI prompts and a modular architecture for scalability and maintainability.
+PIMPilot is a full-stack web application that automates the generation of AI-powered product descriptions and PIM metadata from supplier data. It leverages OpenAI for intelligent text generation and Firecrawl for website analysis, aiming to streamline content creation for MediaMarkt. The system is designed for efficient mass processing of product data (2000+ products), primarily through CSV uploads, offering significant cost and speed advantages over image analysis. It supports dynamic, product-specific AI prompts and a modular architecture for scalability and maintainability.
 
 ## User Preferences
 Keine spezifischen Präferenzen dokumentiert.

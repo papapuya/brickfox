@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Landing from "@/pages/landing";
-import CSVEnricher from "@/pages/csv-enricher";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
 import ProductDescriptionCreator from "@/pages/product-creator";
 import Projects from "@/pages/projects";
@@ -18,7 +17,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/csv-enricher" component={CSVEnricher} />
       <Route path="/csv-bulk-description" component={CSVBulkDescription} />
       <Route path="/projects" component={Projects} />
       <Route path="/project/:id" component={ProjectDetail} />

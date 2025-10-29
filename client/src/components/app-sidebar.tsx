@@ -19,11 +19,6 @@ const menuItems = [
     icon: Home,
   },
   {
-    title: "CSV Anreicherung",
-    url: "/csv-enricher",
-    icon: FileSpreadsheet,
-  },
-  {
     title: "CSV Bulk Beschreibungen",
     url: "/csv-bulk-description",
     icon: Zap,
