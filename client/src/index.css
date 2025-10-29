@@ -363,3 +363,27 @@ h1, h2, h3, h4 {
 a {
   @apply text-primary hover:text-primary-hover transition;
 }
+
+/* Permanente horizontale Scrollbar für Produkttabellen */
+.table-scroll-visible {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+.table-scroll-visible::-webkit-scrollbar {
+  height: 14px;
+}
+
+.table-scroll-visible::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.table-scroll-visible::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
+.table-scroll-visible::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
