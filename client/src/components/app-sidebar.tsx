@@ -1,4 +1,4 @@
-import { Home, FileSpreadsheet, ImagePlus, FolderOpen, Settings, Zap } from "lucide-react";
+import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -31,7 +31,7 @@ const menuItems = [
   {
     title: "URL Webscraper",
     url: "/url-scraper",
-    icon: ImagePlus,
+    icon: Globe,
   },
   {
     title: "API Credentials",

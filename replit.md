@@ -1,7 +1,7 @@
 # PIMPilot - Produktmanagement
 
 ## Overview
-PIMPilot is a full-stack web application that automates the generation of AI-powered product descriptions and PIM metadata from supplier data. It leverages OpenAI for intelligent text generation and Firecrawl for website analysis, aiming to streamline content creation for MediaMarkt. The system is designed for efficient mass processing of product data (2000+ products), primarily through CSV uploads, offering significant cost and speed advantages over image analysis. It supports dynamic, product-specific AI prompts and a modular architecture for scalability and maintainability.
+PIMPilot is a full-stack web application that automates the generation of AI-powered product descriptions and PIM metadata from supplier data. It leverages OpenAI for intelligent text generation and a custom Cheerio-based web scraper for website analysis, aiming to streamline content creation for MediaMarkt. The system is designed for efficient mass processing of product data (2000+ products), primarily through CSV uploads. It supports dynamic, product-specific AI prompts and a modular architecture for scalability and maintainability.
 
 ## User Preferences
 Keine spezifischen Präferenzen dokumentiert.
@@ -14,7 +14,8 @@ Keine spezifischen Präferenzen dokumentiert.
 - **Database**: SQLite (Development), PostgreSQL (Production via Neon)
 - **ORM**: Drizzle ORM
 - **UI Libraries**: shadcn/ui, Radix UI, Tailwind CSS
-- **AI/ML**: OpenAI API, Firecrawl API, Tesseract.js (OCR)
+- **AI/ML**: OpenAI API (GPT-4o)
+- **Web Scraping**: Cheerio (Custom scraper service)
 
 ### System Design
 The application features a **modular subprompt architecture** (implemented in `server/prompts/`) allowing for specialized AI prompts (e.g., USP generation, technical data extraction, narrative description, safety warnings, package contents) orchestrated by a central component. This design enhances testability, reusability, and cost-efficiency.
@@ -29,13 +30,14 @@ This system supports automatic category recognition via keyword matching and dyn
 **UI/UX**: Utilizes shadcn/ui, Radix UI, and Tailwind CSS for a modern and consistent user interface. The MediaMarkt-specific HTML template includes `h2/h4` structures, advantages (✅), technical tables, and package contents.
 
 **Core Features**:
--   **CSV Enrichment**: Upload and process product data via CSV.
--   **URL Analysis**: Direct scraping of supplier websites using Firecrawl.
--   **AI Generation**: Automated product descriptions in the MediaMarkt format.
+-   **CSV Bulk Processing**: Upload and process product data via CSV for mass generation (2000+ products).
+-   **URL Web Scraper**: Direct scraping of supplier websites using custom Cheerio-based scraper with configurable CSS selectors.
+-   **AI Generation**: Automated product descriptions in the MediaMarkt format using OpenAI GPT-4o.
 -   **Template System**: Customizable HTML templates for descriptions.
--   **Multi-URL Scraping**: Supports analyzing multiple URLs concurrently.
--   **Product-Specific AI Prompts**: Dynamic generation of USPs and descriptions based on actual product data, moving beyond generic templates.
+-   **Multi-URL Scraping**: Supports analyzing multiple URLs concurrently with timeout protection.
+-   **Product-Specific AI Prompts**: Dynamic generation of USPs and descriptions based on actual product data.
 -   **Product Categories**: Supports `battery`, `charger`, `tool`, `accessory`, and `testing_equipment` with improved category recognition.
+-   **Project Management**: Save and organize generated products into projects.
 
 ### Project Structure
 -   `client/`: React Frontend (components, hooks, lib, pages)
@@ -43,17 +45,16 @@ This system supports automatic category recognition via keyword matching and dyn
     -   `prompts/`: Modular Subprompt Architecture (base-system, usp-generation, tech-extraction, narrative, safety-warnings, package-contents, orchestrator)
     -   `templates/`: Category-based Template System (category-config, ai-generator, renderer)
     -   `ai-service.ts`: OpenAI Integration
-    -   `firecrawl-service.ts`: Firecrawl Integration
+    -   `scraper-service.ts`: Custom Cheerio-based Web Scraper
+    -   `storage.ts`: Project and Product Management
     -   `db.ts`: Database Setup
     -   `routes.ts`: API Routes
 -   `shared/`: Shared Type Schemas
 -   `dist/`: Build Output
 
 ## External Dependencies
--   **OpenAI API**: For AI-driven text generation.
--   **Firecrawl API**: For website scraping and content analysis.
--   **Tesseract.js**: For Optical Character Recognition (OCR) on product images.
--   **Neon (PostgreSQL)**: Production database hosting.
+-   **OpenAI API**: For AI-driven text generation (GPT-4o).
+-   **Neon (PostgreSQL)**: Production database hosting (optional, uses SQLite in development).
 
 ## 💰 Kosten & Skalierbarkeit für Massenverarbeitung
 
@@ -63,43 +64,30 @@ This system supports automatic category recognition via keyword matching and dyn
 |---------------------|-------------------|---------------|-----------------|
 | **CSV + GPT-4o** (empfohlen) | ~$0.013 | ~$26 | Mittel (1-2h) |
 | **CSV + GPT-4o-mini** | ~$0.0008 | ~$1.60 | Schnell (30-60min) |
-| **CSV + Caching** (50% identisch) | ~$0.01 | ~$20 | Sehr schnell |
-| **Bild + GPT-4o Vision** | ~$0.15 | ~$300 | Langsam (2-3h) |
-| **PDF + Firecrawl + GPT-4o** | ~$0.025 | ~$50 | Mittel (1-2h) |
-| **URL Scraping + Firecrawl + GPT-4o** | ~$0.016 | ~$32 | Mittel-Schnell |
+| **URL Scraping + Cheerio + GPT-4o** | ~$0.013 | ~$26 | Mittel-Schnell |
 
-**Best Practice**: CSV als Hauptquelle, Vision API nur für fehlende Daten
+**Best Practice**: CSV als Hauptquelle für Massenverarbeitung, URL Scraper für einzelne Produkte oder spezielle Fälle
 
-### Firecrawl API Kosten (2025)
+### Custom Web Scraper (Cheerio)
 
-**Credit-System:**
-- Base Scraping (normale Website): **1 Credit pro Seite**
-- PDF Parsing: **+1 Credit pro Seite** (total 2 Credits/Seite)
-- Structured Extraction (JSON): **+5 Credits pro Request**
-- Stealth Proxy Mode: **+4 Credits**
+**Features:**
+- ✅ Kostenlos (keine externen API-Kosten)
+- ✅ Konfigurierbare CSS-Selektoren für flexible Datenextraktion
+- ✅ Timeout-Schutz (15 Sekunden) für zuverlässige Verarbeitung
+- ✅ User-Agent Headers für bessere Kompatibilität
+- ✅ Preis-Parsing mit korrekter Dezimalkomma-Konvertierung (19,99 € → 19.99)
+- ✅ Multi-URL Scraping für Produktlisten
+- ✅ Direkte Integration mit OpenAI für AI-Beschreibungen
 
-**Pricing:**
-- **Free Tier**: Verfügbar zum Testen
-- **Starter**: Ab **$16/Monat** für 1.000 Credits
-- **Pro**: Höhere Volumina verfügbar
+**Limitationen:**
+- ⚠️ Funktioniert nicht mit JavaScript-heavy Websites (z.B. Single Page Apps)
+- ⚠️ Kann durch Bot-Schutz blockiert werden
+- ⚠️ Kein PDF-Parsing (nur HTML-Seiten)
 
-**Beispiel-Rechnung (2000 Produkte):**
+**Workflow:**
 ```
-Szenario 1: URLs scrapen
-- 2000 URLs × 1 Credit = 2.000 Credits (~$32)
-- Mit Structured Extraction: 2000 × 6 Credits = 12.000 Credits (~$192)
-
-Szenario 2: PDF-Kataloge (5 Seiten pro Produkt)
-- 2000 PDFs × 5 Seiten × 2 Credits = 20.000 Credits (~$320)
+URL eingeben → CSS-Selektoren konfigurieren → Scraping → AI-Generierung → Speichern im Projekt
 ```
-
-**Firecrawl PDF-Capabilities:**
-- ✅ Direkte PDF-Extraktion von URLs (keine File-Uploads)
-- ✅ Multi-Spalten-Layouts und Tabellen
-- ✅ Markdown oder HTML Output
-- ✅ Strukturierte JSON-Extraktion mit AI
-- ✅ Batch-Processing mehrerer PDFs
-- ⚠️ Password-geschützte PDFs benötigen Spezialbehandlung
 
 **CSV-Anforderungen (Akku-Kategorie):**
 
@@ -181,15 +169,12 @@ CSV hochladen → Spalten-Mapping → AI-Generierung → Export mit Produktbesch
 | Service | Verwendung | Kosten |
 |---------|-----------|--------|
 | **OpenAI API** | GPT-4o für Produktbeschreibungen | $0.013/Produkt |
-| **Firecrawl API** | URL/PDF Scraping (optional) | Ab $16/Monat für 1.000 Credits |
 
 **Einmalige Bulk-Verarbeitung (2000 Akkus):**
-- OpenAI: ~$26 (CSV) bis ~$300 (Bilder)
-- Firecrawl: ~$32 (URLs) bis ~$320 (PDFs)
+- OpenAI: ~$26 (CSV)
 
 **Laufende Nutzung (z.B. 100 neue Produkte/Monat):**
 - OpenAI: ~$1.30/Monat (CSV)
-- Firecrawl: Optional, nur bei Bedarf
 
 ### Gesamtkosten-Übersicht
 
@@ -214,8 +199,9 @@ Total Production:       ~$45-75/Monat
 
 ### Kosten-Spar-Tipps
 
-1. **CSV bevorzugen** statt Bildanalyse (90% günstiger)
-2. **Statisches Deployment** wenn möglich (keine Compute Units)
-3. **Caching nutzen** für identische Produkte
-4. **Guthaben ausschöpfen** innerhalb des Monats (verfällt sonst)
-5. **Budgetlimits setzen** in Replit-Einstellungen
+1. **CSV bevorzugen** für Massenverarbeitung (schnell und günstig)
+2. **URL Scraper** nur für einzelne Produkte nutzen (kostenlos außer OpenAI)
+3. **Statisches Deployment** wenn möglich (keine Compute Units)
+4. **Caching nutzen** für identische Produkte
+5. **Guthaben ausschöpfen** innerhalb des Monats (verfällt sonst)
+6. **Budgetlimits setzen** in Replit-Einstellungen
