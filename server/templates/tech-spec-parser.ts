@@ -129,23 +129,45 @@ export function extractTechSpecsFromStructured(
   
   // DYNAMISCH: Extrahiere ALLE übrigen Felder (auch wenn nicht in categoryConfig)
   // Dies ermöglicht dynamische Tabellen mit 18+ Specs
-  const processedKeys = new Set(Object.keys(specs).map(k => normalizeFieldName(k)));
+  const processedKeys = new Set();
+  
+  // Sammle alle bereits verarbeiteten Feldnamen (normalisiert)
+  for (const specKey of Object.keys(specs)) {
+    processedKeys.add(normalizeFieldName(specKey));
+  }
+  
+  // Sammle auch alle Quell-Keys die bereits verarbeitet wurden
+  for (const field of categoryConfig.technicalFields) {
+    processedKeys.add(normalizeFieldName(field.key));
+    processedKeys.add(normalizeFieldName(field.label));
+  }
   
   for (const key of Object.keys(structuredData)) {
     const value = structuredData[key];
     
-    // Skip bereits verarbeitete Felder
-    if (processedKeys.has(normalizeFieldName(key))) continue;
+    // Skip bereits verarbeitete Felder (normalisiert vergleichen)
+    const normalizedKey = normalizeFieldName(key);
+    if (processedKeys.has(normalizedKey)) {
+      console.log(`⏭️ Skipping ${key} (already processed as ${normalizedKey})`);
+      continue;
+    }
     
     // Skip Meta-Felder
-    if (['productName', 'product_name', 'seoName', 'description'].includes(key)) continue;
+    if (['productName', 'product_name', 'seoName', 'description', 'productname'].includes(key.toLowerCase())) {
+      console.log(`⏭️ Skipping ${key} (meta field)`);
+      continue;
+    }
     
     // Nur gültige Werte
-    if (!isValidValue(value)) continue;
+    if (!isValidValue(value)) {
+      console.log(`⏭️ Skipping ${key} (invalid value: ${value})`);
+      continue;
+    }
     
-    // Formatiere Feldnamen (z.B. "capacity_mah" → "Kapazität mAh")
+    // Formatiere Feldnamen (z.B. "capacity_mah" → "Kapazität Mah", "Länge mm" → "Länge Mm")
     const formattedKey = formatFieldName(key);
     specs[formattedKey] = value;
+    processedKeys.add(normalizedKey);
     console.log(`✅ 1:1 Dynamisches Feld: ${formattedKey} = ${value}`);
   }
   
