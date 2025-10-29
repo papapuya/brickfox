@@ -360,6 +360,9 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.technicalDataTable = smartExtraction.technicalDataTable;
   }
 
+  // INTELLIGENT TABLE PARSER: Extract structured technical data from properties tables
+  parsePropertiesTable($, product);
+
   console.log('Scraped product:', {
     articleNumber: product.articleNumber,
     productName: product.productName,
@@ -455,6 +458,71 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
   }
 
   return result;
+}
+
+/**
+ * INTELLIGENT TABLE PARSER: Extract structured technical data from generic property tables
+ * Nitecore-style: <th class="properties-label">Länge:</th><td class="properties-value">156 mm</td>
+ */
+function parsePropertiesTable($: cheerio.CheerioAPI, product: any): void {
+  // Find the technical properties table
+  const table = $('.product-detail-properties-table, table.table-striped, .properties-table').first();
+  
+  if (table.length === 0) {
+    return; // No properties table found
+  }
+
+  console.log('Found properties table, parsing...');
+
+  // Parse each row
+  table.find('tr').each((_, row) => {
+    const $row = $(row);
+    const label = $row.find('th, .properties-label').first().text().trim().toLowerCase();
+    const value = $row.find('td, .properties-value').first().text().trim();
+
+    if (!label || !value) return;
+
+    // Map labels to product fields using keywords
+    if (label.includes('länge') && !label.includes('leucht')) {
+      product.length = value;
+    } else if (label.includes('gehäusedurchmesser') || label.includes('body diameter') || label.includes('bodydurchmesser')) {
+      product.bodyDiameter = value;
+    } else if (label.includes('kopfdurchmesser') || label.includes('head diameter')) {
+      product.headDiameter = value;
+    } else if (label.includes('gewicht ohne akku') || label.includes('weight without battery')) {
+      product.weightWithoutBattery = value;
+    } else if (label.includes('gesamt gewicht') || label.includes('total weight') || (label.includes('gewicht') && label.includes('gesamt'))) {
+      product.totalWeight = value;
+    } else if (label.includes('stromversorgung') || label.includes('power supply') || label.includes('batterie')) {
+      product.powerSupply = value;
+    } else if (label.includes('leuchtmittel 1') || label.includes('led 1') || label === 'led1') {
+      product.led1 = value;
+    } else if (label.includes('leuchtmittel 2') || label.includes('led 2') || label === 'led2') {
+      product.led2 = value;
+    } else if (label.includes('leuchtmittel') && !product.led1) {
+      product.led1 = value; // First LED field
+    } else if (label.includes('spotintensität') || label.includes('spot intensity') || label.includes('candela')) {
+      product.spotIntensity = value;
+    } else if (label.includes('leuchtleistung') || label.includes('max output') || label.includes('lumen')) {
+      product.maxLuminosity = value;
+    } else if (label.includes('leuchtweite') || label.includes('beam distance') || label.includes('throw')) {
+      product.maxBeamDistance = value;
+    }
+  });
+
+  console.log('Parsed technical data:', {
+    length: product.length,
+    bodyDiameter: product.bodyDiameter,
+    headDiameter: product.headDiameter,
+    weightWithoutBattery: product.weightWithoutBattery,
+    totalWeight: product.totalWeight,
+    powerSupply: product.powerSupply,
+    led1: product.led1,
+    led2: product.led2,
+    spotIntensity: product.spotIntensity,
+    maxLuminosity: product.maxLuminosity,
+    maxBeamDistance: product.maxBeamDistance
+  });
 }
 
 /**

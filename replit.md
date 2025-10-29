@@ -74,6 +74,8 @@ This system supports automatic category recognition via keyword matching and dyn
 - ✅ Kostenlos (keine externen API-Kosten)
 - ✅ Konfigurierbare CSS-Selektoren für flexible Datenextraktion
 - ✅ **Intelligente Auto-Erkennung**: Findet automatisch Produktlinks ohne manuelle Selektoren (16 gängige Muster)
+- ✅ **Intelligenter Tabellen-Parser**: Extrahiert automatisch technische Daten aus generischen Property-Tabellen (Nitecore-Stil)
+- ✅ **Keyword-basiertes Mapping**: Erkennt Felder wie "Länge", "Gewicht", "Leuchtmittel" automatisch
 - ✅ Timeout-Schutz (20 Sekunden pro Produkt) mit AbortController für robuste Verarbeitung
 - ✅ User-Agent Headers für bessere Kompatibilität
 - ✅ Preis-Parsing mit korrekter Dezimalkomma-Konvertierung (19,99 € → 19.99)
