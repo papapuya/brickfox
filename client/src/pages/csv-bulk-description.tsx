@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Play, DollarSign, Eye, Code, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Play, DollarSign, Eye, Code, Copy, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -502,6 +502,10 @@ export default function CSVBulkDescription() {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setCurrentStep('configure')}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Zurück zu Spalten
+                  </Button>
                   <Button variant="outline" onClick={reset}>
                     Neue Datei
                   </Button>
