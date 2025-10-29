@@ -44,7 +44,7 @@ export default function URLScraper() {
 
   // Multi-Product Scraping
   const [scrapingMode, setScrapingMode] = useState<"single" | "list">("single");
-  const [productLinkSelector, setProductLinkSelector] = useState("a.product-link");
+  const [productLinkSelector, setProductLinkSelector] = useState("");
   const [maxProducts, setMaxProducts] = useState(50);
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
