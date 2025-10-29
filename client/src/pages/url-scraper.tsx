@@ -156,35 +156,131 @@ export default function URLScraper() {
     setBatchProgress({ current: 0, total: 0, status: enablePagination ? "Scrape alle Seiten..." : "Suche nach Produkten..." });
 
     try {
-      // Step 1: Get all product URLs from listing page (single or multi-page)
-      const apiEndpoint = enablePagination ? '/api/scrape-all-pages' : '/api/scrape-product-list';
-      const requestBody: any = {
-        url: url.trim(),
-        productLinkSelector: productLinkSelector.trim() || null,
-        maxProducts,
-        userAgent: userAgent || undefined,
-        cookies: sessionCookies || undefined
-      };
+      let productUrls: string[] = [];
 
-      // Add pagination-specific params
+      // Step 1: Get all product URLs from listing page
       if (enablePagination) {
-        requestBody.paginationSelector = paginationSelector.trim() || null;
-        requestBody.maxPages = maxPages;
-        setBatchProgress({ current: 0, total: 0, status: `Scrape bis zu ${maxPages} Seiten...` });
+        // Use SSE for multi-page scraping with live progress
+        productUrls = await new Promise((resolve, reject) => {
+          const requestBody = {
+            url: url.trim(),
+            productLinkSelector: productLinkSelector.trim() || null,
+            paginationSelector: paginationSelector.trim() || null,
+            maxPages,
+            maxProducts,
+            userAgent: userAgent || undefined,
+            cookies: sessionCookies || undefined
+          };
+
+          // Create URL with query parameters for SSE
+          const params = new URLSearchParams();
+          Object.entries(requestBody).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              params.append(key, String(value));
+            }
+          });
+
+          fetch('/api/scrape-all-pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          }).then(response => {
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+
+            if (!reader) {
+              reject(new Error('No response body'));
+              return;
+            }
+
+            const readStream = async () => {
+              let buffer = ''; // Buffer for incomplete lines
+              
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+
+                  // Decode chunk (do NOT flush decoder - keep state for multi-byte UTF-8)
+                  buffer += decoder.decode(value, { stream: true });
+
+                  // Split on newlines
+                  const lines = buffer.split('\n');
+                  
+                  // Keep the last incomplete line in the buffer
+                  buffer = lines.pop() || '';
+
+                  // Process complete lines
+                  for (const line of lines) {
+                    if (line.trim() && line.startsWith('data: ')) {
+                      try {
+                        const data = JSON.parse(line.substring(6));
+                        
+                        if (data.type === 'progress') {
+                          setBatchProgress({
+                            current: data.currentPage,
+                            total: maxPages,
+                            status: data.message
+                          });
+                        } else if (data.type === 'complete') {
+                          resolve(data.productUrls);
+                          return;
+                        } else if (data.type === 'error') {
+                          reject(new Error(data.error));
+                          return;
+                        }
+                      } catch (parseErr) {
+                        console.error('Failed to parse SSE line:', line, parseErr);
+                      }
+                    }
+                  }
+                }
+
+                // Process any remaining buffered data
+                if (buffer.trim() && buffer.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(buffer.substring(6));
+                    if (data.type === 'complete') {
+                      resolve(data.productUrls);
+                    } else if (data.type === 'error') {
+                      reject(new Error(data.error));
+                    }
+                  } catch (parseErr) {
+                    console.error('Failed to parse final SSE buffer:', buffer, parseErr);
+                  }
+                }
+              } catch (err) {
+                reject(err);
+              }
+            };
+
+            readStream();
+          }).catch(reject);
+        });
+      } else {
+        // Single page scraping (no SSE needed)
+        const requestBody = {
+          url: url.trim(),
+          productLinkSelector: productLinkSelector.trim() || null,
+          maxProducts,
+          userAgent: userAgent || undefined,
+          cookies: sessionCookies || undefined
+        };
+
+        const listResponse = await fetch('/api/scrape-product-list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!listResponse.ok) {
+          const error = await listResponse.json();
+          throw new Error(error.error || 'Fehler beim Abrufen der Produktliste');
+        }
+
+        const data = await listResponse.json();
+        productUrls = data.productUrls;
       }
-
-      const listResponse = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!listResponse.ok) {
-        const error = await listResponse.json();
-        throw new Error(error.error || 'Fehler beim Abrufen der Produktliste');
-      }
-
-      const { productUrls } = await listResponse.json();
 
       if (!productUrls || productUrls.length === 0) {
         toast({

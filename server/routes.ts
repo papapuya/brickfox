@@ -278,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Product Scraper: Multi-page scraping with pagination
+  // Product Scraper: Multi-page scraping with pagination (SSE for live progress)
   app.post('/api/scrape-all-pages', async (req, res) => {
     try {
       const { 
@@ -299,8 +299,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Pagination selector: ${paginationSelector || 'auto-detect'}`);
       console.log(`Max pages: ${maxPages || 10}, Max products: ${maxProducts || 500}`);
 
+      // Set SSE headers for real-time progress
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      });
+
       // Import scrapeAllPages function
       const { scrapeAllPages } = await import('./scraper-service.js');
+
+      // Progress callback to send updates
+      const progressCallback = (currentPage: number, totalProducts: number) => {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'progress',
+          currentPage, 
+          totalProducts,
+          message: `📄 Seite ${currentPage} gescraped - ${totalProducts} Produkte gefunden`
+        })}\n\n`);
+      };
 
       const productUrls = await scrapeAllPages(
         url,
@@ -312,22 +331,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent,
           cookies,
           timeout: 15000
-        }
+        },
+        progressCallback
       );
 
-      res.json({
+      // Send final result
+      res.write(`data: ${JSON.stringify({ 
+        type: 'complete',
         success: true,
         productUrls,
         count: productUrls.length,
-        message: `Scraped ${productUrls.length} products from multiple pages`
-      });
+        message: `✓ Fertig! ${productUrls.length} Produkte von mehreren Seiten gescraped`
+      })}\n\n`);
+      
+      res.end();
 
     } catch (error) {
       console.error('Multi-page scraping error:', error);
-      res.status(500).json({
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error',
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      })}\n\n`);
+      res.end();
     }
   });
 

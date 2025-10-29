@@ -392,123 +392,56 @@ export default function Suppliers() {
 
             <div className="border-t pt-4">
               <h3 className="font-semibold mb-3">Produkt-Selektoren (optional)</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="selector-articleNumber">Artikelnummer</Label>
-                  <Input
-                    id="selector-articleNumber"
-                    value={formData.selectors.articleNumber}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, articleNumber: e.target.value }
-                    })}
-                    placeholder=".product-code"
-                  />
-                </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                {Object.keys(formData.selectors).length} Selektoren konfiguriert
+              </p>
+              <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+                {Object.entries(formData.selectors).map(([key, value]) => {
+                  // Generate friendly label names
+                  const labelMap: Record<string, string> = {
+                    articleNumber: "Artikelnummer",
+                    productName: "Produktname",
+                    ean: "EAN",
+                    manufacturer: "Hersteller",
+                    price: "Preis",
+                    weight: "Gewicht",
+                    description: "Beschreibung",
+                    images: "Bilder",
+                    category: "Kategorie",
+                    technicalTable: "Technische Tabelle",
+                    length: "Länge (mm)",
+                    bodyDiameter: "Gehäusedurchmesser (mm)",
+                    headDiameter: "Kopfdurchmesser (mm)",
+                    weightWithoutBattery: "Gewicht ohne Akku (g)",
+                    totalWeight: "Gesamt Gewicht (g)",
+                    powerSupply: "Stromversorgung",
+                    led1: "Leuchtmittel 1",
+                    led2: "Leuchtmittel 2",
+                    spotIntensity: "Spotintensität (cd)",
+                    maxLuminosity: "Leuchtleistung max.",
+                    maxBeamDistance: "Leuchtweite max. (m)"
+                  };
 
-                <div>
-                  <Label htmlFor="selector-productName">Produktname</Label>
-                  <Input
-                    id="selector-productName"
-                    value={formData.selectors.productName}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, productName: e.target.value }
-                    })}
-                    placeholder="h1"
-                  />
-                </div>
+                  const label = labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1);
 
-                <div>
-                  <Label htmlFor="selector-ean">EAN</Label>
-                  <Input
-                    id="selector-ean"
-                    value={formData.selectors.ean}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, ean: e.target.value }
-                    })}
-                    placeholder=".ean"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="selector-manufacturer">Hersteller</Label>
-                  <Input
-                    id="selector-manufacturer"
-                    value={formData.selectors.manufacturer}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, manufacturer: e.target.value }
-                    })}
-                    placeholder=".brand"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="selector-price">Preis</Label>
-                  <Input
-                    id="selector-price"
-                    value={formData.selectors.price}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, price: e.target.value }
-                    })}
-                    placeholder=".price"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="selector-weight">Gewicht</Label>
-                  <Input
-                    id="selector-weight"
-                    value={formData.selectors.weight}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, weight: e.target.value }
-                    })}
-                    placeholder=".weight"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="selector-description">Beschreibung</Label>
-                  <Input
-                    id="selector-description"
-                    value={formData.selectors.description}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, description: e.target.value }
-                    })}
-                    placeholder=".product-description"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="selector-images">Bilder</Label>
-                  <Input
-                    id="selector-images"
-                    value={formData.selectors.images}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, images: e.target.value }
-                    })}
-                    placeholder=".product-image img"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="selector-category">Kategorie</Label>
-                  <Input
-                    id="selector-category"
-                    value={formData.selectors.category}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, category: e.target.value }
-                    })}
-                    placeholder=".breadcrumb"
-                  />
-                </div>
+                  return (
+                    <div key={key}>
+                      <Label htmlFor={`selector-${key}`} className="text-sm">
+                        {label}
+                      </Label>
+                      <Input
+                        id={`selector-${key}`}
+                        value={value || ""}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          selectors: { ...formData.selectors, [key]: e.target.value }
+                        })}
+                        placeholder={`CSS-Selektor für ${label}`}
+                        className="text-sm"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
