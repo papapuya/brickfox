@@ -1,16 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -101,32 +91,12 @@ export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescript
                   </TooltipProvider>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={product.produktbeschreibung}
-                      onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
-                      className="text-xs resize-none min-h-[100px] font-mono flex-1"
-                      data-testid={`input-beschreibung-${product.id}`}
-                    />
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="shrink-0">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Vorschau: {product.produktname}</DialogTitle>
-                          <DialogDescription>
-                            Gerenderte HTML-Produktbeschreibung
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="border rounded-md p-6 bg-background prose prose-sm max-w-none">
-                          <div dangerouslySetInnerHTML={{ __html: product.produktbeschreibung }} />
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  <Textarea
+                    value={product.produktbeschreibung}
+                    onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
+                    className="text-xs resize-none min-h-[100px] font-mono"
+                    data-testid={`input-beschreibung-${product.id}`}
+                  />
                 </td>
                 <td className="px-4 py-3">
                   <Textarea
@@ -145,60 +115,20 @@ export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescript
                   />
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={product.seo_beschreibung}
-                      onChange={(e) => onUpdateProduct(product.id, 'seo_beschreibung', e.target.value)}
-                      className="text-sm resize-none min-h-[80px] font-sans flex-1"
-                      data-testid={`input-seo-${product.id}`}
-                    />
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="shrink-0">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>SEO Beschreibung: {product.produktname}</DialogTitle>
-                          <DialogDescription>
-                            Gerenderte SEO Beschreibung (max. 150 Zeichen)
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="border rounded-md p-6 bg-background prose prose-sm max-w-none">
-                          <div dangerouslySetInnerHTML={{ __html: product.seo_beschreibung }} />
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  <Textarea
+                    value={product.seo_beschreibung}
+                    onChange={(e) => onUpdateProduct(product.id, 'seo_beschreibung', e.target.value)}
+                    className="text-sm resize-none min-h-[80px] font-sans"
+                    data-testid={`input-seo-${product.id}`}
+                  />
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={product.kurzbeschreibung}
-                      onChange={(e) => onUpdateProduct(product.id, 'kurzbeschreibung', e.target.value)}
-                      className="text-sm resize-none min-h-[80px] font-sans flex-1"
-                      data-testid={`input-kurz-${product.id}`}
-                    />
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="shrink-0">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Kurzbeschreibung: {product.produktname}</DialogTitle>
-                          <DialogDescription>
-                            Gerenderte Kurzbeschreibung (max. 300 Zeichen)
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="border rounded-md p-6 bg-background prose prose-sm max-w-none">
-                          <div dangerouslySetInnerHTML={{ __html: product.kurzbeschreibung }} />
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  <Textarea
+                    value={product.kurzbeschreibung}
+                    onChange={(e) => onUpdateProduct(product.id, 'kurzbeschreibung', e.target.value)}
+                    className="text-sm resize-none min-h-[80px] font-sans"
+                    data-testid={`input-kurz-${product.id}`}
+                  />
                 </td>
               </tr>
             ))}
