@@ -1320,7 +1320,7 @@ export default function URLScraper() {
             )}
             
             <div className="border rounded-lg overflow-hidden">
-              <div className="max-h-96 overflow-x-scroll overflow-y-auto">
+              <div className="max-h-96 overflow-x-auto overflow-y-auto [&::-webkit-scrollbar]:h-3 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
                 <Table>
                   <TableHeader className="bg-muted sticky top-0 z-10">
                     <TableRow>
