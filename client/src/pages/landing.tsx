@@ -16,12 +16,11 @@ export default function Landing() {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-              Produktdaten-Tools für{" "}
-              <span className="text-primary">MediaMarkt</span>
+              <span className="text-primary">PIMPilot</span> - AI Produktbeschreibung Generator
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              KI-gestützte Tools für CSV-Anreicherung und Produktbeschreibungen
+              Automatische PIM-Daten Generierung • AI-gestützte Produktbeschreibungen • MediaMarkt-konforme Titel
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

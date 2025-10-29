@@ -145,7 +145,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            MediaMarkt CSV Produktdaten-Anreicherung
+            PIMPilot - CSV Produktdaten-Anreicherung
           </h1>
           <p className="text-sm text-muted-foreground">
             MediaMarkt-konforme Titel-Generierung (TTL/TTB) • Technische Daten-Extraktion • Inline-Bearbeitung • Flexibler CSV-Export
