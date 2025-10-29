@@ -395,6 +395,9 @@ export default function CSVBulkDescription() {
 
       if (response.ok) {
         savedCount++;
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to save product:', errorText);
       }
     }
     return savedCount;
