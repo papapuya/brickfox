@@ -440,39 +440,51 @@ export default function CSVBulkDescription() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
-                    1. Benötigte Felder für Produktbeschreibung
-                    <span className="text-xs font-normal text-green-600 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
-                      ✨ Automatisch zugeordnet
-                    </span>
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">
+                    1. CSV-Vorschau
                   </h3>
-                  <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+                  <div className="bg-muted/30 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Die Felder wurden automatisch aus Ihrer CSV zugeordnet:
+                      Hochgeladene Datei: <strong>{file?.name}</strong> • {rawData.length} Produkte
                     </p>
-                    <div className="space-y-3">
-                      {columnMappings.map(mapping => (
-                        <div key={mapping.field} className="flex items-center justify-between py-2 px-3 bg-background rounded-md border">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
-                            <span className="text-sm font-medium">
-                              {mapping.label}
-                              {mapping.required && <span className="text-red-500 ml-1">*</span>}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground">←</span>
-                            <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                              {mapping.csvColumn || "Nicht gefunden"}
-                            </span>
-                            {mapping.preview && (
-                              <span className="text-xs text-muted-foreground max-w-xs truncate">
-                                "{mapping.preview}"
-                              </span>
+                    <div className="overflow-x-auto border rounded-md bg-background">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50 border-b">
+                          <tr>
+                            {csvColumns.slice(0, 6).map((col, idx) => (
+                              <th key={idx} className="px-3 py-2 text-left font-medium text-muted-foreground">
+                                {col}
+                              </th>
+                            ))}
+                            {csvColumns.length > 6 && (
+                              <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                                +{csvColumns.length - 6} weitere
+                              </th>
                             )}
-                          </div>
-                        </div>
-                      ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rawData.slice(0, 3).map((row, rowIdx) => (
+                            <tr key={rowIdx} className="border-b last:border-0 hover:bg-muted/20">
+                              {csvColumns.slice(0, 6).map((col, colIdx) => (
+                                <td key={colIdx} className="px-3 py-2 max-w-[200px] truncate">
+                                  {row[col] || '-'}
+                                </td>
+                              ))}
+                              {csvColumns.length > 6 && (
+                                <td className="px-3 py-2 text-muted-foreground">...</td>
+                              )}
+                            </tr>
+                          ))}
+                          {rawData.length > 3 && (
+                            <tr>
+                              <td colSpan={Math.min(csvColumns.length, 7)} className="px-3 py-2 text-center text-muted-foreground text-xs">
+                                ... und {rawData.length - 3} weitere Produkte
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
