@@ -132,15 +132,69 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     const element = $(selectors.price).first();
     let priceText = element.text().trim() || element.attr('content')?.trim() || '';
     
-    // Keep German format with comma and Euro symbol
-    // Just clean up extra whitespace but preserve "89,90 €" format
-    priceText = priceText.replace(/\s+/g, ' ').trim();
-    
-    // If we only got a number without currency, add " €" 
-    if (priceText && !priceText.includes('€') && !priceText.includes('$') && !priceText.includes('£')) {
-      // If it's just a number with comma, format as German price
-      if (/^\d+[,.]?\d*$/.test(priceText)) {
-        priceText = priceText.replace('.', ',') + ' €';
+    if (priceText) {
+      // Step 1: Extract only the numeric portion with separators
+      // Match pattern: optional digits, separator, digits (supports various formats)
+      const numericMatch = priceText.match(/[\d,.]+/);
+      if (numericMatch) {
+        priceText = numericMatch[0];
+      } else {
+        priceText = '';
+      }
+      
+      if (priceText) {
+        // Step 2: Normalize to German format (comma as decimal separator)
+        const hasComma = priceText.includes(',');
+        const hasDot = priceText.includes('.');
+        
+        if (hasComma && hasDot) {
+          // Both present: last one is decimal separator
+          const lastComma = priceText.lastIndexOf(',');
+          const lastDot = priceText.lastIndexOf('.');
+          
+          if (lastComma > lastDot) {
+            // German format: 1.234,56 -> comma is decimal
+            priceText = priceText.replace(/\./g, ''); // Remove thousands separators (dots)
+          } else {
+            // English format: 1,234.56 -> dot is decimal
+            priceText = priceText.replace(/,/g, ''); // Remove thousands separators (commas)
+            priceText = priceText.replace('.', ','); // Convert decimal dot to comma
+          }
+        } else if (hasDot && !hasComma) {
+          // Only dot: check if it's thousands separator or decimal
+          const dotParts = priceText.split('.');
+          if (dotParts.length === 2 && dotParts[1].length <= 2) {
+            // Likely decimal: 89.90 -> 89,90
+            priceText = priceText.replace('.', ',');
+          } else {
+            // Likely thousands separator: 1.234 -> 1234
+            priceText = priceText.replace(/\./g, '');
+          }
+        } else if (hasComma && !hasDot) {
+          // Only comma: check if it's thousands separator or decimal
+          const commaParts = priceText.split(',');
+          if (commaParts.length === 2 && commaParts[1].length <= 2) {
+            // Likely decimal: 89,90 -> keep as is
+          } else {
+            // Likely thousands separator: 1,234 -> 1234
+            priceText = priceText.replace(/,/g, '');
+          }
+        }
+        
+        // Step 3: Ensure exactly 2 decimal places
+        if (!priceText.includes(',')) {
+          // No decimals: add ,00
+          priceText = priceText + ',00';
+        } else {
+          const parts = priceText.split(',');
+          if (parts[1]) {
+            // Pad or truncate to exactly 2 decimals
+            parts[1] = parts[1].padEnd(2, '0').substring(0, 2);
+          } else {
+            parts[1] = '00';
+          }
+          priceText = parts.join(',');
+        }
       }
     }
     
