@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -25,10 +27,25 @@ interface BulkDescriptionTableProps {
 }
 
 export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescriptionTableProps) {
-  const [displayLimit, setDisplayLimit] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
-  const displayedProducts = products.slice(0, displayLimit);
-  const hasMore = products.length > displayLimit;
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const displayedProducts = products.slice(startIndex, endIndex);
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -137,19 +154,32 @@ export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescript
       </div>
       <div className="p-4 border-t bg-muted/30 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Zeige <span className="font-medium text-foreground">{Math.min(displayLimit, products.length)}</span> von <span className="font-medium text-foreground">{products.length}</span> Produkten
+          Zeige <span className="font-medium text-foreground">{startIndex + 1}-{Math.min(endIndex, products.length)}</span> von <span className="font-medium text-foreground">{products.length}</span> Produkten
         </div>
-        <div className="text-sm text-muted-foreground">
-          Seite <span className="font-medium text-foreground">{Math.ceil(displayLimit / 50)}</span> von <span className="font-medium text-foreground">{Math.ceil(products.length / 50)}</span>
-        </div>
-        {hasMore && (
-          <button
-            onClick={() => setDisplayLimit(prev => prev + 50)}
-            className="text-sm text-primary hover:underline font-medium"
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
           >
-            Weitere {Math.min(50, products.length - displayLimit)} Produkte laden
-          </button>
-        )}
+            <ChevronLeft className="w-4 h-4" />
+            Zurück
+          </Button>
+          <div className="text-sm text-muted-foreground px-4">
+            Seite <span className="font-medium text-foreground">{currentPage}</span> von <span className="font-medium text-foreground">{totalPages}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Weiter
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="w-32"></div>
       </div>
     </Card>
   );

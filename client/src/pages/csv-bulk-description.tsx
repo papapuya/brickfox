@@ -268,10 +268,10 @@ export default function CSVBulkDescription() {
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-[1600px] mx-auto px-6 py-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            MediaMarkt CSV Produktdaten-Anreicherung
+            PIMPilot - AI Produktbeschreibung Generator
           </h1>
           <p className="text-sm text-muted-foreground">
-            MediaMarkt-konforme Titel-Generierung (1TL/1TB) • Technische Daten-Extraktion • Inline-Bearbeitung • Flexibler CSV-Export
+            Automatische PIM-Daten Generierung • AI-gestützte Produktbeschreibungen • MediaMarkt-konforme Titel • CSV Massenverarbeitung
           </p>
         </div>
       </header>
@@ -309,7 +309,7 @@ export default function CSVBulkDescription() {
                   CSV-Datei hochladen
                 </h2>
                 <p className="text-muted-foreground max-w-md">
-                  Ziehen Sie Ihre CSV-Datei hierher oder klicken Sie auf den Button unten
+                  Laden Sie Ihre Produktdaten-CSV hoch und generieren Sie automatisch vollständige PIM-Attribute mit AI
                 </p>
               </div>
               <input
@@ -337,10 +337,10 @@ export default function CSVBulkDescription() {
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
               <div className="text-center space-y-2">
                 <h2 className="text-xl font-semibold text-foreground">
-                  Generiere Produktbeschreibungen...
+                  PIM-Daten werden generiert...
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {progress}% abgeschlossen
+                  {progress}% abgeschlossen - AI generiert Produktbeschreibungen, SEO-Daten und MediaMarkt-Titel
                 </p>
               </div>
               <div className="w-full max-w-md">
