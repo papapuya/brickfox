@@ -119,24 +119,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeout: 15000
       });
 
-      // Check which fields were found
-      const fieldStatus = {
-        articleNumber: { found: !!scrapedProduct.articleNumber && scrapedProduct.articleNumber.length > 0, value: scrapedProduct.articleNumber },
-        productName: { found: !!scrapedProduct.productName && scrapedProduct.productName.length > 0, value: scrapedProduct.productName },
-        ean: { found: !!scrapedProduct.ean && scrapedProduct.ean.length > 0, value: scrapedProduct.ean },
-        manufacturer: { found: !!scrapedProduct.manufacturer && scrapedProduct.manufacturer.length > 0, value: scrapedProduct.manufacturer },
-        price: { found: !!scrapedProduct.price && scrapedProduct.price.length > 0, value: scrapedProduct.price },
-        description: { found: !!scrapedProduct.description && scrapedProduct.description.length > 0, value: scrapedProduct.description },
-        images: { found: scrapedProduct.images.length > 0, value: scrapedProduct.images.join(', ') },
-        weight: { found: !!scrapedProduct.weight && scrapedProduct.weight.length > 0, value: scrapedProduct.weight },
-        category: { found: !!scrapedProduct.category && scrapedProduct.category.length > 0, value: scrapedProduct.category }
-      };
+      // Check which fields were found and build results array
+      const results = [
+        { 
+          field: 'articleNumber', 
+          selector: effectiveSelectors.articleNumber,
+          found: !!scrapedProduct.articleNumber && scrapedProduct.articleNumber.length > 0, 
+          value: scrapedProduct.articleNumber 
+        },
+        { 
+          field: 'productName', 
+          selector: effectiveSelectors.productName,
+          found: !!scrapedProduct.productName && scrapedProduct.productName.length > 0, 
+          value: scrapedProduct.productName 
+        },
+        { 
+          field: 'ean', 
+          selector: effectiveSelectors.ean,
+          found: !!scrapedProduct.ean && scrapedProduct.ean.length > 0, 
+          value: scrapedProduct.ean 
+        },
+        { 
+          field: 'manufacturer', 
+          selector: effectiveSelectors.manufacturer,
+          found: !!scrapedProduct.manufacturer && scrapedProduct.manufacturer.length > 0, 
+          value: scrapedProduct.manufacturer 
+        },
+        { 
+          field: 'price', 
+          selector: effectiveSelectors.price,
+          found: !!scrapedProduct.price && scrapedProduct.price.length > 0, 
+          value: scrapedProduct.price 
+        },
+        { 
+          field: 'description', 
+          selector: effectiveSelectors.description,
+          found: !!scrapedProduct.description && scrapedProduct.description.length > 0, 
+          value: scrapedProduct.description 
+        },
+        { 
+          field: 'images', 
+          selector: effectiveSelectors.images,
+          found: scrapedProduct.images.length > 0, 
+          value: scrapedProduct.images 
+        },
+        { 
+          field: 'weight', 
+          selector: effectiveSelectors.weight,
+          found: !!scrapedProduct.weight && scrapedProduct.weight.length > 0, 
+          value: scrapedProduct.weight 
+        },
+        { 
+          field: 'category', 
+          selector: effectiveSelectors.category,
+          found: !!scrapedProduct.category && scrapedProduct.category.length > 0, 
+          value: scrapedProduct.category 
+        }
+      ];
 
       // Return scraped data with field status
       res.json({
         success: true,
         product: scrapedProduct,
-        fieldStatus,
+        results,
         selectorsUsed: effectiveSelectors
       });
 
