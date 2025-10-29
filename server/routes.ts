@@ -3,6 +3,20 @@ import { createServer, type Server } from "http";
 import passport from './auth';
 import { storage } from "./storage";
 import { registerUserSchema, loginUserSchema } from '@shared/schema';
+import Stripe from 'stripe';
+import { 
+  createCheckoutSession, 
+  createPortalSession, 
+  handleWebhookEvent, 
+  getSubscriptionStatus,
+  PLANS 
+} from './stripe-service';
+import { 
+  requireAuth, 
+  requireSubscription, 
+  checkApiLimit, 
+  trackApiUsage 
+} from './middleware/subscription';
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
 import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors } from "./scraper-service";
@@ -111,6 +125,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiCallsLimit: user.apiCallsLimit
       } 
     });
+  });
+
+  // Stripe Subscription Endpoints
+  app.get('/api/stripe/plans', (req, res) => {
+    res.json({ plans: Object.values(PLANS) });
+  });
+
+  app.post('/api/stripe/create-checkout-session', async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Nicht authentifiziert' });
+      }
+
+      const user = req.user as any;
+      const { planId } = req.body;
+
+      if (!planId || !['starter', 'pro', 'enterprise'].includes(planId)) {
+        return res.status(400).json({ error: 'Ungültiger Plan' });
+      }
+
+      const origin = req.headers.origin || `http://localhost:${process.env.PORT || 5000}`;
+      const session = await createCheckoutSession(
+        user.id,
+        user.email,
+        planId,
+        `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+        `${origin}/pricing`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error('Checkout session error:', error);
+      res.status(500).json({ error: 'Fehler beim Erstellen der Checkout-Session' });
+    }
+  });
+
+  app.post('/api/stripe/create-portal-session', async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Nicht authentifiziert' });
+      }
+
+      const user = req.user as any;
+      
+      if (!user.stripeCustomerId) {
+        return res.status(400).json({ error: 'Kein Stripe-Customer gefunden' });
+      }
+
+      const origin = req.headers.origin || `http://localhost:${process.env.PORT || 5000}`;
+      const session = await createPortalSession(user.stripeCustomerId, `${origin}/account`);
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error('Portal session error:', error);
+      res.status(500).json({ error: 'Fehler beim Erstellen der Portal-Session' });
+    }
+  });
+
+  app.get('/api/subscription/status', async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Nicht authentifiziert' });
+      }
+
+      const user = req.user as any;
+      const status = await getSubscriptionStatus(user.id);
+
+      res.json(status);
+    } catch (error) {
+      console.error('Subscription status error:', error);
+      res.status(500).json({ error: 'Fehler beim Abrufen des Subscription-Status' });
+    }
+  });
+
+  // Stripe Webhook (MUST be before other body parsers for raw body)
+  app.post('/api/stripe/webhook', async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    if (!sig) {
+      return res.status(400).send('Missing Stripe signature');
+    }
+
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET not configured');
+      return res.status(500).send('Webhook secret not configured');
+    }
+
+    try {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+        apiVersion: '2025-10-29.clover',
+      });
+
+      const event = stripe.webhooks.constructEvent(
+        req.rawBody as Buffer,
+        sig,
+        webhookSecret
+      );
+
+      await handleWebhookEvent(event);
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error.message);
+      return res.status(400).send(`Webhook Error: ${error.message}`);
+    }
   });
 
   // API-Schlüssel-Verwaltung
@@ -273,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Scraper: Scrape single product with custom selectors (Cheerio-based)
-  app.post('/api/scrape-product', async (req, res) => {
+  app.post('/api/scrape-product', requireAuth, requireSubscription, async (req, res) => {
     try {
       const { url, selectors, userAgent, cookies } = req.body;
 
@@ -319,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Scraper: Get list of product URLs from listing page
-  app.post('/api/scrape-product-list', async (req, res) => {
+  app.post('/api/scrape-product-list', requireAuth, requireSubscription, async (req, res) => {
     try {
       const { url, productLinkSelector, maxProducts, userAgent, cookies } = req.body;
 
@@ -436,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Creator: Neuer 3-Stufen Workflow mit Fortschritt
-  app.post('/api/process-with-new-workflow', async (req, res) => {
+  app.post('/api/process-with-new-workflow', requireAuth, requireSubscription, checkApiLimit, trackApiUsage, async (req, res) => {
     try {
       const { htmlOrText } = req.body;
 
@@ -483,7 +603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Creator: Generate product description with optional template
-  app.post('/api/generate-description', async (req, res) => {
+  app.post('/api/generate-description', requireAuth, requireSubscription, checkApiLimit, trackApiUsage, async (req, res) => {
     try {
       const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable, model } = req.body;
 
@@ -536,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Creator: Refine description with custom prompt
-  app.post('/api/refine-description', async (req, res) => {
+  app.post('/api/refine-description', requireAuth, requireSubscription, checkApiLimit, trackApiUsage, async (req, res) => {
     try {
       const { currentDescription, userPrompt, extractedData } = req.body;
 
@@ -560,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Creator: Generate product name from extracted data
-  app.post('/api/generate-product-name', async (req, res) => {
+  app.post('/api/generate-product-name', requireAuth, requireSubscription, checkApiLimit, trackApiUsage, async (req, res) => {
     try {
       const { extractedData } = req.body;
 

@@ -1,4 +1,4 @@
-import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2 } from "lucide-react";
+import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2, User, CreditCard } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -37,6 +37,16 @@ const menuItems = [
     title: "Lieferanten-Profile",
     url: "/suppliers",
     icon: Building2,
+  },
+  {
+    title: "Mein Account",
+    url: "/account",
+    icon: User,
+  },
+  {
+    title: "Abonnement",
+    url: "/pricing",
+    icon: CreditCard,
   },
   {
     title: "API Credentials",
