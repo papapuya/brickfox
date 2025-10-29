@@ -44,7 +44,7 @@ export default function URLScraper() {
 
   // Multi-Product Scraping
   const [scrapingMode, setScrapingMode] = useState<"single" | "list">("single");
-  const [productLinkSelector, setProductLinkSelector] = useState("");
+  const [productLinkSelector, setProductLinkSelector] = useState("a.product-link");
   const [maxProducts, setMaxProducts] = useState(50);
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
@@ -117,15 +117,15 @@ export default function URLScraper() {
 
   // Custom selectors
   const [selectors, setSelectors] = useState({
-    articleNumber: "",
-    productName: "",
-    ean: "",
-    manufacturer: "",
-    price: "",
-    description: "",
-    images: "",
-    weight: "",
-    category: ""
+    articleNumber: ".product-code",
+    productName: "h1.product-title",
+    ean: ".ean",
+    manufacturer: ".brand",
+    price: ".price",
+    description: ".product-description",
+    images: ".product-image img",
+    weight: ".weight",
+    category: ".breadcrumb"
   });
 
   const handleScrapeProductList = async () => {
@@ -133,15 +133,6 @@ export default function URLScraper() {
       toast({
         title: "Fehler",
         description: "Bitte geben Sie eine URL ein",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!productLinkSelector.trim()) {
-      toast({
-        title: "Fehler",
-        description: "Bitte geben Sie einen CSS-Selektor für Produktlinks ein",
         variant: "destructive",
       });
       return;

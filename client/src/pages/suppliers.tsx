@@ -51,15 +51,15 @@ export default function Suppliers() {
     sessionCookies: "",
     userAgent: "",
     selectors: {
-      articleNumber: "",
-      productName: "",
-      ean: "",
-      manufacturer: "",
-      price: "",
-      description: "",
-      images: "",
-      weight: "",
-      category: ""
+      articleNumber: ".product-code",
+      productName: "h1.product-title",
+      ean: ".ean",
+      manufacturer: ".brand",
+      price: ".price",
+      description: ".product-description",
+      images: ".product-image img",
+      weight: ".weight",
+      category: ".breadcrumb"
     }
   });
 
@@ -106,15 +106,15 @@ export default function Suppliers() {
         sessionCookies: "",
         userAgent: "",
         selectors: {
-          articleNumber: "",
-          productName: "",
-          ean: "",
-          manufacturer: "",
-          price: "",
-          description: "",
-          images: "",
-          weight: "",
-          category: ""
+          articleNumber: ".product-code",
+          productName: "h1.product-title",
+          ean: ".ean",
+          manufacturer: ".brand",
+          price: ".price",
+          description: ".product-description",
+          images: ".product-image img",
+          weight: ".weight",
+          category: ".breadcrumb"
         }
       });
     }
