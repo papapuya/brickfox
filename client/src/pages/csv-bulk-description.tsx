@@ -63,6 +63,7 @@ export default function CSVBulkDescription() {
     shortDescription: true,
     mediamarktNameV1: true,
     mediamarktNameV2: true,
+    productDescription: true,
   });
 
   const productFields: { field: string; label: string; required: boolean }[] = [
@@ -281,12 +282,11 @@ export default function CSVBulkDescription() {
     if (selectedPimFields.shortDescription) pimHeaders.push('Kurzbeschreibung');
     if (selectedPimFields.mediamarktNameV1) pimHeaders.push('Mediamarktname_V1');
     if (selectedPimFields.mediamarktNameV2) pimHeaders.push('Mediamarktname_V2');
+    if (selectedPimFields.productDescription) pimHeaders.push('Produktbeschreibung_HTML');
     
     const headers = [
       ...csvColumns,
-      ...pimHeaders,
-      'Beschreibung_Text', 
-      'Beschreibung_HTML'
+      ...pimHeaders
     ];
     
     const rows = processedData.map(product => {
@@ -297,12 +297,11 @@ export default function CSVBulkDescription() {
       if (selectedPimFields.shortDescription) pimValues.push(product.shortDescription || '');
       if (selectedPimFields.mediamarktNameV1) pimValues.push(product.mediamarktNameV1 || '');
       if (selectedPimFields.mediamarktNameV2) pimValues.push(product.mediamarktNameV2 || '');
+      if (selectedPimFields.productDescription) pimValues.push(product.descriptionHtml || '');
       
       return [
         ...originalValues,
-        ...pimValues,
-        product.descriptionText || '', 
-        product.descriptionHtml || ''
+        ...pimValues
       ];
     });
 
@@ -590,6 +589,27 @@ export default function CSVBulkDescription() {
                           placeholder="Wird automatisch generiert (erste 300 Zeichen für Produktlisten)"
                           className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
                           rows={3}
+                          disabled
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="pim-productDescription"
+                            checked={selectedPimFields.productDescription}
+                            onChange={(e) => setSelectedPimFields({...selectedPimFields, productDescription: e.target.checked})}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="pim-productDescription" className="text-sm font-medium cursor-pointer">
+                            Produktbeschreibung
+                          </Label>
+                        </div>
+                        <textarea
+                          placeholder="Wird automatisch generiert (vollständige HTML-Produktbeschreibung im MediaMarkt-Format)"
+                          className="w-full px-3 py-2 border rounded-md bg-muted/50 text-sm resize-none"
+                          rows={5}
                           disabled
                         />
                       </div>
