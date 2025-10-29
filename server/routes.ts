@@ -89,6 +89,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // Product Scraper: Test scrape with field status feedback
+  app.post('/api/test-scrape-product', async (req, res) => {
+    try {
+      const { url, selectors, userAgent, cookies } = req.body;
+
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+
+      // Validate URL format
+      try {
+        new URL(url);
+      } catch {
+        return res.status(400).json({ error: 'Invalid URL format' });
+      }
+
+      console.log(`Test scraping product from URL: ${url}`);
+      
+      // Use provided selectors or default generic selectors
+      const effectiveSelectors: ScraperSelectors = selectors || defaultSelectors.generic;
+
+      // Scrape product data
+      const scrapedProduct = await scrapeProduct({
+        url,
+        selectors: effectiveSelectors,
+        userAgent,
+        cookies,
+        timeout: 15000
+      });
+
+      // Check which fields were found
+      const fieldStatus = {
+        articleNumber: { found: !!scrapedProduct.articleNumber && scrapedProduct.articleNumber.length > 0, value: scrapedProduct.articleNumber },
+        productName: { found: !!scrapedProduct.productName && scrapedProduct.productName.length > 0, value: scrapedProduct.productName },
+        ean: { found: !!scrapedProduct.ean && scrapedProduct.ean.length > 0, value: scrapedProduct.ean },
+        manufacturer: { found: !!scrapedProduct.manufacturer && scrapedProduct.manufacturer.length > 0, value: scrapedProduct.manufacturer },
+        price: { found: !!scrapedProduct.price && scrapedProduct.price.length > 0, value: scrapedProduct.price },
+        description: { found: !!scrapedProduct.description && scrapedProduct.description.length > 0, value: scrapedProduct.description },
+        images: { found: scrapedProduct.images.length > 0, value: scrapedProduct.images.join(', ') },
+        weight: { found: !!scrapedProduct.weight && scrapedProduct.weight.length > 0, value: scrapedProduct.weight },
+        category: { found: !!scrapedProduct.category && scrapedProduct.category.length > 0, value: scrapedProduct.category }
+      };
+
+      // Return scraped data with field status
+      res.json({
+        success: true,
+        product: scrapedProduct,
+        fieldStatus,
+        selectorsUsed: effectiveSelectors
+      });
+
+    } catch (error) {
+      console.error('Test scraping error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Product Scraper: Scrape single product with custom selectors (Cheerio-based)
   app.post('/api/scrape-product', async (req, res) => {
     try {

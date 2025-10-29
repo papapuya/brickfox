@@ -53,6 +53,11 @@ export default function URLScraper() {
   const [sessionCookies, setSessionCookies] = useState("");
   const [userAgent, setUserAgent] = useState("");
 
+  // Test-Scrape with Preview
+  const [showTestPreview, setShowTestPreview] = useState(false);
+  const [testResults, setTestResults] = useState<any>(null);
+  const [isTesting, setIsTesting] = useState(false);
+
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
     queryKey: ['/api/projects'],
@@ -259,6 +264,63 @@ export default function URLScraper() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTestScrape = async () => {
+    if (!url.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine URL ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      // Build selectors object (only include non-empty selectors)
+      const activeSelectors: any = {};
+      Object.entries(selectors).forEach(([key, value]) => {
+        if (value.trim()) {
+          activeSelectors[key] = value;
+        }
+      });
+
+      const response = await fetch('/api/test-scrape-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: url.trim(),
+          selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
+          userAgent: userAgent || undefined,
+          cookies: sessionCookies || undefined
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Test-Scraping fehlgeschlagen');
+      }
+
+      const data = await response.json();
+      setTestResults(data);
+      setShowTestPreview(true);
+      
+      toast({
+        title: "Test abgeschlossen",
+        description: `Produktdaten analysiert - Vorschau verfügbar`,
+      });
+
+    } catch (error) {
+      console.error('Test scraping error:', error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : 'Test-Scraping fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -580,6 +642,19 @@ export default function URLScraper() {
                       }
                     }}
                   />
+                  <Button onClick={handleTestScrape} disabled={isTesting || isLoading} variant="outline">
+                    {isTesting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Teste...
+                      </>
+                    ) : (
+                      <>
+                        <Settings2 className="w-4 h-4 mr-2" />
+                        Test-Scrape
+                      </>
+                    )}
+                  </Button>
                   <Button onClick={handleScrape} disabled={isLoading}>
                     {isLoading ? (
                       <>
@@ -1082,6 +1157,144 @@ export default function URLScraper() {
                 )}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Test-Scrape Preview Dialog */}
+        <Dialog open={showTestPreview} onOpenChange={setShowTestPreview}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Test-Scrape Ergebnisse</DialogTitle>
+              <DialogDescription>
+                Überprüfen Sie, welche Felder erfolgreich extrahiert wurden
+              </DialogDescription>
+            </DialogHeader>
+            
+            {testResults && (
+              <div className="space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-green-600">
+                      {testResults.results.filter((r: any) => r.found).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Gefunden</div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-red-600">
+                      {testResults.results.filter((r: any) => !r.found).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Fehlt</div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {testResults.results.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Gesamt</div>
+                  </Card>
+                </div>
+
+                {/* Results Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">Status</TableHead>
+                        <TableHead>Feld</TableHead>
+                        <TableHead>CSS-Selektor</TableHead>
+                        <TableHead>Extrahierter Wert</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {testResults.results.map((result: any, index: number) => (
+                        <TableRow key={index} className={result.found ? '' : 'bg-red-50'}>
+                          <TableCell className="text-center text-2xl">
+                            {result.found ? '✅' : '❌'}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {result.field}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {result.selector || (
+                              <span className="text-muted-foreground italic">
+                                {result.field === 'images' ? 'Auto-Erkennung' : 'Kein Selektor'}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-md">
+                            {result.found ? (
+                              <div className="text-sm">
+                                {result.field === 'images' && Array.isArray(result.value) ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold">{result.value.length} Bild(er)</span>
+                                    {result.value[0] && (
+                                      <img 
+                                        src={result.value[0]} 
+                                        alt="Preview"
+                                        className="w-12 h-12 object-cover rounded border"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%23e5e7eb"/></svg>';
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="break-words">
+                                    {String(result.value).substring(0, 150)}
+                                    {String(result.value).length > 150 ? '...' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground italic">Nicht gefunden</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Info Box */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>💡 Tipp:</strong> Felder mit ❌ bedeuten, dass der CSS-Selektor kein passendes Element gefunden hat.
+                    Passen Sie die Selektoren an oder speichern Sie diese Konfiguration als Lieferantenprofil für zukünftige Verwendung.
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowTestPreview(false);
+                      setShowAdvanced(true);
+                    }}
+                  >
+                    <Settings2 className="w-4 h-4 mr-2" />
+                    Selektoren anpassen
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setShowTestPreview(false);
+                      setLocation('/suppliers');
+                    }}
+                  >
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                    Als Lieferantenprofil speichern
+                  </Button>
+                  <Button 
+                    variant="default"
+                    onClick={() => {
+                      setShowTestPreview(false);
+                    }}
+                  >
+                    Schließen
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
