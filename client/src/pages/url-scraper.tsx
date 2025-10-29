@@ -1420,17 +1420,17 @@ export default function URLScraper() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {product.description ? (
+                        <TableCell className="text-xs font-mono">
+                          {generatedDescriptions.has(product.articleNumber) ? (
                             <div className="flex items-center gap-2">
-                              <span className="max-w-xs truncate" title={product.description}>
-                                {product.description.replace(/<[^>]*>/g, '').substring(0, 50) + '...'}
+                              <span className="max-w-xs truncate text-muted-foreground" title={generatedDescriptions.get(product.articleNumber)}>
+                                {generatedDescriptions.get(product.articleNumber)!.substring(0, 60) + '...'}
                               </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  setHtmlPreviewContent(product.description || '');
+                                  setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber) || '');
                                   setShowHtmlPreview(true);
                                 }}
                                 title="HTML Vorschau anzeigen"
@@ -1438,7 +1438,9 @@ export default function URLScraper() {
                                 <Eye className="w-4 h-4" />
                               </Button>
                             </div>
-                          ) : '-'}
+                          ) : (
+                            <span className="text-muted-foreground">Noch nicht generiert</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
                           {generatedDescriptions.has(product.articleNumber) ? (
@@ -1732,28 +1734,25 @@ export default function URLScraper() {
         <Dialog open={showHtmlPreview} onOpenChange={setShowHtmlPreview}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>HTML Produktbeschreibung Vorschau</DialogTitle>
+              <DialogTitle>Produktbeschreibung Vorschau</DialogTitle>
               <DialogDescription>
-                So sieht die HTML-Beschreibung gerendert aus
+                So würde die Beschreibung im MediaMarkt-Shop aussehen
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Gerenderte Ansicht</Label>
-                <div className="p-4 bg-white border rounded-lg max-h-96 overflow-y-auto">
-                  <div dangerouslySetInnerHTML={{ __html: htmlPreviewContent }} />
-                </div>
+              <div className="p-6 bg-white border rounded-lg overflow-y-auto" style={{ maxHeight: '70vh' }}>
+                <div dangerouslySetInnerHTML={{ __html: htmlPreviewContent }} />
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">HTML-Code</Label>
-                <Textarea
-                  value={htmlPreviewContent}
-                  readOnly
-                  className="font-mono text-sm"
-                  rows={10}
-                />
-              </div>
-              <div className="flex justify-end">
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(htmlPreviewContent);
+                    toast({ title: "Kopiert", description: "HTML wurde in die Zwischenablage kopiert" });
+                  }}
+                >
+                  HTML kopieren
+                </Button>
                 <Button onClick={() => setShowHtmlPreview(false)}>
                   Schließen
                 </Button>
