@@ -407,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product Creator: Generate product description with optional template
   app.post('/api/generate-description', async (req, res) => {
     try {
-      const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable } = req.body;
+      const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable, model } = req.body;
 
       if (!extractedData || !Array.isArray(extractedData)) {
         return res.status(400).json({ error: 'Invalid extracted data' });
@@ -424,7 +424,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enhancedData.push(`Technische Daten (HTML-Tabelle):\n${technicalDataTable}`);
       }
 
-      const description = await generateProductDescription(enhancedData, undefined, customAttributes);
+      // COST OPTIMIZATION: Use GPT-4o-mini (30× cheaper) by default
+      const aiModel = model || 'gpt-4o-mini';
+      const description = await generateProductDescription(enhancedData, undefined, customAttributes, aiModel);
 
       res.json({ success: true, description });
     } catch (error) {

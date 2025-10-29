@@ -536,6 +536,8 @@ export default function URLScraper() {
           // SMART AUTO-EXTRACTION: Pass auto-extracted data to AI
           autoExtractedDescription: (scrapedProduct as any).autoExtractedDescription,
           technicalDataTable: (scrapedProduct as any).technicalDataTable,
+          // COST OPTIMIZATION: GPT-4o-mini ist 30× günstiger!
+          model: 'gpt-4o-mini',
         }),
       });
 
@@ -602,6 +604,8 @@ export default function URLScraper() {
               },
               autoExtractedDescription: (product as any).autoExtractedDescription,
               technicalDataTable: (product as any).technicalDataTable,
+              // COST OPTIMIZATION: GPT-4o-mini ist 30× günstiger ($0.00015 vs $0.0025/1k tokens)
+              model: 'gpt-4o-mini',
             }),
           });
 

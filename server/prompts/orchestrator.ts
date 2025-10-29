@@ -40,7 +40,8 @@ export class PromptOrchestrator {
 
   async executeSubprompt(
     name: SubpromptName,
-    context: PromptContext
+    context: PromptContext,
+    retries = 5
   ): Promise<SubpromptResult> {
     const config = SUBPROMPT_CONFIGS[name];
     if (!config) {
@@ -51,53 +52,72 @@ export class PromptOrchestrator {
       };
     }
 
-    try {
-      const basePrompt = getBaseSystemPrompt();
-      const systemPrompt = `${basePrompt}\n\n${config.systemPrompt(context)}`;
-      const userPrompt = config.userPrompt(context);
+    // RETRY LOGIC: Exponential Backoff bei Rate Limit Errors
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const basePrompt = getBaseSystemPrompt();
+        const systemPrompt = `${basePrompt}\n\n${config.systemPrompt(context)}`;
+        const userPrompt = config.userPrompt(context);
 
-      const response = await this.openai.chat.completions.create({
-        model: this.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: config.temperature,
-        max_tokens: config.maxTokens,
-        response_format: config.responseFormat ? { type: config.responseFormat } : undefined,
-      });
+        const response = await this.openai.chat.completions.create({
+          model: this.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: config.temperature,
+          max_tokens: config.maxTokens,
+          response_format: config.responseFormat ? { type: config.responseFormat } : undefined,
+        });
 
-      const content = response.choices[0]?.message?.content?.trim() || '{}';
-      
-      if (config.responseFormat === 'json_object') {
-        try {
-          const parsedData = JSON.parse(content);
+        const content = response.choices[0]?.message?.content?.trim() || '{}';
+        
+        if (config.responseFormat === 'json_object') {
+          try {
+            const parsedData = JSON.parse(content);
+            return {
+              success: true,
+              data: parsedData,
+            };
+          } catch (parseError) {
+            console.error(`Failed to parse JSON from ${name}:`, content);
+            return {
+              success: false,
+              data: null,
+              error: 'Invalid JSON response',
+            };
+          }
+        } else {
           return {
             success: true,
-            data: parsedData,
-          };
-        } catch (parseError) {
-          console.error(`Failed to parse JSON from ${name}:`, content);
-          return {
-            success: false,
-            data: null,
-            error: 'Invalid JSON response',
+            data: content,
           };
         }
-      } else {
+      } catch (error: any) {
+        // Rate Limit Error: Retry with exponential backoff
+        if (error.status === 429 && attempt < retries - 1) {
+          const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s, 8s, 16s
+          console.log(`⚠️ Rate limit hit for ${name}, retrying in ${waitTime}ms (attempt ${attempt + 1}/${retries})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue; // Retry
+        }
+        
+        // Other errors or max retries reached
+        console.error(`Subprompt ${name} failed:`, error);
         return {
-          success: true,
-          data: content,
+          success: false,
+          data: null,
+          error: error instanceof Error ? error.message : 'Unknown error',
         };
       }
-    } catch (error) {
-      console.error(`Subprompt ${name} failed:`, error);
-      return {
-        success: false,
-        data: null,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
     }
+    
+    // Should never reach here, but TypeScript requires it
+    return {
+      success: false,
+      data: null,
+      error: 'Max retries exceeded',
+    };
   }
 
   async executeMultiple(

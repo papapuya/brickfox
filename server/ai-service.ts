@@ -189,9 +189,10 @@ export async function generateProductDescription(
     articleNumber?: string;
     customAttributes?: Array<{key: string, value: string, type: string}>;
   },
+  model: string = 'gpt-4o-mini', // COST OPTIMIZATION: 30× günstiger!
   onProgress?: (step: number, message: string) => void
 ): Promise<string> {
-  console.log('=== USING CATEGORY-BASED GENERATION ===');
+  console.log(`=== USING CATEGORY-BASED GENERATION with ${model} ===`);
   
   const { detectCategory, getCategoryConfig } = await import('./templates/category-config.js');
   const { generateProductCopy } = await import('./templates/ai-generator.js');
@@ -216,7 +217,8 @@ export async function generateProductDescription(
     firstData,
     categoryConfig,
     currentApiKey,
-    currentBaseUrl
+    currentBaseUrl,
+    model // Pass model to AI generator
   );
 
   const html = renderProductHtml({

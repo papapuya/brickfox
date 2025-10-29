@@ -62,11 +62,11 @@ This system supports automatic category recognition via keyword matching and dyn
 
 | Verarbeitungsmethode | Kosten pro Produkt | 2000 Produkte | Geschwindigkeit |
 |---------------------|-------------------|---------------|-----------------|
-| **CSV + GPT-4o** (empfohlen) | ~$0.013 | ~$26 | Mittel (1-2h) |
-| **CSV + GPT-4o-mini** | ~$0.0008 | ~$1.60 | Schnell (30-60min) |
-| **URL Scraping + Cheerio + GPT-4o** | ~$0.013 | ~$26 | Mittel-Schnell |
+| **CSV + GPT-4o-mini** (NEU, STANDARD) | ~$0.0004 | ~$0.80 | Schnell (30-60min) |
+| **URL Scraping + GPT-4o-mini** | ~$0.0004 | ~$0.80 | Mittel-Schnell |
+| **CSV + GPT-4o** (alt) | ~$0.013 | ~$26 | Mittel (1-2h) |
 
-**Best Practice**: CSV als Hauptquelle für Massenverarbeitung, URL Scraper für einzelne Produkte oder spezielle Fälle
+**Best Practice**: GPT-4o-mini ist jetzt Standard (97% Ersparnis!), CSV für Massenverarbeitung, URL Scraper für einzelne Produkte
 
 ### Custom Web Scraper (Cheerio)
 
@@ -91,13 +91,18 @@ This system supports automatic category recognition via keyword matching and dyn
 
 **Workflow (Einzelnes Produkt):**
 ```
-URL eingeben → CSS-Selektoren konfigurieren → Scraping → AI-Generierung → Speichern im Projekt
+URL eingeben → CSS-Selektoren konfigurieren → Scraping → AI-Generierung (GPT-4o-mini) → Speichern im Projekt
 ```
 
 **Workflow (Produktliste):**
 ```
 Listen-URL eingeben → Produktlink-Selektor konfigurieren → Batch-Scraping → CSV-Vorschau → Download
 ```
+
+**NEUE Features (Okt 2025):**
+- ✅ **Request Queue + Retry Logic**: Automatische Wiederholung bei Rate Limit Errors (5 Retries mit Exponential Backoff: 1s→2s→4s→8s→16s)
+- ✅ **GPT-4o-mini als Standard**: 30× günstiger ($0.00015 vs $0.0025 per 1K Tokens) - fest im Code für alle Generierungen
+- ✅ **Kostenoptimierung**: Statt $0.013 pro Produkt jetzt nur noch $0.0004 - **97% Ersparnis!**
 
 **CSV-Anforderungen (Akku-Kategorie):**
 

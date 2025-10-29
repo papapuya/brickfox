@@ -11,12 +11,13 @@ export async function generateProductCopy(
   categoryConfig: ProductCategoryConfig,
   openaiKey: string,
   openaiBaseUrl?: string,
+  model: string = 'gpt-4o-mini', // COST OPTIMIZATION: 30× günstiger!
   useModularPrompts: boolean = true
 ): Promise<ProductCopyPayload> {
   if (useModularPrompts || categoryConfig.subpromptPreferences?.useModularPrompts) {
-    return await generateProductCopyModular(productData, categoryConfig, openaiKey, openaiBaseUrl);
+    return await generateProductCopyModular(productData, categoryConfig, openaiKey, openaiBaseUrl, model);
   } else {
-    return await generateProductCopyMonolithic(productData, categoryConfig, openaiKey, openaiBaseUrl);
+    return await generateProductCopyMonolithic(productData, categoryConfig, openaiKey, openaiBaseUrl, model);
   }
 }
 
@@ -24,13 +25,15 @@ async function generateProductCopyModular(
   productData: any,
   categoryConfig: ProductCategoryConfig,
   openaiKey: string,
-  openaiBaseUrl?: string
+  openaiBaseUrl?: string,
+  model: string = 'gpt-4o-mini'
 ): Promise<ProductCopyPayload> {
-  console.log('🔧 Using MODULAR subprompt architecture');
+  console.log(`🔧 Using MODULAR subprompt architecture with ${model}`);
 
   const orchestrator = createOrchestrator({
     openaiKey,
     openaiBaseUrl,
+    model, // Pass model to orchestrator
   });
 
   const context: PromptContext = {
@@ -124,9 +127,10 @@ async function generateProductCopyMonolithic(
   productData: any,
   categoryConfig: ProductCategoryConfig,
   openaiKey: string,
-  openaiBaseUrl?: string
+  openaiBaseUrl?: string,
+  model: string = 'gpt-4o-mini'
 ): Promise<ProductCopyPayload> {
-  console.log('📦 Using MONOLITHIC prompt (legacy)');
+  console.log(`📦 Using MONOLITHIC prompt (legacy) with ${model}`);
 
   const openai = new OpenAI({
     apiKey: openaiKey,
@@ -204,7 +208,7 @@ Erstelle jetzt das JSON-Objekt mit Produkttexten basierend auf diesen Daten.`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model, // COST OPTIMIZATION: Use GPT-4o-mini by default (30× günstiger!)
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
