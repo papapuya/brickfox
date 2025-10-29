@@ -528,6 +528,9 @@ export default function URLScraper() {
           customAttributes: {
             exactProductName: scrapedProduct.productName,
           },
+          // SMART AUTO-EXTRACTION: Pass auto-extracted data to AI
+          autoExtractedDescription: (scrapedProduct as any).autoExtractedDescription,
+          technicalDataTable: (scrapedProduct as any).technicalDataTable,
         }),
       });
 
