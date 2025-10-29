@@ -166,6 +166,31 @@ export default function BrickfoxDataPreview({ products, projectName }: BrickfoxD
     product.exactProductName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+
+  // Helper: Extrahiere Wert aus extractedData
+  const getExtractedValue = (product: ProductInProject, field: string): string => {
+    if (!product.extractedData || product.extractedData.length === 0) return '';
+    
+    const extractedText = product.extractedData[0]?.extractedText;
+    if (!extractedText) return '';
+    
+    try {
+      const parsed = JSON.parse(extractedText);
+      return parsed[field] || '';
+    } catch {
+      return '';
+    }
+  };
+
+  // Helper: Finde Attribut nach Schlüsselwort
+  const findAttribute = (product: ProductInProject, keywords: string[]): string => {
+    if (!product.customAttributes) return '';
+    const attr = product.customAttributes.find(a => 
+      keywords.some(keyword => a.key.toLowerCase().includes(keyword.toLowerCase()))
+    );
+    return attr?.value || '';
+  };
+
   // Generiere Daten für die Tabelle
   const generateTableData = () => {
     return filteredProducts.map(product => {
@@ -174,6 +199,9 @@ export default function BrickfoxDataPreview({ products, projectName }: BrickfoxD
       selectedColumns.forEach(column => {
         if (column.enabled) {
           switch (column.id) {
+            case 'product_id_external':
+              row[column.label] = product.articleNumber || product.id || '';
+              break;
             case 'product_name':
               row[column.label] = product.name || '';
               break;
@@ -184,19 +212,19 @@ export default function BrickfoxDataPreview({ products, projectName }: BrickfoxD
               row[column.label] = product.articleNumber || '';
               break;
             case 'manufacturer_external_id':
-              row[column.label] = 'TBD'; // To be determined
+              row[column.label] = getExtractedValue(product, 'manufacturer') || findAttribute(product, ['hersteller', 'manufacturer']) || '';
               break;
             case 'brand_name':
-              row[column.label] = 'TBD';
+              row[column.label] = getExtractedValue(product, 'manufacturer') || findAttribute(product, ['marke', 'brand', 'hersteller']) || '';
               break;
             case 'ean':
-              row[column.label] = 'TBD';
+              row[column.label] = getExtractedValue(product, 'ean') || findAttribute(product, ['ean', 'gtin']) || '';
               break;
             case 'manufacturer_article_number':
               row[column.label] = product.articleNumber?.replace(/^[A-Z]{2}/, '') || '';
               break;
             case 'price':
-              row[column.label] = 'TBD';
+              row[column.label] = getExtractedValue(product, 'price') || findAttribute(product, ['preis', 'price']) || '';
               break;
             case 'height':
               row[column.label] = product.customAttributes?.find(attr => 

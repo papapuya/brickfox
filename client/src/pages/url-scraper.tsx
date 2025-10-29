@@ -499,7 +499,7 @@ export default function URLScraper() {
   };
 
   const handleSaveToProject = async () => {
-    if (!scrapedProduct || !generatedDescription) return;
+    if (!scrapedProduct) return;
 
     if (selectedProjectId === "new" && !projectName.trim()) {
       toast({
@@ -531,7 +531,7 @@ export default function URLScraper() {
             products: [{
               produktname: scrapedProduct.productName,
               artikelnummer: scrapedProduct.articleNumber || '',
-              produktbeschreibung: generatedDescription,
+              produktbeschreibung: generatedDescription || '',
               ean: scrapedProduct.ean || '',
               hersteller: scrapedProduct.manufacturer || '',
               preis: scrapedProduct.price || '',
@@ -560,7 +560,7 @@ export default function URLScraper() {
           body: JSON.stringify({
             name: scrapedProduct.productName,
             articleNumber: scrapedProduct.articleNumber || '',
-            htmlCode: generatedDescription,
+            htmlCode: generatedDescription || '',
             previewText: scrapedProduct.description?.substring(0, 200) || '',
             exactProductName: scrapedProduct.productName,
             customAttributes: [
@@ -965,7 +965,7 @@ export default function URLScraper() {
               </Button>
               <Button 
                 variant="outline" 
-                disabled={!generatedDescription}
+                disabled={!scrapedProduct}
                 onClick={() => setShowSaveDialog(true)}
               >
                 Zu Projekt hinzufügen
