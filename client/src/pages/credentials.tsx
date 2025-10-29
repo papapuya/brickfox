@@ -20,7 +20,7 @@ export default function CredentialsPage() {
         </Button>
         <h1 className="text-3xl font-bold">API Credentials</h1>
         <p className="text-muted-foreground mt-2">
-          Verwalten Sie Ihre API-Schlüssel für OpenAI und Firecrawl
+          Verwalten Sie Ihren OpenAI API-Schlüssel
         </p>
       </div>
 
@@ -28,6 +28,3 @@ export default function CredentialsPage() {
     </div>
   );
 }
-
-
-

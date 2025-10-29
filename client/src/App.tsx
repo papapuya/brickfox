@@ -7,7 +7,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Landing from "@/pages/landing";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
-import ProductDescriptionCreator from "@/pages/product-creator";
 import URLScraper from "@/pages/url-scraper";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
@@ -22,7 +21,6 @@ function Router() {
       <Route path="/url-scraper" component={URLScraper} />
       <Route path="/projects" component={Projects} />
       <Route path="/project/:id" component={ProjectDetail} />
-      <Route path="/product-creator" component={ProductDescriptionCreator} />
       <Route path="/credentials" component={CredentialsPage} />
       <Route component={NotFound} />
     </Switch>
