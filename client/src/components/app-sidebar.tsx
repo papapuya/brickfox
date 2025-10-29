@@ -29,8 +29,8 @@ const menuItems = [
     icon: FolderOpen,
   },
   {
-    title: "Bild-Analyse/Webscraper",
-    url: "/product-creator",
+    title: "URL Webscraper",
+    url: "/url-scraper",
     icon: ImagePlus,
   },
   {

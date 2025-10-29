@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import { analyzePDF, analyzeCSV, analyzeImage, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
 import { fetchWithFirecrawl, extractFromHtml } from "./firecrawl-service";
+import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors } from "./scraper-service";
 import { nanoid } from "nanoid";
 import { createProjectSchema, createProductInProjectSchema, updateProductInProjectSchema } from "@shared/schema";
 import fs from 'fs';
@@ -168,6 +169,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('File analysis error:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'File analysis failed' 
+      });
+    }
+  });
+
+  // Product Scraper: Scrape single product with custom selectors (Cheerio-based)
+  app.post('/api/scrape-product', async (req, res) => {
+    try {
+      const { url, selectors, userAgent, cookies } = req.body;
+
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+
+      // Validate URL format
+      try {
+        new URL(url);
+      } catch {
+        return res.status(400).json({ error: 'Invalid URL format' });
+      }
+
+      console.log(`Scraping product from URL: ${url}`);
+      
+      // Use provided selectors or default generic selectors
+      const effectiveSelectors: ScraperSelectors = selectors || defaultSelectors.generic;
+
+      // Scrape product data
+      const scrapedProduct = await scrapeProduct({
+        url,
+        selectors: effectiveSelectors,
+        userAgent,
+        cookies,
+        timeout: 15000
+      });
+
+      // Return scraped data
+      res.json({
+        success: true,
+        product: scrapedProduct,
+        selectorsUsed: effectiveSelectors
+      });
+
+    } catch (error) {
+      console.error('Product scraping error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Product Scraper: Get list of product URLs from listing page
+  app.post('/api/scrape-product-list', async (req, res) => {
+    try {
+      const { url, productLinkSelector, maxProducts } = req.body;
+
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+
+      if (!productLinkSelector || typeof productLinkSelector !== 'string') {
+        return res.status(400).json({ error: 'Product link selector is required' });
+      }
+
+      console.log(`Scraping product list from: ${url}`);
+
+      const productUrls = await scrapeProductList(url, productLinkSelector, maxProducts || 50);
+
+      res.json({
+        success: true,
+        productUrls,
+        count: productUrls.length
+      });
+
+    } catch (error) {
+      console.error('Product list scraping error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });

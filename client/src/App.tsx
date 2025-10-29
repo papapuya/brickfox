@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Landing from "@/pages/landing";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
 import ProductDescriptionCreator from "@/pages/product-creator";
+import URLScraper from "@/pages/url-scraper";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
 import CredentialsPage from "@/pages/credentials";
@@ -18,6 +19,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/csv-bulk-description" component={CSVBulkDescription} />
+      <Route path="/url-scraper" component={URLScraper} />
       <Route path="/projects" component={Projects} />
       <Route path="/project/:id" component={ProjectDetail} />
       <Route path="/product-creator" component={ProductDescriptionCreator} />
