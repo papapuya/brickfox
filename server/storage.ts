@@ -248,6 +248,8 @@ export class DatabaseStorage implements IStorage {
         description: data.description || null,
         selectors: JSON.stringify(data.selectors || {}),
         productLinkSelector: data.productLinkSelector || null,
+        sessionCookies: data.sessionCookies || null,
+        userAgent: data.userAgent || null,
       })
       .returning();
     
@@ -284,6 +286,8 @@ export class DatabaseStorage implements IStorage {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.selectors !== undefined) updateData.selectors = JSON.stringify(data.selectors);
     if (data.productLinkSelector !== undefined) updateData.productLinkSelector = data.productLinkSelector;
+    if (data.sessionCookies !== undefined) updateData.sessionCookies = data.sessionCookies;
+    if (data.userAgent !== undefined) updateData.userAgent = data.userAgent;
     
     const [supplier] = await db
       .update(suppliers)
@@ -332,6 +336,8 @@ export class DatabaseStorage implements IStorage {
       description: supplier.description || undefined,
       selectors: supplier.selectors ? JSON.parse(supplier.selectors) : {},
       productLinkSelector: supplier.productLinkSelector || undefined,
+      sessionCookies: supplier.sessionCookies || undefined,
+      userAgent: supplier.userAgent || undefined,
       createdAt: typeof supplier.createdAt === 'string' ? supplier.createdAt : supplier.createdAt.toISOString(),
       updatedAt: typeof supplier.updatedAt === 'string' ? supplier.updatedAt : supplier.updatedAt.toISOString(),
     };

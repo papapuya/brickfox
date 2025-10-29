@@ -30,6 +30,8 @@ interface Supplier {
   description?: string;
   selectors: Record<string, string>;
   productLinkSelector?: string;
+  sessionCookies?: string;
+  userAgent?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,6 +48,8 @@ export default function Suppliers() {
     urlPattern: "",
     description: "",
     productLinkSelector: "",
+    sessionCookies: "",
+    userAgent: "",
     selectors: {
       articleNumber: "",
       productName: "",
@@ -88,6 +92,8 @@ export default function Suppliers() {
         urlPattern: supplier.urlPattern || "",
         description: supplier.description || "",
         productLinkSelector: supplier.productLinkSelector || "",
+        sessionCookies: supplier.sessionCookies || "",
+        userAgent: supplier.userAgent || "",
         selectors: { ...formData.selectors, ...supplier.selectors }
       });
     } else {
@@ -97,6 +103,8 @@ export default function Suppliers() {
         urlPattern: "",
         description: "",
         productLinkSelector: "",
+        sessionCookies: "",
+        userAgent: "",
         selectors: {
           articleNumber: "",
           productName: "",
@@ -137,6 +145,8 @@ export default function Suppliers() {
         urlPattern: formData.urlPattern || undefined,
         description: formData.description || undefined,
         productLinkSelector: formData.productLinkSelector || undefined,
+        sessionCookies: formData.sessionCookies || undefined,
+        userAgent: formData.userAgent || undefined,
         selectors: activeSelectors
       };
 
@@ -343,6 +353,41 @@ export default function Suppliers() {
               <p className="text-xs text-muted-foreground mt-1">
                 Für Produktlisten-Scraping
               </p>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3">🔐 Authentifizierung (optional)</h3>
+              
+              <div className="mb-4">
+                <Label htmlFor="sessionCookies">Session Cookies</Label>
+                <Textarea
+                  id="sessionCookies"
+                  value={formData.sessionCookies}
+                  onChange={(e) => setFormData({ ...formData, sessionCookies: e.target.value })}
+                  placeholder="sessionid=abc123; csrftoken=xyz789"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 <strong>So kopieren Sie Cookies:</strong><br/>
+                  1. Loggen Sie sich auf der Lieferanten-Webseite ein<br/>
+                  2. Öffnen Sie DevTools (F12) → Tab "Application" → "Cookies"<br/>
+                  3. Kopieren Sie relevante Cookies (z.B. sessionid, auth_token)<br/>
+                  4. Format: <code>cookie1=value1; cookie2=value2</code>
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="userAgent">Custom User-Agent (optional)</Label>
+                <Input
+                  id="userAgent"
+                  value={formData.userAgent}
+                  onChange={(e) => setFormData({ ...formData, userAgent: e.target.value })}
+                  placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Falls die Webseite bestimmte Browser erfordert
+                </p>
+              </div>
             </div>
 
             <div className="border-t pt-4">

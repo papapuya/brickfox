@@ -48,6 +48,10 @@ export default function URLScraper() {
   const [maxProducts, setMaxProducts] = useState(50);
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
+  
+  // Session cookies and userAgent for authenticated scraping
+  const [sessionCookies, setSessionCookies] = useState("");
+  const [userAgent, setUserAgent] = useState("");
 
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -74,12 +78,12 @@ export default function URLScraper() {
     },
   });
 
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("none");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplierId(supplierId);
     
-    if (supplierId === "none") {
+    if (supplierId === "__none__") {
       // Clear selectors
       setSelectors({
         articleNumber: "",
@@ -93,6 +97,8 @@ export default function URLScraper() {
         category: ""
       });
       setProductLinkSelector("");
+      setSessionCookies("");
+      setUserAgent("");
       return;
     }
 
@@ -100,9 +106,11 @@ export default function URLScraper() {
     if (supplier) {
       setSelectors({ ...selectors, ...supplier.selectors });
       setProductLinkSelector(supplier.productLinkSelector || "");
+      setSessionCookies(supplier.sessionCookies || "");
+      setUserAgent(supplier.userAgent || "");
       toast({
         title: "Lieferant geladen",
-        description: `Selektoren für "${supplier.name}" wurden geladen`,
+        description: `Selektoren und Authentifizierung für "${supplier.name}" wurden geladen`,
       });
     }
   };
@@ -151,7 +159,9 @@ export default function URLScraper() {
         body: JSON.stringify({
           url: url.trim(),
           productLinkSelector: productLinkSelector.trim(),
-          maxProducts
+          maxProducts,
+          userAgent: userAgent || undefined,
+          cookies: sessionCookies || undefined
         }),
       });
 
@@ -204,7 +214,9 @@ export default function URLScraper() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               url: productUrl,
-              selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined
+              selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
+              userAgent: userAgent || undefined,
+              cookies: sessionCookies || undefined
             }),
             signal: controller.signal
           });
@@ -285,7 +297,9 @@ export default function URLScraper() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: url.trim(),
-          selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined
+          selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
+          userAgent: userAgent || undefined,
+          cookies: sessionCookies || undefined
         }),
       });
 
@@ -615,7 +629,7 @@ export default function URLScraper() {
                     <SelectValue placeholder="Lieferant wählen oder manuell konfigurieren" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Keine Vorlage (Auto-Erkennung)</SelectItem>
+                    <SelectItem value="__none__">Keine Vorlage (Auto-Erkennung)</SelectItem>
                     {suppliersData?.suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}

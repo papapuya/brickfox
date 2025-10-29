@@ -138,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product Scraper: Get list of product URLs from listing page
   app.post('/api/scrape-product-list', async (req, res) => {
     try {
-      const { url, productLinkSelector, maxProducts } = req.body;
+      const { url, productLinkSelector, maxProducts, userAgent, cookies } = req.body;
 
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ error: 'URL is required' });
@@ -150,7 +150,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productUrls = await scrapeProductList(
         url, 
         productLinkSelector || null, 
-        maxProducts || 50
+        maxProducts || 50,
+        {
+          userAgent,
+          cookies,
+          timeout: 15000
+        }
       );
 
       res.json({

@@ -179,6 +179,8 @@ export const suppliers = sqliteTable("suppliers", {
   description: text("description"),
   selectors: text("selectors").notNull(), // JSON string of ScraperSelectors
   productLinkSelector: text("product_link_selector"),
+  sessionCookies: text("session_cookies"), // Session cookies for authenticated access
+  userAgent: text("user_agent"), // Custom user agent string
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -232,6 +234,8 @@ export const supplierSchema = z.object({
   description: z.string().optional(),
   selectors: z.record(z.string(), z.string()),
   productLinkSelector: z.string().optional(),
+  sessionCookies: z.string().optional(),
+  userAgent: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -244,6 +248,8 @@ export const createSupplierSchema = z.object({
   description: z.string().optional(),
   selectors: z.record(z.string(), z.string()).default({}),
   productLinkSelector: z.string().optional(),
+  sessionCookies: z.string().optional(),
+  userAgent: z.string().optional(),
 });
 
 export type CreateSupplier = z.infer<typeof createSupplierSchema>;
