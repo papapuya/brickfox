@@ -171,6 +171,18 @@ export const templates = sqliteTable("templates", {
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
+// Supplier profiles for web scraping
+export const suppliers = sqliteTable("suppliers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  urlPattern: text("url_pattern"),
+  description: text("description"),
+  selectors: text("selectors").notNull(), // JSON string of ScraperSelectors
+  productLinkSelector: text("product_link_selector"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 // Relations
 export const projectsRelations = relations(projects, ({ many }) => ({
   products: many(productsInProjects),
@@ -212,7 +224,35 @@ export interface HtmlTemplate {
   templateFunction: (product: CreatorProduct) => string;
 }
 
+// Supplier profile schemas
+export const supplierSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  urlPattern: z.string().optional(),
+  description: z.string().optional(),
+  selectors: z.record(z.string(), z.string()),
+  productLinkSelector: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type Supplier = z.infer<typeof supplierSchema>;
+
+export const createSupplierSchema = z.object({
+  name: z.string().min(1, "Name ist erforderlich"),
+  urlPattern: z.string().optional(),
+  description: z.string().optional(),
+  selectors: z.record(z.string(), z.string()).default({}),
+  productLinkSelector: z.string().optional(),
+});
+
+export type CreateSupplier = z.infer<typeof createSupplierSchema>;
+
+export const updateSupplierSchema = createSupplierSchema.partial();
+export type UpdateSupplier = z.infer<typeof updateSupplierSchema>;
+
 // Drizzle insert schemas
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });
 export const insertProductInProjectSchema = createInsertSchema(productsInProjects).omit({ id: true, createdAt: true });
 export const insertTemplateSchema = createInsertSchema(templates).omit({ id: true, createdAt: true });
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true, updatedAt: true });
