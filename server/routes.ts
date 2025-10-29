@@ -407,13 +407,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product Creator: Generate product description with optional template
   app.post('/api/generate-description', async (req, res) => {
     try {
-      const { extractedData, customAttributes } = req.body;
+      const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable } = req.body;
 
       if (!extractedData || !Array.isArray(extractedData)) {
         return res.status(400).json({ error: 'Invalid extracted data' });
       }
 
-      const description = await generateProductDescription(extractedData, undefined, customAttributes);
+      // SMART AUTO-EXTRACTION: Combine manual extracted data with auto-extracted data
+      const enhancedData = [...extractedData];
+      
+      if (autoExtractedDescription) {
+        enhancedData.push(`Produktbeschreibung:\n${autoExtractedDescription}`);
+      }
+      
+      if (technicalDataTable) {
+        enhancedData.push(`Technische Daten (HTML-Tabelle):\n${technicalDataTable}`);
+      }
+
+      const description = await generateProductDescription(enhancedData, undefined, customAttributes);
 
       res.json({ success: true, description });
     } catch (error) {

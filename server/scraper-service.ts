@@ -45,6 +45,8 @@ export interface ScrapedProduct {
   maxLuminosity?: string;
   maxBeamDistance?: string;
   rawHtml?: string;
+  technicalDataTable?: string;
+  autoExtractedDescription?: string;
 }
 
 export interface ScrapeOptions {
@@ -349,14 +351,110 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   // Store raw HTML for debugging
   product.rawHtml = html.substring(0, 1000); // First 1000 chars
 
+  // SMART AUTO-EXTRACTION: Description + Technical Data Table
+  const smartExtraction = autoExtractProductDetails($, html);
+  if (smartExtraction.description) {
+    product.autoExtractedDescription = smartExtraction.description;
+  }
+  if (smartExtraction.technicalDataTable) {
+    product.technicalDataTable = smartExtraction.technicalDataTable;
+  }
+
   console.log('Scraped product:', {
     articleNumber: product.articleNumber,
     productName: product.productName,
     ean: product.ean,
-    imagesCount: product.images.length
+    imagesCount: product.images.length,
+    autoExtractedDescription: !!product.autoExtractedDescription,
+    technicalDataTable: !!product.technicalDataTable
   });
 
   return product;
+}
+
+/**
+ * SMART AUTO-EXTRACTION: Automatically find and extract description + technical data table
+ * Searches for common tab patterns like "Beschreibung", "Technische Daten", etc.
+ */
+function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
+  description?: string;
+  technicalDataTable?: string;
+} {
+  const result: { description?: string; technicalDataTable?: string } = {};
+
+  // 1. AUTO-EXTRACT DESCRIPTION (look for "Beschreibung" tab or section)
+  const descriptionSelectors = [
+    '#description-tab-516d15ca626445a38719925615405a64-pane', // Nitecore specific
+    '[id*="description"]',
+    '[class*="description"]',
+    '[id*="produktbeschreibung"]',
+    '.product-description',
+    '.tab-content [id*="beschreibung"]',
+    '.tab-pane:contains("Die")', // Generic German product descriptions start with "Die"
+  ];
+
+  for (const selector of descriptionSelectors) {
+    try {
+      const element = $(selector).first();
+      if (element.length > 0) {
+        const text = element.text().trim();
+        if (text.length > 50) { // Minimum length to be valid description
+          result.description = text;
+          console.log(`Auto-extracted description using: ${selector}`);
+          break;
+        }
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  // 2. AUTO-EXTRACT TECHNICAL DATA TABLE (look for "Technische Daten" table)
+  const technicalDataSelectors = [
+    '#lds-technical-data-tab-pane table', // Nitecore specific
+    '[id*="technical"] table',
+    '[id*="technische-daten"] table',
+    '[class*="technical"] table',
+    '.tab-content table',
+    'table[border="0"]', // Nitecore uses this pattern
+  ];
+
+  for (const selector of technicalDataSelectors) {
+    try {
+      const table = $(selector).first();
+      if (table.length > 0) {
+        // Check if it's a technical data table (has at least 3 rows)
+        const rows = table.find('tr');
+        if (rows.length >= 3) {
+          result.technicalDataTable = table.toString();
+          console.log(`Auto-extracted technical data table using: ${selector} (${rows.length} rows)`);
+          break;
+        }
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  // Fallback: Search entire HTML for table with technical keywords
+  if (!result.technicalDataTable) {
+    $('table').each((_, el) => {
+      const tableHtml = $(el).html() || '';
+      const tableText = $(el).text().toLowerCase();
+      
+      // Check for technical keywords in German
+      const technicalKeywords = ['länge', 'gewicht', 'durchmesser', 'stromversorgung', 'leuchtmittel', 'lumen', 'leuchtweite'];
+      const matchCount = technicalKeywords.filter(keyword => tableText.includes(keyword)).length;
+      
+      if (matchCount >= 3) { // At least 3 technical keywords found
+        result.technicalDataTable = $(el).toString();
+        console.log(`Auto-extracted technical data table by keyword matching (${matchCount} keywords)`);
+        return false; // Break loop
+      }
+    });
+  }
+
+  return result;
 }
 
 /**
