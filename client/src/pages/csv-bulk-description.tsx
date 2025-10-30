@@ -247,18 +247,13 @@ export default function CSVBulkDescription() {
           const shortDesc =
             sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
 
-          const capacity =
-            productData.capacity_mah ||
-            productData['kapazität_mah'] ||
-            productData.capacity ||
-            '';
-          const voltage = productData.voltage || productData.spannung || '';
-          const model = productData.model || productData.modell || '';
+          // MediaMarkt V1: Vollständiger Produktname aus CSV (Bezeichnung)
+          const bezeichnung = productData.bezeichnung || row['Bezeichnung'] || produktname;
+          const mmNameV1 = bezeichnung;
 
-          const mmNameV1 = `Akku ${model} ${
-            capacity ? `${capacity} mAh` : ''
-          } ${voltage ? `${voltage}V` : ''}`.trim();
-          const mmNameV2 = `${model} ${capacity ? `${capacity}mAh` : ''}`.trim();
+          // MediaMarkt V2: Nur Artikelnummer/Modell
+          const artikelnummer = productData.artikelnummer || row['Artikelnummer'] || '';
+          const mmNameV2 = artikelnummer;
 
           return {
             id: globalIndex + 1,
