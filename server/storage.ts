@@ -139,7 +139,7 @@ export class DatabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.isAdmin || false,
-      passwordHash: user.passwordHash,
+      passwordHash: (user as any).password_hash || user.passwordHash, // Handle both snake_case and camelCase
       stripeCustomerId: user.stripeCustomerId || undefined,
       subscriptionStatus: user.subscriptionStatus || undefined,
       subscriptionId: user.subscriptionId || undefined,
@@ -165,7 +165,7 @@ export class DatabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.isAdmin || false,
-      passwordHash: user.passwordHash,
+      passwordHash: (user as any).password_hash || user.passwordHash, // Handle both snake_case and camelCase
       stripeCustomerId: user.stripeCustomerId || undefined,
       subscriptionStatus: user.subscriptionStatus || undefined,
       subscriptionId: user.subscriptionId || undefined,
