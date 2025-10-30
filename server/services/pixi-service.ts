@@ -5,6 +5,9 @@
  * and inventory management.
  */
 
+import type { ProductInProject, Supplier } from '@shared/schema';
+import type { IStorage } from '../supabase-storage';
+
 interface PixiItemSearchRequest {
   SupplNr: string;
 }
@@ -33,6 +36,23 @@ interface PixiComparisonSummary {
     vorhanden: number;
   };
   products: PixiComparisonResult[];
+}
+
+interface PixiSupabaseComparisonResult extends PixiComparisonResult {
+  id: string;
+  pixi_checked_at: string;
+}
+
+interface PixiSupabaseComparisonSummary {
+  success: boolean;
+  projectId: string;
+  supplierId?: string;
+  summary: {
+    total: number;
+    neu: number;
+    vorhanden: number;
+  };
+  products: PixiSupabaseComparisonResult[];
 }
 
 interface CSVProduct {
@@ -187,6 +207,151 @@ export class PixiService {
       };
     } catch (error: any) {
       console.error('[Pixi Service] Comparison failed:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Compare products from Supabase with Pixi inventory and update database
+   * @param projectId Project ID to load products from
+   * @param storage Supabase storage instance
+   * @param supplierIdOrSupplNr Supplier ID or direct SupplNr
+   * @returns Comparison results with updated database records
+   */
+  async compareProductsFromSupabase(
+    projectId: string,
+    storage: IStorage,
+    supplierIdOrSupplNr: string
+  ): Promise<PixiSupabaseComparisonSummary> {
+    try {
+      console.log(`[Pixi Service] Starting Supabase comparison for project ${projectId}`);
+
+      // Load products from Supabase
+      const products = await storage.getProducts(projectId);
+      if (!products || products.length === 0) {
+        throw new Error('No products found in project');
+      }
+
+      console.log(`[Pixi Service] Loaded ${products.length} products from Supabase`);
+
+      // Determine SupplNr - either direct value or lookup from supplier
+      let supplNr: string;
+      let supplierId: string | undefined;
+
+      if (supplierIdOrSupplNr.match(/^\d+$/)) {
+        // Looks like a SupplNr (numeric)
+        supplNr = supplierIdOrSupplNr;
+      } else {
+        // Assume it's a supplier ID
+        supplierId = supplierIdOrSupplNr;
+        const supplier = await storage.getSupplier(supplierId);
+        
+        if (!supplier) {
+          throw new Error(`Supplier ${supplierId} not found`);
+        }
+        
+        if (!supplier.supplNr) {
+          throw new Error(`Supplier ${supplier.name} has no SupplNr configured`);
+        }
+        
+        supplNr = supplier.supplNr;
+        console.log(`[Pixi Service] Using SupplNr ${supplNr} from supplier ${supplier.name}`);
+      }
+
+      // Fetch Pixi inventory
+      const pixiResponse = await this.searchItems(supplNr);
+      const pixiItems = pixiResponse.data || [];
+
+      // Create lookup maps
+      const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      pixiItems.forEach(item => {
+        if (item.ItemNrSuppl) {
+          pixiByItemNr.set(item.ItemNrSuppl.toUpperCase(), item);
+        }
+      });
+
+      console.log(`[Pixi Service] Loaded ${pixiItems.length} items from Pixi API`);
+
+      // Compare and prepare updates
+      const results: PixiSupabaseComparisonResult[] = [];
+      const updates: Array<{
+        id: string;
+        pixi_status: 'NEU' | 'VORHANDEN';
+        pixi_ean: string | null;
+        pixi_checked_at: string;
+      }> = [];
+      
+      let neuCount = 0;
+      let vorhandenCount = 0;
+      const timestamp = new Date().toISOString();
+
+      for (const product of products) {
+        const artikelnummer = product.articleNumber?.trim() || product.name?.trim() || '';
+        const produktname = product.name?.trim() || '';
+        
+        // Try to get EAN from custom attributes or extractedData
+        let ean = '';
+        if (product.customAttributes) {
+          const eanAttr = product.customAttributes.find((attr: any) => 
+            attr.key?.toLowerCase() === 'ean' || attr.key?.toLowerCase() === 'ean-nummer'
+          );
+          if (eanAttr) {
+            ean = eanAttr.value?.toString().trim() || '';
+          }
+        }
+
+        // Check if product exists in Pixi
+        const pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
+        const isMatch = !!pixiItem;
+        const matchedEan = pixiItem?.EANUPC || null;
+        const status: 'NEU' | 'VORHANDEN' = isMatch ? 'VORHANDEN' : 'NEU';
+
+        if (status === 'NEU') {
+          neuCount++;
+        } else {
+          vorhandenCount++;
+        }
+
+        results.push({
+          id: product.id,
+          artikelnummer,
+          produktname,
+          ean,
+          hersteller: '', // Could be extracted from customAttributes if needed
+          pixi_status: status,
+          pixi_ean: matchedEan,
+          pixi_checked_at: timestamp,
+        });
+
+        updates.push({
+          id: product.id,
+          pixi_status: status,
+          pixi_ean: matchedEan,
+          pixi_checked_at: timestamp,
+        });
+      }
+
+      // Batch update in Supabase
+      console.log(`[Pixi Service] Updating ${updates.length} products in Supabase`);
+      const updateSuccess = await storage.batchUpdateProductsPixiStatus(updates);
+      
+      if (!updateSuccess) {
+        console.warn('[Pixi Service] Some database updates may have failed');
+      }
+
+      return {
+        success: true,
+        projectId,
+        supplierId,
+        summary: {
+          total: products.length,
+          neu: neuCount,
+          vorhanden: vorhandenCount,
+        },
+        products: results,
+      };
+    } catch (error: any) {
+      console.error('[Pixi Service] Supabase comparison failed:', error.message);
       throw error;
     }
   }
