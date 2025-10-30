@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import type { Project } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ScrapedProduct {
   articleNumber: string;
@@ -909,30 +910,22 @@ export default function URLScraper() {
     try {
       if (selectedProjectId === "new") {
         // Create new project with single product
-        const response = await fetch('/api/bulk-save-to-project', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            projectName: projectName.trim(),
-            products: [{
-              produktname: scrapedProduct.productName,
-              artikelnummer: scrapedProduct.articleNumber || '',
-              produktbeschreibung: generatedDescription || '',
-              ean: scrapedProduct.ean || '',
-              hersteller: scrapedProduct.manufacturer || '',
-              preis: scrapedProduct.price || '',
-              gewicht: scrapedProduct.weight || '',
-              kategorie: scrapedProduct.category || '',
-              mediamarktname_v1: scrapedProduct.productName,
-              seo_beschreibung: scrapedProduct.description?.substring(0, 200) || '',
-              source_url: url,
-            }],
-          }),
+        await apiRequest('POST', '/api/bulk-save-to-project', {
+          projectName: projectName.trim(),
+          products: [{
+            produktname: scrapedProduct.productName,
+            artikelnummer: scrapedProduct.articleNumber || '',
+            produktbeschreibung: generatedDescription || '',
+            ean: scrapedProduct.ean || '',
+            hersteller: scrapedProduct.manufacturer || '',
+            preis: scrapedProduct.price || '',
+            gewicht: scrapedProduct.weight || '',
+            kategorie: scrapedProduct.category || '',
+            mediamarktname_v1: scrapedProduct.productName,
+            seo_beschreibung: scrapedProduct.description?.substring(0, 200) || '',
+            source_url: url,
+          }],
         });
-
-        if (!response.ok) {
-          throw new Error('Fehler beim Erstellen des Projekts');
-        }
 
         toast({
           title: "Projekt erstellt",
@@ -940,29 +933,21 @@ export default function URLScraper() {
         });
       } else {
         // Add to existing project
-        const response = await fetch(`/api/projects/${selectedProjectId}/products`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: scrapedProduct.productName,
-            articleNumber: scrapedProduct.articleNumber || '',
-            htmlCode: generatedDescription || '',
-            previewText: scrapedProduct.description?.substring(0, 200) || '',
-            exactProductName: scrapedProduct.productName,
-            customAttributes: [
-              { key: 'ean', value: scrapedProduct.ean || '', type: 'text' },
-              { key: 'hersteller', value: scrapedProduct.manufacturer || '', type: 'text' },
-              { key: 'preis', value: scrapedProduct.price || '', type: 'text' },
-              { key: 'gewicht', value: scrapedProduct.weight || '', type: 'text' },
-              { key: 'kategorie', value: scrapedProduct.category || '', type: 'text' },
-              { key: 'source_url', value: url, type: 'text' },
-            ].filter(attr => attr.value),
-          }),
+        await apiRequest('POST', `/api/projects/${selectedProjectId}/products`, {
+          name: scrapedProduct.productName,
+          articleNumber: scrapedProduct.articleNumber || '',
+          htmlCode: generatedDescription || '',
+          previewText: scrapedProduct.description?.substring(0, 200) || '',
+          exactProductName: scrapedProduct.productName,
+          customAttributes: [
+            { key: 'ean', value: scrapedProduct.ean || '', type: 'text' },
+            { key: 'hersteller', value: scrapedProduct.manufacturer || '', type: 'text' },
+            { key: 'preis', value: scrapedProduct.price || '', type: 'text' },
+            { key: 'gewicht', value: scrapedProduct.weight || '', type: 'text' },
+            { key: 'kategorie', value: scrapedProduct.category || '', type: 'text' },
+            { key: 'source_url', value: url, type: 'text' },
+          ].filter(attr => attr.value),
         });
-
-        if (!response.ok) {
-          throw new Error('Fehler beim Hinzufügen zum Projekt');
-        }
 
         const project = projectsData?.projects.find(p => p.id === selectedProjectId);
         toast({
