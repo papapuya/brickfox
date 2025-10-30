@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
-  email: z.string().email('Ungültige E-Mail-Adresse'),
+  email: z.string().min(1, 'Benutzername oder E-Mail erforderlich'),
   password: z.string().min(1, 'Passwort erforderlich'),
 });
 
@@ -81,11 +81,11 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
+              <Label htmlFor="email">E-Mail oder Benutzername</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="ihre@email.de"
+                type="text"
+                placeholder="Admin oder admin@pimpilot.de"
                 {...register('email')}
                 disabled={isLoading}
               />

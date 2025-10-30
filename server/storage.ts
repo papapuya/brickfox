@@ -26,6 +26,7 @@ export interface IStorage {
   createUser(data: RegisterUser): Promise<User>;
   getUserById(id: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User & { passwordHash: string } | null>;
+  getUserByUsername(username: string): Promise<User & { passwordHash: string } | null>;
   getAllUsers(): Promise<User[]>;
   updateUserSubscription(userId: string, data: {
     stripeCustomerId?: string;
@@ -130,6 +131,32 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(eq(users.email, email));
+    
+    if (!user) return null;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username || undefined,
+      isAdmin: user.isAdmin || false,
+      passwordHash: user.passwordHash,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 500,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : user.updatedAt.toISOString(),
+    };
+  }
+
+  async getUserByUsername(username: string): Promise<User & { passwordHash: string } | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     
     if (!user) return null;
     

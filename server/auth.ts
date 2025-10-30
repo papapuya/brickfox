@@ -7,21 +7,26 @@ import type { User } from '@shared/schema';
 passport.use(
   new LocalStrategy(
     {
-      usernameField: 'email',
+      usernameField: 'email', // We keep this name but accept both email and username
       passwordField: 'password',
     },
-    async (email, password, done) => {
+    async (emailOrUsername, password, done) => {
       try {
-        const user = await storage.getUserByEmail(email);
+        // Try to find user by email first, then by username
+        let user = await storage.getUserByEmail(emailOrUsername);
         
         if (!user) {
-          return done(null, false, { message: 'Ungültige E-Mail oder Passwort' });
+          user = await storage.getUserByUsername(emailOrUsername);
+        }
+        
+        if (!user) {
+          return done(null, false, { message: 'Ungültiger Benutzername/E-Mail oder Passwort' });
         }
 
         const isValidPassword = await bcrypt.compare(password, user.passwordHash);
         
         if (!isValidPassword) {
-          return done(null, false, { message: 'Ungültige E-Mail oder Passwort' });
+          return done(null, false, { message: 'Ungültiger Benutzername/E-Mail oder Passwort' });
         }
 
         return done(null, user);
