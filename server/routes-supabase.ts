@@ -185,7 +185,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Ungültiger Benutzername/E-Mail oder Passwort' });
       }
 
-      const user = await supabaseStorage.getUserById(data.user.id);
+      let user = await supabaseStorage.getUserById(data.user.id);
+
+      // AUTO-FIX: Update old 100 limit to new 3000 (GPT-4o-mini adjustment)
+      if (user && user.apiCallsLimit === 100) {
+        console.log(`🔄 Auto-updating ${user.email} from 100 to 3000 credits (GPT-4o-mini)`);
+        await supabaseAdmin!
+          .from('users')
+          .update({ api_calls_limit: 3000 })
+          .eq('id', user.id);
+        
+        // Refresh user data
+        user = await supabaseStorage.getUserById(data.user.id);
+      }
 
       res.json({ 
         user,
