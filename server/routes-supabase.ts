@@ -513,10 +513,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       await trackApiUsage(req, res, () => {});
-      res.write(`data: ${JSON.stringify(result)}\n\n`);
+      
+      // Send in the format the frontend expects (result is already the productUrls array)
+      res.write(`data: ${JSON.stringify({ type: 'complete', productUrls: result })}\n\n`);
       res.end();
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      res.end();
     }
   });
 
