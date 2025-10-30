@@ -112,7 +112,12 @@ export default function ProjectDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${id}/products`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects/product-counts'] });
+      // Invalidate all product-counts queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          Array.isArray(query.queryKey) && 
+          query.queryKey[0] === '/api/projects/product-counts'
+      });
       setIsProductDialogOpen(false);
       setSelectedProduct(null);
       toast({

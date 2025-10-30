@@ -958,7 +958,12 @@ export default function URLScraper() {
 
       // Invalidate queries to refresh product counts
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects/product-counts'] });
+      // Invalidate all product-counts queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          Array.isArray(query.queryKey) && 
+          query.queryKey[0] === '/api/projects/product-counts'
+      });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProjectId}/products`] });
 
       setShowSaveDialog(false);
