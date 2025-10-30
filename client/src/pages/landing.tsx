@@ -102,65 +102,45 @@ export default function Landing() {
 
       {/* Feature 2: Individualization */}
       <section className="py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative order-2 md:order-1">
-              <div className="bg-gradient-to-br from-indigo-100 to-violet-100 rounded-2xl p-8 shadow-xl">
-                <div className="bg-white rounded-lg p-6 shadow-md">
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold text-indigo-600">Produkt-Beschreibung</div>
-                    <div className="text-lg font-bold text-gray-900">Nitecore 18650 Li-Ion Akku</div>
-                    <p className="text-gray-700 leading-relaxed">
-                      ✅ Hochleistungs-Lithium-Ionen-Akku für maximale Power<br/>
-                      ✅ 3400mAh Kapazität für langanhaltende Energie<br/>
-                      ✅ Perfekt für LED-Taschenlampen und E-Zigaretten
-                    </p>
-                    <div className="pt-2 border-t border-gray-200">
-                      <div className="text-xs text-gray-500">Tonalität: Professionell & Überzeugend</div>
-                    </div>
-                  </div>
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center space-y-8">
+            <div className="inline-block bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full text-sm font-semibold">
+              Individualisierung
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900">
+              Maßgeschneiderte Texte dank individuell trainierter Software
+            </h2>
+            <ul className="space-y-4 text-left max-w-2xl mx-auto">
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-lg text-gray-700">Individuelle und CI-konforme Produktbeschreibungen</p>
                 </div>
-              </div>
-            </div>
-            <div className="space-y-6 order-1 md:order-2">
-              <div className="inline-block bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full text-sm font-semibold">
-                Individualisierung
-              </div>
-              <h2 className="text-4xl font-bold text-gray-900">
-                Maßgeschneiderte Texte dank individuell trainierter Software
-              </h2>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Individuelle und CI-konforme Produktbeschreibungen</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Tonalität und Vokabular perfekt auf Ihre Zielgruppe abgestimmt</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Branchenunabhängige Anpassung</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Interner, persönlicher Kontakt für Support & Onboarding</p>
-                  </div>
-                </li>
-              </ul>
-              <Link href="/pricing">
-                <Button size="lg" className="mt-4 bg-indigo-600 hover:bg-indigo-700">
-                  Mehr über Anpassungen
-                </Button>
-              </Link>
-            </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-lg text-gray-700">Tonalität und Vokabular perfekt auf Ihre Zielgruppe abgestimmt</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-lg text-gray-700">Branchenunabhängige Anpassung</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-lg text-gray-700">Interner, persönlicher Kontakt für Support & Onboarding</p>
+                </div>
+              </li>
+            </ul>
+            <Link href="/pricing">
+              <Button size="lg" className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+                Mehr über Anpassungen
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
