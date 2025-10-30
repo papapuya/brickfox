@@ -1,10 +1,53 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield } from "lucide-react";
+import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield, Package } from "lucide-react";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white">
+      {/* Header Navigation */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/">
+              <div className="flex items-center gap-2 cursor-pointer group">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                  PIMPilot
+                </span>
+              </div>
+            </Link>
+
+            {/* Navigation Links - Desktop */}
+            <nav className="hidden md:flex items-center gap-8">
+              <a href="#features" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                Features
+              </a>
+              <a href="/pricing" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors cursor-pointer">
+                Preise
+              </a>
+            </nav>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-3">
+              <Link href="/login">
+                <Button variant="ghost" className="text-gray-700 hover:text-indigo-600 hover:bg-indigo-50">
+                  Login
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white">
+                  Kostenlos starten
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section - PromptPop Style */}
       <section className="relative">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
