@@ -105,3 +105,24 @@ export function requireActiveSubscriptionWithLimit(req: Request, res: Response, 
     });
   });
 }
+
+// Check if user is admin
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentifizierung erforderlich' });
+  }
+
+  const user = req.user as any;
+
+  // Get fresh user data to check admin status
+  const freshUser = await storage.getUserById(user.id);
+  
+  if (!freshUser || !freshUser.isAdmin) {
+    return res.status(403).json({ 
+      error: 'Zugriff verweigert',
+      message: 'Nur Administratoren haben Zugriff auf diesen Bereich.'
+    });
+  }
+
+  next();
+}

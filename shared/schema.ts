@@ -149,6 +149,7 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   username: text("username"),
+  isAdmin: integer("is_admin", { mode: 'boolean' }).default(false),
   
   // Stripe subscription fields
   stripeCustomerId: text("stripe_customer_id"),
@@ -167,6 +168,7 @@ export const users = sqliteTable("users", {
 
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -197,6 +199,7 @@ export const templates = sqliteTable("templates", {
 // Supplier profiles for web scraping
 export const suppliers = sqliteTable("suppliers", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   urlPattern: text("url_pattern"),
   description: text("description"),
@@ -211,6 +214,7 @@ export const suppliers = sqliteTable("suppliers", {
 // Temporary scrape session - stores scraped products until new scrape or manual clear
 export const scrapeSession = sqliteTable("scrape_session", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   scrapedProducts: text("scraped_products").notNull(), // JSON string of ScrapedProduct[]
   scrapedProduct: text("scraped_product"), // JSON string of single ScrapedProduct
   generatedDescription: text("generated_description"),
@@ -219,7 +223,17 @@ export const scrapeSession = sqliteTable("scrape_session", {
 });
 
 // Relations
-export const projectsRelations = relations(projects, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(projects),
+  suppliers: many(suppliers),
+  scrapeSessions: many(scrapeSession),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  user: one(users, {
+    fields: [projects.userId],
+    references: [users.id],
+  }),
   products: many(productsInProjects),
 }));
 
@@ -227,6 +241,20 @@ export const productsInProjectsRelations = relations(productsInProjects, ({ one 
   project: one(projects, {
     fields: [productsInProjects.projectId],
     references: [projects.id],
+  }),
+}));
+
+export const suppliersRelations = relations(suppliers, ({ one }) => ({
+  user: one(users, {
+    fields: [suppliers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const scrapeSessionRelations = relations(scrapeSession, ({ one }) => ({
+  user: one(users, {
+    fields: [scrapeSession.userId],
+    references: [users.id],
   }),
 }));
 
@@ -295,6 +323,7 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   username: z.string().optional(),
+  isAdmin: z.boolean().optional().default(false),
   stripeCustomerId: z.string().optional(),
   subscriptionStatus: z.string().optional(),
   subscriptionId: z.string().optional(),
