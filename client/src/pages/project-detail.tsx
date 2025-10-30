@@ -22,6 +22,8 @@ export default function ProjectDetail() {
   const { toast } = useToast();
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"products" | "brickfox">("products");
+  const [selectedProduct, setSelectedProduct] = useState<ProductInProject | null>(null);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
 
   const defaultColumns: ExportColumn[] = [
     { id: 'name', label: 'Produktname', field: 'name', enabled: true },
@@ -109,7 +111,10 @@ export default function ProjectDetail() {
       return apiRequest('DELETE', `/api/products/${productId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', id, 'products'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${id}/products`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects/product-counts'] });
+      setIsProductDialogOpen(false);
+      setSelectedProduct(null);
       toast({
         title: "Produkt gelöscht",
         description: "Das Produkt wurde erfolgreich gelöscht.",
@@ -129,6 +134,11 @@ export default function ProjectDetail() {
     if (confirm("Möchten Sie dieses Produkt wirklich löschen?")) {
       deleteProductMutation.mutate(productId);
     }
+  };
+
+  const handleProductClick = (product: ProductInProject) => {
+    setSelectedProduct(product);
+    setIsProductDialogOpen(true);
   };
 
   const handleExportProject = () => {
@@ -300,7 +310,8 @@ export default function ProjectDetail() {
                 {products.map((product) => (
                   <Card
                     key={product.id}
-                    className="hover-elevate transition-all"
+                    className="hover-elevate active-elevate-2 cursor-pointer transition-all"
+                    onClick={() => handleProductClick(product)}
                     data-testid={`card-product-${product.id}`}
                   >
                     <CardHeader className="space-y-0 pb-3">
@@ -351,6 +362,102 @@ export default function ProjectDetail() {
             <BrickfoxDataPreview products={products} projectName={project?.name} />
           </TabsContent>
         </Tabs>
+
+        {/* Product Detail Dialog */}
+        <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-product-detail">
+            <DialogHeader>
+              <DialogTitle>{selectedProduct?.name || 'Produktdetails'}</DialogTitle>
+              <DialogDescription>
+                {selectedProduct && format(new Date(selectedProduct.createdAt), "dd. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedProduct && (
+              <div className="space-y-6 mt-4">
+                {/* Custom Attributes */}
+                {selectedProduct.customAttributes && selectedProduct.customAttributes.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Produktattribute
+                    </h3>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {selectedProduct.customAttributes.map((attr, idx) => (
+                        <div key={idx} className="rounded-md border p-3">
+                          <div className="text-xs text-muted-foreground mb-1">{attr.key}</div>
+                          <div className="text-sm">{attr.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* HTML Description */}
+                {selectedProduct.htmlCode && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      HTML-Beschreibung
+                    </h3>
+                    <div 
+                      className="prose prose-sm max-w-none border rounded-md p-4 bg-muted/30"
+                      dangerouslySetInnerHTML={{ __html: selectedProduct.htmlCode }}
+                    />
+                  </div>
+                )}
+
+                {/* Preview Text */}
+                {selectedProduct.previewText && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Fließtext
+                    </h3>
+                    <div className="border rounded-md p-4 bg-muted/30 text-sm whitespace-pre-wrap">
+                      {selectedProduct.previewText}
+                    </div>
+                  </div>
+                )}
+
+                {/* Files */}
+                {selectedProduct.files && selectedProduct.files.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Dateien ({selectedProduct.files.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedProduct.files.map((file: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm border rounded-md p-2">
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                          <span>{file.fileName || file.filename || `Datei ${idx + 1}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="destructive"
+                    onClick={(e) => {
+                      if (confirm("Möchten Sie dieses Produkt wirklich löschen?")) {
+                        deleteProductMutation.mutate(selectedProduct.id);
+                      }
+                    }}
+                    disabled={deleteProductMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {deleteProductMutation.isPending ? "Wird gelöscht..." : "Produkt löschen"}
+                  </Button>
+                  <Button onClick={() => setIsProductDialogOpen(false)}>
+                    Schließen
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Export Dialog */}
         <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
