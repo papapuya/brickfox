@@ -38,6 +38,7 @@ interface BulkProduct {
   artikelnummer: string;
   produktname: string;
   produktbeschreibung: string;
+  produktbeschreibung_html: string;
   mediamarktname_v1: string;
   mediamarktname_v2: string;
   seo_beschreibung: string;
@@ -81,7 +82,8 @@ export default function CSVBulkDescription() {
   const [exportColumns, setExportColumns] = useState<ExportColumn[]>([
     { key: 'artikelnummer', label: 'Artikelnummer', enabled: true },
     { key: 'produktname', label: 'Produktname', enabled: true },
-    { key: 'produktbeschreibung', label: 'Produktbeschreibung_HTML', enabled: true },
+    { key: 'produktbeschreibung', label: 'Produktbeschreibung_Text', enabled: false },
+    { key: 'produktbeschreibung_html', label: 'Produktbeschreibung_HTML', enabled: true },
     { key: 'mediamarktname_v1', label: 'Mediamarktname_V1', enabled: true },
     { key: 'mediamarktname_v2', label: 'Mediamarktname_V2', enabled: true },
     { key: 'seo_beschreibung', label: 'SEO_Beschreibung', enabled: true },
