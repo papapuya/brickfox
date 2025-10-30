@@ -124,6 +124,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Registrierung fehlgeschlagen' });
       }
 
+      const { data: akkushopOrg } = await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .eq('slug', 'akkushop')
+        .single();
+
+      if (!akkushopOrg) {
+        console.error('AkkuShop organization not found - creating it now');
+        const { data: newOrg } = await supabaseAdmin
+          .from('organizations')
+          .insert({
+            name: 'AkkuShop',
+            slug: 'akkushop',
+            settings: {
+              default_categories: ['battery', 'charger', 'tool', 'gps', 'drone', 'camera'],
+              mediamarkt_title_format: 'Kategorie + Artikelnummer'
+            }
+          })
+          .select()
+          .single();
+        
+        if (!newOrg) {
+          return res.status(500).json({ error: 'Organization konnte nicht erstellt werden' });
+        }
+      }
+
+      const orgId = akkushopOrg?.id || (await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .eq('slug', 'akkushop')
+        .single()).data?.id;
+
       const { error: insertError } = await supabaseAdmin
         .from('users')
         .upsert({
@@ -131,6 +163,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: validatedData.email,
           username: validatedData.username || validatedData.email.split('@')[0],
           is_admin: false,
+          organization_id: orgId,
+          role: 'member',
           subscription_status: 'trial',
           plan_id: 'trial',
           api_calls_limit: 3000, // 3000 GPT-4o-mini calls = same cost as 100 GPT-4o calls
@@ -370,9 +404,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/projects/:id', requireAuth, async (req, res) => {
+  app.get('/api/projects/:id', requireAuth, async (req: any, res) => {
     try {
-      const project = await supabaseStorage.getProject(req.params.id);
+      const project = await supabaseStorage.getProject(req.params.id, req.user.id);
       if (!project) {
         return res.status(404).json({ error: 'Projekt nicht gefunden' });
       }
@@ -382,9 +416,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/projects/:id', requireAuth, async (req, res) => {
+  app.delete('/api/projects/:id', requireAuth, async (req: any, res) => {
     try {
-      const success = await supabaseStorage.deleteProject(req.params.id);
+      const success = await supabaseStorage.deleteProject(req.params.id, req.user.id);
       if (!success) {
         return res.status(404).json({ error: 'Projekt nicht gefunden' });
       }
@@ -394,19 +428,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/projects/:projectId/products', requireAuth, async (req, res) => {
+  app.get('/api/projects/:projectId/products', requireAuth, async (req: any, res) => {
     try {
-      const products = await supabaseStorage.getProducts(req.params.projectId);
+      const products = await supabaseStorage.getProducts(req.params.projectId, req.user.id);
       res.json(products);
     } catch (error) {
       res.status(500).json({ error: 'Fehler beim Laden der Produkte' });
     }
   });
 
-  app.post('/api/projects/:projectId/products', requireAuth, checkApiLimit, async (req, res) => {
+  app.post('/api/projects/:projectId/products', requireAuth, checkApiLimit, async (req: any, res) => {
     try {
       const data = createProductInProjectSchema.parse(req.body);
-      const product = await supabaseStorage.createProduct(req.params.projectId, data);
+      const product = await supabaseStorage.createProduct(req.params.projectId, data, req.user.id);
       await trackApiUsage(req, res, () => {});
       res.json(product);
     } catch (error: any) {

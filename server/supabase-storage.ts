@@ -33,17 +33,17 @@ export interface IStorage {
   createProject(userId: string, data: CreateProject): Promise<Project>;
   getProjects(): Promise<Project[]>;
   getProjectsByUserId(userId: string): Promise<Project[]>;
-  getProject(id: string): Promise<Project | null>;
-  deleteProject(id: string): Promise<boolean>;
+  getProject(id: string, userId?: string): Promise<Project | null>;
+  deleteProject(id: string, userId?: string): Promise<boolean>;
   
-  createProduct(projectId: string, data: CreateProductInProject): Promise<ProductInProject>;
-  getProducts(projectId: string): Promise<ProductInProject[]>;
-  getProduct(id: string): Promise<ProductInProject | null>;
-  updateProduct(id: string, data: UpdateProductInProject): Promise<ProductInProject | null>;
-  deleteProduct(id: string): Promise<boolean>;
+  createProduct(projectId: string, data: CreateProductInProject, userId?: string): Promise<ProductInProject>;
+  getProducts(projectId: string, userId?: string): Promise<ProductInProject[]>;
+  getProduct(id: string, userId?: string): Promise<ProductInProject | null>;
+  updateProduct(id: string, data: UpdateProductInProject, userId?: string): Promise<ProductInProject | null>;
+  deleteProduct(id: string, userId?: string): Promise<boolean>;
   
   createTemplate(name: string, content: string, isDefault?: boolean): Promise<Template>;
-  getTemplates(): Promise<Template[]>;
+  getTemplates(userId?: string): Promise<Template[]>;
   getTemplate(id: string): Promise<Template | null>;
   deleteTemplate(id: string): Promise<boolean>;
   
@@ -77,6 +77,8 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
+      organizationId: user.organization_id || undefined,
+      role: user.role || 'member',
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
       subscriptionId: user.subscription_id || undefined,
@@ -107,6 +109,8 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
+      organizationId: user.organization_id || undefined,
+      role: user.role || 'member',
       passwordHash: '', // Not used with Supabase Auth
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
@@ -138,6 +142,8 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
+      organizationId: user.organization_id || undefined,
+      role: user.role || 'member',
       passwordHash: '', // Not used with Supabase Auth
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
@@ -168,6 +174,8 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
+      organizationId: user.organization_id || undefined,
+      role: user.role || 'member',
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
       subscriptionId: user.subscription_id || undefined,
@@ -257,10 +265,19 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createProject(userId: string, data: CreateProject): Promise<Project> {
+    const user = await this.getUserById(userId);
+    if (!user) throw new Error('User not found');
+    
+    if (!user.organizationId) {
+      console.error(`[SECURITY CRITICAL] User ${userId} has NO organization_id - cannot create project`);
+      throw new Error('User must belong to an organization to create projects');
+    }
+
     const { data: project, error } = await supabase
       .from('projects')
       .insert({
         user_id: userId,
+        organization_id: user.organizationId,
         name: data.name,
       })
       .select()
@@ -276,27 +293,25 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProjects(): Promise<Project[]> {
-    const { data: projects, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at');
-
-    if (error || !projects) return [];
-
-    return projects.map(p => ({
-      id: p.id,
-      name: p.name,
-      createdAt: p.created_at,
-    }));
+    throw new Error('Use getProjectsByUserId instead - organization filtering required');
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {
-    const { data: projects, error } = await supabase
+    const user = await this.getUserById(userId);
+    if (!user) return [];
+
+    const query = supabase
       .from('projects')
       .select('*')
       .eq('user_id', userId)
       .order('created_at');
 
+    if (user.organizationId) {
+      query.eq('organization_id', user.organizationId);
+    }
+
+    const { data: projects, error } = await query;
+
     if (error || !projects) return [];
 
     return projects.map(p => ({
@@ -306,7 +321,7 @@ export class SupabaseStorage implements IStorage {
     }));
   }
 
-  async getProject(id: string): Promise<Project | null> {
+  async getProject(id: string, userId?: string): Promise<Project | null> {
     const { data: project, error } = await supabase
       .from('projects')
       .select('*')
@@ -315,6 +330,29 @@ export class SupabaseStorage implements IStorage {
 
     if (error || !project) return null;
 
+    if (userId) {
+      const user = await this.getUserById(userId);
+      if (!user) {
+        console.warn(`[SECURITY] Invalid user ${userId} tried to access project ${id}`);
+        return null;
+      }
+      
+      if (!user.organizationId) {
+        console.warn(`[SECURITY CRITICAL] User ${userId} has NO organization_id - blocking ALL access`);
+        return null;
+      }
+      
+      if (!project.organization_id) {
+        console.warn(`[SECURITY CRITICAL] Project ${id} has NO organization_id - blocking access (needs backfill)`);
+        return null;
+      }
+      
+      if (user.organizationId !== project.organization_id) {
+        console.warn(`[SECURITY] User ${userId} (org: ${user.organizationId}) tried to access project ${id} (org: ${project.organization_id})`);
+        return null;
+      }
+    }
+
     return {
       id: project.id,
       name: project.name,
@@ -322,7 +360,15 @@ export class SupabaseStorage implements IStorage {
     };
   }
 
-  async deleteProject(id: string): Promise<boolean> {
+  async deleteProject(id: string, userId?: string): Promise<boolean> {
+    if (userId) {
+      const project = await this.getProject(id, userId);
+      if (!project) {
+        console.warn(`[SECURITY] User ${userId} tried to delete project ${id} from different org`);
+        return false;
+      }
+    }
+
     const { error } = await supabase
       .from('projects')
       .delete()
@@ -331,11 +377,24 @@ export class SupabaseStorage implements IStorage {
     return !error;
   }
 
-  async createProduct(projectId: string, data: CreateProductInProject): Promise<ProductInProject> {
-    const { data: product, error } = await supabase
+  async createProduct(projectId: string, data: CreateProductInProject, userId?: string): Promise<ProductInProject> {
+    const project = await this.getProject(projectId, userId);
+    if (!project) {
+      if (userId) console.warn(`[SECURITY] User ${userId} tried to create product in non-existent/unauthorized project ${projectId}`);
+      throw new Error('Project not found or access denied');
+    }
+
+    const projectData = await supabase
+      .from('projects')
+      .select('organization_id')
+      .eq('id', projectId)
+      .single();
+
+    const { data: product, error} = await supabase
       .from('products_in_projects')
       .insert({
         project_id: projectId,
+        organization_id: projectData.data?.organization_id || null,
         name: data.name,
         files: data.files || null,
         html_code: data.htmlCode,
@@ -354,7 +413,10 @@ export class SupabaseStorage implements IStorage {
     return this.mapProduct(product);
   }
 
-  async getProducts(projectId: string): Promise<ProductInProject[]> {
+  async getProducts(projectId: string, userId?: string): Promise<ProductInProject[]> {
+    const project = await this.getProject(projectId, userId);
+    if (!project) return [];
+
     const { data: products, error } = await supabase
       .from('products_in_projects')
       .select('*')
@@ -366,7 +428,7 @@ export class SupabaseStorage implements IStorage {
     return products.map(p => this.mapProduct(p));
   }
 
-  async getProduct(id: string): Promise<ProductInProject | null> {
+  async getProduct(id: string, userId?: string): Promise<ProductInProject | null> {
     const { data: product, error } = await supabase
       .from('products_in_projects')
       .select('*')
@@ -375,10 +437,41 @@ export class SupabaseStorage implements IStorage {
 
     if (error || !product) return null;
 
+    if (userId) {
+      const user = await this.getUserById(userId);
+      if (!user) {
+        console.warn(`[SECURITY] Invalid user ${userId} tried to access product ${id}`);
+        return null;
+      }
+      
+      if (!user.organizationId) {
+        console.warn(`[SECURITY CRITICAL] User ${userId} has NO organization_id - blocking ALL access`);
+        return null;
+      }
+      
+      if (!product.organization_id) {
+        console.warn(`[SECURITY CRITICAL] Product ${id} has NO organization_id - blocking access (needs backfill)`);
+        return null;
+      }
+      
+      if (user.organizationId !== product.organization_id) {
+        console.warn(`[SECURITY] User ${userId} (org: ${user.organizationId}) tried to access product ${id} (org: ${product.organization_id})`);
+        return null;
+      }
+    }
+
     return this.mapProduct(product);
   }
 
-  async updateProduct(id: string, data: UpdateProductInProject): Promise<ProductInProject | null> {
+  async updateProduct(id: string, data: UpdateProductInProject, userId?: string): Promise<ProductInProject | null> {
+    if (userId) {
+      const existingProduct = await this.getProduct(id, userId);
+      if (!existingProduct) {
+        console.warn(`[SECURITY] User ${userId} tried to update product ${id} from different org`);
+        return null;
+      }
+    }
+
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.files !== undefined) updateData.files = data.files;
@@ -402,7 +495,15 @@ export class SupabaseStorage implements IStorage {
     return this.mapProduct(product);
   }
 
-  async deleteProduct(id: string): Promise<boolean> {
+  async deleteProduct(id: string, userId?: string): Promise<boolean> {
+    if (userId) {
+      const product = await this.getProduct(id, userId);
+      if (!product) {
+        console.warn(`[SECURITY] User ${userId} tried to delete product ${id} from different org`);
+        return false;
+      }
+    }
+
     const { error } = await supabase
       .from('products_in_projects')
       .delete()
@@ -432,11 +533,26 @@ export class SupabaseStorage implements IStorage {
     };
   }
 
-  async getTemplates(): Promise<Template[]> {
-    const { data: templates, error } = await supabase
+  async getTemplates(userId?: string): Promise<Template[]> {
+    let organizationId: string | null = null;
+    
+    if (userId) {
+      const user = await this.getUserById(userId);
+      organizationId = user?.organizationId || null;
+    }
+
+    const query = supabase
       .from('templates')
       .select('*')
       .order('created_at');
+
+    if (organizationId) {
+      query.or(`organization_id.eq.${organizationId},organization_id.is.null`);
+    } else {
+      query.is('organization_id', null);
+    }
+
+    const { data: templates, error } = await query;
 
     if (error || !templates) return [];
 
@@ -475,10 +591,14 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createSupplier(userId: string, data: CreateSupplier): Promise<Supplier> {
+    const user = await this.getUserById(userId);
+    if (!user) throw new Error('User not found');
+
     const { data: supplier, error } = await supabase
       .from('suppliers')
       .insert({
         user_id: userId,
+        organization_id: user.organizationId || null,
         name: data.name,
         url_pattern: data.urlPattern,
         description: data.description,
@@ -496,11 +616,20 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getSuppliers(userId: string): Promise<Supplier[]> {
-    const { data: suppliers, error } = await supabase
+    const user = await this.getUserById(userId);
+    if (!user) return [];
+
+    const query = supabase
       .from('suppliers')
       .select('*')
       .eq('user_id', userId)
       .order('name');
+
+    if (user.organizationId) {
+      query.eq('organization_id', user.organizationId);
+    }
+
+    const { data: suppliers, error } = await query;
 
     if (error || !suppliers) return [];
 

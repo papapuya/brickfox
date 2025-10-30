@@ -143,6 +143,16 @@ export type UpdateProductInProject = z.infer<typeof updateProductInProjectSchema
 
 // Drizzle database tables for SQLite
 
+// Organizations table for multi-tenant B2B SaaS (akkushop.de, kunde2, etc.)
+export const organizations = sqliteTable("organizations", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  settings: text("settings").notNull().default('{}'),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 // Users table for authentication and subscription management
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -150,6 +160,10 @@ export const users = sqliteTable("users", {
   passwordHash: text("password_hash").notNull(),
   username: text("username"),
   isAdmin: integer("is_admin", { mode: 'boolean' }).default(false),
+  
+  // Multi-tenant fields
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+  role: text("role").default('member'),
   
   // Stripe subscription fields
   stripeCustomerId: text("stripe_customer_id"),
@@ -169,6 +183,7 @@ export const users = sqliteTable("users", {
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -176,6 +191,7 @@ export const projects = sqliteTable("projects", {
 export const productsInProjects = sqliteTable("products_in_projects", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name"),
   files: text("files"),
   htmlCode: text("html_code"),
@@ -190,6 +206,7 @@ export const productsInProjects = sqliteTable("products_in_projects", {
 
 export const templates = sqliteTable("templates", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   content: text("content").notNull(),
   isDefault: text("is_default"),
@@ -200,6 +217,7 @@ export const templates = sqliteTable("templates", {
 export const suppliers = sqliteTable("suppliers", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   urlPattern: text("url_pattern"),
   description: text("description"),
@@ -215,6 +233,7 @@ export const suppliers = sqliteTable("suppliers", {
 export const scrapeSession = sqliteTable("scrape_session", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   scrapedProducts: text("scraped_products").notNull(), // JSON string of ScrapedProduct[]
   scrapedProduct: text("scraped_product"), // JSON string of single ScrapedProduct
   generatedDescription: text("generated_description"),
@@ -223,7 +242,20 @@ export const scrapeSession = sqliteTable("scrape_session", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  users: many(users),
+  projects: many(projects),
+  products: many(productsInProjects),
+  suppliers: many(suppliers),
+  templates: many(templates),
+  scrapeSessions: many(scrapeSession),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
   projects: many(projects),
   suppliers: many(suppliers),
   scrapeSessions: many(scrapeSession),
@@ -234,6 +266,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     fields: [projects.userId],
     references: [users.id],
   }),
+  organization: one(organizations, {
+    fields: [projects.organizationId],
+    references: [organizations.id],
+  }),
   products: many(productsInProjects),
 }));
 
@@ -242,6 +278,10 @@ export const productsInProjectsRelations = relations(productsInProjects, ({ one 
     fields: [productsInProjects.projectId],
     references: [projects.id],
   }),
+  organization: one(organizations, {
+    fields: [productsInProjects.organizationId],
+    references: [organizations.id],
+  }),
 }));
 
 export const suppliersRelations = relations(suppliers, ({ one }) => ({
@@ -249,12 +289,20 @@ export const suppliersRelations = relations(suppliers, ({ one }) => ({
     fields: [suppliers.userId],
     references: [users.id],
   }),
+  organization: one(organizations, {
+    fields: [suppliers.organizationId],
+    references: [organizations.id],
+  }),
 }));
 
 export const scrapeSessionRelations = relations(scrapeSession, ({ one }) => ({
   user: one(users, {
     fields: [scrapeSession.userId],
     references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [scrapeSession.organizationId],
+    references: [organizations.id],
   }),
 }));
 
@@ -318,12 +366,34 @@ export type CreateSupplier = z.infer<typeof createSupplierSchema>;
 export const updateSupplierSchema = createSupplierSchema.partial();
 export type UpdateSupplier = z.infer<typeof updateSupplierSchema>;
 
+// Organization schemas for multi-tenant B2B SaaS
+export const organizationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  settings: z.record(z.string(), z.any()).optional().default({}),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type Organization = z.infer<typeof organizationSchema>;
+
+export const createOrganizationSchema = z.object({
+  name: z.string().min(1, "Name ist erforderlich"),
+  slug: z.string().min(1, "Slug ist erforderlich"),
+  settings: z.record(z.string(), z.any()).optional(),
+});
+
+export type CreateOrganization = z.infer<typeof createOrganizationSchema>;
+
 // User schemas for authentication
 export const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   username: z.string().optional(),
   isAdmin: z.boolean().optional().default(false),
+  organizationId: z.string().optional(),
+  role: z.enum(['admin', 'member']).optional().default('member'),
   stripeCustomerId: z.string().optional(),
   subscriptionStatus: z.string().optional(),
   subscriptionId: z.string().optional(),
