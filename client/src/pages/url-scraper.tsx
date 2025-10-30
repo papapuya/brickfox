@@ -1543,8 +1543,19 @@ export default function URLScraper() {
             <div className="space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">HTML-Vorschau</Label>
-                <div className="p-4 bg-muted rounded-lg max-h-96 overflow-y-auto">
-                  <div dangerouslySetInnerHTML={{ __html: generatedDescription }} />
+                <div className="p-4 bg-white dark:bg-gray-900 border rounded-lg max-h-96 overflow-y-auto">
+                  <div 
+                    className="prose prose-sm max-w-none dark:prose-invert
+                      prose-h2:text-xl prose-h2:font-bold prose-h2:mb-2
+                      prose-h3:text-lg prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-2
+                      prose-h4:text-base prose-h4:font-semibold prose-h4:mt-3 prose-h4:mb-2
+                      prose-p:my-2 prose-p:leading-relaxed
+                      prose-ul:my-2 prose-li:my-1
+                      prose-table:border-collapse prose-table:w-full prose-table:my-3
+                      prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:p-2
+                      prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:p-2 prose-th:bg-gray-100 dark:prose-th:bg-gray-800"
+                    dangerouslySetInnerHTML={{ __html: generatedDescription }} 
+                  />
                 </div>
               </div>
               <div>
