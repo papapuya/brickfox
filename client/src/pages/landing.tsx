@@ -1,12 +1,15 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield, Package } from "lucide-react";
+import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield, Package, ChevronDown, Linkedin, Facebook, Twitter } from "lucide-react";
+import { useState } from "react";
 
 export default function Landing() {
+  const [productMenuOpen, setProductMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white">
-      {/* Header Navigation */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+      {/* Header Navigation - Modern Clean Design */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -15,7 +18,7 @@ export default function Landing() {
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
                   <Package className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                <span className="text-xl font-bold text-gray-900">
                   PIMPilot
                 </span>
               </div>
@@ -23,24 +26,59 @@ export default function Landing() {
 
             {/* Navigation Links - Desktop */}
             <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
-                Features
+              {/* Produkt Dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setProductMenuOpen(true)}
+                onMouseLeave={() => setProductMenuOpen(false)}
+              >
+                <button className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                  Produkt
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {productMenuOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
+                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                      Tool Funktionen
+                    </a>
+                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                      CSV Bulk Import
+                    </a>
+                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                      URL Scraper
+                    </a>
+                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                      AI-Generierung
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <Link href="/pricing">
+                <span className="text-gray-700 hover:text-indigo-600 font-medium transition-colors cursor-pointer">
+                  Tarife
+                </span>
+              </Link>
+              
+              <a href="#" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                Über uns
               </a>
-              <a href="/pricing" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors cursor-pointer">
-                Preise
+              
+              <a href="#" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                Kontakt
               </a>
             </nav>
 
             {/* Auth Buttons */}
             <div className="flex items-center gap-3">
               <Link href="/login">
-                <Button variant="ghost" className="text-gray-700 hover:text-indigo-600 hover:bg-indigo-50">
-                  Login
+                <Button asChild variant="outline" className="text-gray-700 border-gray-300 hover:text-indigo-600 hover:border-indigo-300">
+                  <span>Einloggen</span>
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white">
-                  Kostenlos starten
+                <Button asChild className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-md">
+                  <span>Demo anfordern</span>
                 </Button>
               </Link>
             </div>
@@ -62,15 +100,15 @@ export default function Landing() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Link href="/pricing">
-                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl shadow-lg">
-                  Kostenlos starten
+                <Button asChild size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl shadow-lg">
+                  <span>Kostenlos starten</span>
                 </Button>
               </Link>
-              <Link href="#features">
+              <a href="#features">
                 <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded-xl">
                   Mehr erfahren
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -281,77 +319,80 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-b from-indigo-950 via-indigo-900 to-violet-950 text-white">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            {/* Company Info */}
-            <div>
-              <h3 className="text-xl font-bold mb-4 text-white">PIMPilot</h3>
-              <p className="text-white/70 text-sm">
-                Ihr AI-Tool für automatische PIM-Daten Generierung. Professionell, schnell, zuverlässig.
+      {/* Footer - Modern Dark Design */}
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
+            {/* Company Info - 4 columns */}
+            <div className="md:col-span-4">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xl font-bold text-white">PIMPilot</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                Textoptimierung mit AI – die perfekte Lösung für erfolgreiche Online-Shops und große Unternehmen
               </p>
+              <div className="flex items-center gap-4">
+                <a href="#" className="w-9 h-9 bg-gray-800 hover:bg-emerald-500 rounded-lg flex items-center justify-center transition-colors group">
+                  <Linkedin className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </a>
+                <a href="#" className="w-9 h-9 bg-gray-800 hover:bg-emerald-500 rounded-lg flex items-center justify-center transition-colors group">
+                  <Facebook className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </a>
+                <a href="#" className="w-9 h-9 bg-gray-800 hover:bg-emerald-500 rounded-lg flex items-center justify-center transition-colors group">
+                  <Twitter className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </a>
+              </div>
             </div>
 
-            {/* Products */}
-            <div>
-              <h4 className="font-semibold mb-4 text-white">Produkt</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Preise</Link></li>
-                <li><Link href="/register" className="hover:text-white transition-colors">Kostenlos testen</Link></li>
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><Link href="/login" className="hover:text-white transition-colors">Login</Link></li>
+            {/* Tarife - 2 columns */}
+            <div className="md:col-span-2">
+              <h4 className="font-semibold mb-4 text-white text-sm uppercase tracking-wider">Tarife</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">Starter</Link></li>
+                <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">Professional</Link></li>
+                <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">Enterprise</Link></li>
+                <li><Link href="/register" className="text-gray-400 hover:text-white transition-colors">Kostenlos testen</Link></li>
               </ul>
             </div>
 
-            {/* Company */}
-            <div>
-              <h4 className="font-semibold mb-4 text-white">Unternehmen</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="#" className="hover:text-white transition-colors">Über uns</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Karriere</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Kontakt</a></li>
+            {/* Tools - 2 columns */}
+            <div className="md:col-span-2">
+              <h4 className="font-semibold mb-4 text-white text-sm uppercase tracking-wider">Tools</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">CSV Bulk Import</a></li>
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">URL Scraper</a></li>
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">AI-Generierung</a></li>
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Projekt-Management</a></li>
               </ul>
             </div>
 
-            {/* Legal */}
-            <div>
-              <h4 className="font-semibold mb-4 text-white">Rechtliches</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="#" className="hover:text-white transition-colors">Impressum</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Datenschutz</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">AGB</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Widerrufsrecht</a></li>
+            {/* Unternehmen - 2 columns */}
+            <div className="md:col-span-2">
+              <h4 className="font-semibold mb-4 text-white text-sm uppercase tracking-wider">Unternehmen</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Über uns</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Karriere</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Kontakt</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Impressum</a></li>
               </ul>
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <div className="border-t border-white/10 pt-8 mb-8">
-            <p className="text-sm text-white/70 mb-4 text-center">Sichere Zahlungsmethoden</p>
-            <div className="flex flex-wrap justify-center items-center gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-white/80 font-semibold text-sm">VISA</span>
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-gray-400">
+                © {new Date().getFullYear()} PIMPilot. Alle Rechte vorbehalten.
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-white/80 font-semibold text-sm">Mastercard</span>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-white/80 font-semibold text-sm">PayPal</span>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-white/80 font-semibold text-sm">Stripe</span>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-white/80 font-semibold text-sm">SEPA</span>
+              <div className="flex items-center gap-6 text-sm">
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">Datenschutz</a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">AGB</a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">Cookies</a>
               </div>
             </div>
-          </div>
-
-          {/* Copyright */}
-          <div className="border-t border-white/10 pt-8 text-center text-sm text-white/70">
-            <p>&copy; {new Date().getFullYear()} PIMPilot. Alle Rechte vorbehalten.</p>
           </div>
         </div>
       </footer>
