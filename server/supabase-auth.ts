@@ -17,7 +17,17 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
     .eq('id', user.id)
     .single();
 
-  if (!userData) return null;
+  if (!userData) {
+    console.error(`[getSupabaseUser] No user data found for id: ${user.id}`);
+    return null;
+  }
+
+  console.log(`[getSupabaseUser] User data:`, {
+    id: userData.id,
+    email: userData.email,
+    organization_id: userData.organization_id,
+    role: userData.role
+  });
 
   return {
     id: userData.id,
