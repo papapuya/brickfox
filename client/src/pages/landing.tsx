@@ -239,25 +239,25 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white">
+      <footer className="bg-gradient-to-b from-indigo-950 via-indigo-900 to-violet-950 text-white">
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Company Info */}
             <div>
-              <h3 className="text-xl font-bold mb-4">PIMPilot</h3>
-              <p className="text-gray-400 text-sm mb-4">
+              <h3 className="text-xl font-bold mb-4 text-white">PIMPilot</h3>
+              <p className="text-indigo-200 text-sm mb-4">
                 Ihr AI-Tool für automatische PIM-Daten Generierung. Professionell, schnell, zuverlässig.
               </p>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-indigo-200">
                   <Mail className="w-4 h-4" />
                   <span>info@pimpilot.de</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-indigo-200">
                   <Phone className="w-4 h-4" />
                   <span>+49 (0) 123 456789</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-indigo-200">
                   <MapPin className="w-4 h-4" />
                   <span>Berlin, Deutschland</span>
                 </div>
@@ -266,8 +266,8 @@ export default function Landing() {
 
             {/* Products */}
             <div>
-              <h4 className="font-semibold mb-4">Produkt</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <h4 className="font-semibold mb-4 text-white">Produkt</h4>
+              <ul className="space-y-2 text-sm text-indigo-100">
                 <li><Link href="/pricing" className="hover:text-white transition-colors">Preise</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Kostenlos testen</Link></li>
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
@@ -277,8 +277,8 @@ export default function Landing() {
 
             {/* Company */}
             <div>
-              <h4 className="font-semibold mb-4">Unternehmen</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <h4 className="font-semibold mb-4 text-white">Unternehmen</h4>
+              <ul className="space-y-2 text-sm text-indigo-100">
                 <li><a href="#" className="hover:text-white transition-colors">Über uns</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Karriere</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
@@ -288,8 +288,8 @@ export default function Landing() {
 
             {/* Legal */}
             <div>
-              <h4 className="font-semibold mb-4">Rechtliches</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <h4 className="font-semibold mb-4 text-white">Rechtliches</h4>
+              <ul className="space-y-2 text-sm text-indigo-100">
                 <li><a href="#" className="hover:text-white transition-colors">Impressum</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Datenschutz</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">AGB</a></li>
@@ -299,29 +299,29 @@ export default function Landing() {
           </div>
 
           {/* Payment Methods */}
-          <div className="border-t border-gray-800 pt-8 mb-8">
-            <p className="text-sm text-gray-400 mb-4 text-center">Sichere Zahlungsmethoden</p>
-            <div className="flex flex-wrap justify-center items-center gap-6 opacity-70">
-              <div className="bg-white rounded px-4 py-2">
-                <span className="text-blue-600 font-bold text-sm">VISA</span>
+          <div className="border-t border-white/10 pt-8 mb-8">
+            <p className="text-sm text-indigo-200 mb-4 text-center">Sichere Zahlungsmethoden</p>
+            <div className="flex flex-wrap justify-center items-center gap-4">
+              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                <span className="text-indigo-100 font-semibold text-sm">VISA</span>
               </div>
-              <div className="bg-white rounded px-4 py-2">
-                <span className="text-orange-600 font-bold text-sm">Mastercard</span>
+              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                <span className="text-indigo-100 font-semibold text-sm">Mastercard</span>
               </div>
-              <div className="bg-white rounded px-4 py-2">
-                <span className="text-blue-700 font-bold text-sm">PayPal</span>
+              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                <span className="text-indigo-100 font-semibold text-sm">PayPal</span>
               </div>
-              <div className="bg-white rounded px-4 py-2">
-                <span className="text-purple-600 font-bold text-sm">Stripe</span>
+              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                <span className="text-indigo-100 font-semibold text-sm">Stripe</span>
               </div>
-              <div className="bg-white rounded px-4 py-2">
-                <span className="text-gray-800 font-bold text-sm">SEPA</span>
+              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                <span className="text-indigo-100 font-semibold text-sm">SEPA</span>
               </div>
             </div>
           </div>
 
           {/* Copyright */}
-          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+          <div className="border-t border-white/10 pt-8 text-center text-sm text-indigo-200">
             <p>&copy; {new Date().getFullYear()} PIMPilot. Alle Rechte vorbehalten.</p>
           </div>
         </div>

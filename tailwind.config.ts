@@ -34,8 +34,8 @@ export default {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
           border: "var(--primary-border)",
-          hover: '#1d4ed8',
-          light: '#60a5fa',
+          hover: '#6366f1',
+          light: '#818cf8',
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
