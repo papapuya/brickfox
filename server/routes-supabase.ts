@@ -827,6 +827,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pixi Supabase Integration - Compare project products with Pixi ERP
+  app.post('/api/pixi/compare-project', requireAuth, async (req: any, res) => {
+    try {
+      const { projectId, supplierId, supplNr } = req.body;
+
+      if (!projectId) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Project ID is required' 
+        });
+      }
+
+      if (!supplierId && !supplNr) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Either supplier ID or supplier number (supplNr) is required' 
+        });
+      }
+
+      console.log(
+        `[Pixi Compare Project] Starting comparison for project ${projectId} ` +
+        `with ${supplierId ? `supplier ${supplierId}` : `supplNr ${supplNr}`}`
+      );
+
+      const supplierIdOrSupplNr = supplierId || supplNr;
+      const comparisonResult = await pixiService.compareProductsFromSupabase(
+        projectId,
+        supabaseStorage,
+        supplierIdOrSupplNr
+      );
+
+      console.log(
+        `[Pixi Compare Project] Comparison complete: ${comparisonResult.summary.total} total, ` +
+        `${comparisonResult.summary.neu} new, ${comparisonResult.summary.vorhanden} existing`
+      );
+
+      res.json(comparisonResult);
+    } catch (error: any) {
+      console.error('[Pixi Compare Project] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to compare products with Pixi API' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
