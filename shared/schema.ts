@@ -130,6 +130,9 @@ export const productInProjectSchema = z.object({
   })).optional(),
   exactProductName: z.string().optional(),
   articleNumber: z.string().optional(),
+  pixi_status: z.enum(['NEU', 'VORHANDEN']).optional(),
+  pixi_ean: z.string().optional(),
+  pixi_checked_at: z.string().optional(),
   createdAt: z.string(),
 });
 
@@ -201,6 +204,9 @@ export const productsInProjects = sqliteTable("products_in_projects", {
   customAttributes: text("custom_attributes"),
   exactProductName: text("exact_product_name"),
   articleNumber: text("article_number"),
+  pixiStatus: text("pixi_status"),
+  pixiEan: text("pixi_ean"),
+  pixiCheckedAt: text("pixi_checked_at"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -219,6 +225,7 @@ export const suppliers = sqliteTable("suppliers", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  supplNr: text("suppl_nr"),
   urlPattern: text("url_pattern"),
   description: text("description"),
   selectors: text("selectors").notNull(), // JSON string of ScraperSelectors
@@ -339,6 +346,7 @@ export interface HtmlTemplate {
 export const supplierSchema = z.object({
   id: z.string(),
   name: z.string(),
+  supplNr: z.string().optional(),
   urlPattern: z.string().optional(),
   description: z.string().optional(),
   selectors: z.record(z.string(), z.string()),
@@ -353,6 +361,7 @@ export type Supplier = z.infer<typeof supplierSchema>;
 
 export const createSupplierSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
+  supplNr: z.string().optional(),
   urlPattern: z.string().optional(),
   description: z.string().optional(),
   selectors: z.record(z.string(), z.string()).default({}),
