@@ -1,0 +1,332 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { supabase, supabaseAdmin } from './supabase';
+import { supabaseStorage } from './supabase-storage';
+import { createAdminUser, getSupabaseUser } from './supabase-auth';
+import { registerUserSchema, loginUserSchema } from '@shared/schema';
+import Stripe from 'stripe';
+import { 
+  createCheckoutSession, 
+  createPortalSession, 
+  handleWebhookEvent, 
+  getSubscriptionStatus,
+  PLANS 
+} from './stripe-service';
+import multer from "multer";
+import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
+import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors } from "./scraper-service";
+import { nanoid } from "nanoid";
+import { createProjectSchema, createProductInProjectSchema, updateProductInProjectSchema } from "@shared/schema";
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 10,
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'text/csv',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ];
+    if (allowedTypes.includes(file.mimetype) || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported file type: ${file.mimetype}`));
+    }
+  },
+});
+
+import { apiKeyManager } from './api-key-manager';
+
+async function requireAuth(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const user = await getSupabaseUser(token);
+
+  if (!user) {
+    return res.status(401).json({ error: 'Ungültiges Token' });
+  }
+
+  req.user = user;
+  next();
+}
+
+async function requireAdmin(req: any, res: any, next: any) {
+  await requireAuth(req, res, async () => {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: 'Admin-Zugriff erforderlich' });
+    }
+    next();
+  });
+}
+
+async function checkApiLimit(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
+  const user = await supabaseStorage.getUserById(req.user.id);
+  
+  if (!user) {
+    return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+  }
+
+  if (user.apiCallsUsed >= user.apiCallsLimit) {
+    return res.status(429).json({ 
+      error: 'API-Limit erreicht', 
+      limit: user.apiCallsLimit,
+      used: user.apiCallsUsed 
+    });
+  }
+
+  next();
+}
+
+async function trackApiUsage(req: any, res: any, next: any) {
+  if (req.user) {
+    await supabaseStorage.incrementApiCalls(req.user.id);
+  }
+  next();
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const validatedData = registerUserSchema.parse(req.body);
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.password,
+        options: {
+          data: {
+            username: validatedData.username || validatedData.email.split('@')[0],
+          }
+        }
+      });
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      if (!data.user) {
+        return res.status(400).json({ error: 'Registrierung fehlgeschlagen' });
+      }
+
+      await supabaseStorage.updateUserSubscription(data.user.id, {
+        subscriptionStatus: 'trial',
+        planId: 'trial',
+        apiCallsLimit: 100,
+      });
+
+      const { data: sessionData } = await supabase.auth.signInWithPassword({
+        email: validatedData.email,
+        password: validatedData.password,
+      });
+
+      const user = await supabaseStorage.getUserById(data.user.id);
+
+      res.json({ 
+        user, 
+        session: sessionData.session,
+        access_token: sessionData.session?.access_token 
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Ungültige Registrierungsdaten' });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      loginUserSchema.parse(req.body);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: req.body.email,
+        password: req.body.password,
+      });
+
+      if (error || !data.user) {
+        return res.status(401).json({ error: 'Ungültiger Benutzername/E-Mail oder Passwort' });
+      }
+
+      const user = await supabaseStorage.getUserById(data.user.id);
+
+      res.json({ 
+        user,
+        session: data.session,
+        access_token: data.session?.access_token
+      });
+    } catch (error) {
+      res.status(400).json({ error: 'Ungültige Login-Daten' });
+    }
+  });
+
+  app.post('/api/auth/logout', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      await supabase.auth.signOut();
+    }
+    res.json({ success: true });
+  });
+
+  app.get('/api/auth/user', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const user = await getSupabaseUser(token);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Ungültige Session' });
+    }
+
+    res.json({ user });
+  });
+
+  app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    try {
+      const users = await supabaseStorage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: 'Fehler beim Laden der Benutzer' });
+    }
+  });
+
+  app.post('/api/admin/create-admin', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'E-Mail und Passwort erforderlich' });
+      }
+
+      await createAdminUser(email, password);
+      res.json({ success: true, message: 'Admin-Benutzer erstellt' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/projects', requireAuth, async (req, res) => {
+    try {
+      const projects = await supabaseStorage.getProjectsByUserId(req.user.id);
+      res.json(projects);
+    } catch (error) {
+      res.status(500).json({ error: 'Fehler beim Laden der Projekte' });
+    }
+  });
+
+  app.post('/api/projects', requireAuth, async (req, res) => {
+    try {
+      const data = createProjectSchema.parse(req.body);
+      const project = await supabaseStorage.createProject(req.user.id, data);
+      res.json(project);
+    } catch (error) {
+      res.status(400).json({ error: 'Ungültige Projektdaten' });
+    }
+  });
+
+  app.get('/api/projects/:id', requireAuth, async (req, res) => {
+    try {
+      const project = await supabaseStorage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ error: 'Projekt nicht gefunden' });
+      }
+      res.json(project);
+    } catch (error) {
+      res.status(500).json({ error: 'Fehler beim Laden des Projekts' });
+    }
+  });
+
+  app.delete('/api/projects/:id', requireAuth, async (req, res) => {
+    try {
+      const success = await supabaseStorage.deleteProject(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: 'Projekt nicht gefunden' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Fehler beim Löschen des Projekts' });
+    }
+  });
+
+  app.get('/api/projects/:projectId/products', requireAuth, async (req, res) => {
+    try {
+      const products = await supabaseStorage.getProducts(req.params.projectId);
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ error: 'Fehler beim Laden der Produkte' });
+    }
+  });
+
+  app.post('/api/projects/:projectId/products', requireAuth, checkApiLimit, async (req, res) => {
+    try {
+      const data = createProductInProjectSchema.parse(req.body);
+      const product = await supabaseStorage.createProduct(req.params.projectId, data);
+      await trackApiUsage(req, res, () => {});
+      res.json(product);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Ungültige Produktdaten' });
+    }
+  });
+
+  app.get('/api/suppliers', requireAuth, async (req, res) => {
+    try {
+      const suppliers = await supabaseStorage.getSuppliers(req.user.id);
+      res.json(suppliers);
+    } catch (error) {
+      res.status(500).json({ error: 'Fehler beim Laden der Lieferanten' });
+    }
+  });
+
+  app.post('/api/scrape', requireAuth, checkApiLimit, upload.none(), async (req, res) => {
+    try {
+      const { url, selectors } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL ist erforderlich' });
+      }
+
+      const parsedSelectors: ScraperSelectors = selectors ? JSON.parse(selectors) : defaultSelectors;
+      const result = await scrapeProduct(url, parsedSelectors);
+      
+      await trackApiUsage(req, res, () => {});
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/generate', requireAuth, checkApiLimit, async (req, res) => {
+    try {
+      const { productData, template } = req.body;
+      
+      if (!productData) {
+        return res.status(400).json({ error: 'Produktdaten fehlen' });
+      }
+
+      const description = await generateProductDescription(productData);
+      const htmlCode = convertTextToHTML(description);
+      
+      await trackApiUsage(req, res, () => {});
+      res.json({ description, htmlCode });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}

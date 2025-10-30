@@ -25,8 +25,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['/api/auth/user'],
     queryFn: async () => {
-      const res = await fetch('/api/auth/user', { credentials: 'include' });
-      if (!res.ok) return { user: null };
+      const token = localStorage.getItem('supabase_token');
+      
+      if (!token) {
+        return { user: null };
+      }
+      
+      const res = await fetch('/api/auth/user', { 
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!res.ok) {
+        localStorage.removeItem('supabase_token');
+        return { user: null };
+      }
+      
       return res.json();
     },
     retry: false,

@@ -47,6 +47,11 @@ export default function Login() {
       return res.json();
     },
     onSuccess: (data) => {
+      // Store access token for Supabase Auth
+      if (data.access_token) {
+        localStorage.setItem('supabase_token', data.access_token);
+      }
+      
       toast({
         title: 'Erfolgreich angemeldet',
         description: 'Sie werden weitergeleitet...',

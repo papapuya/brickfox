@@ -1,0 +1,75 @@
+import { supabase, supabaseAdmin } from './supabase';
+import type { Request, Response, NextFunction } from 'express';
+import type { User } from '@shared/schema';
+
+export async function getSupabaseUser(accessToken: string): Promise<User | null> {
+  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+  
+  if (error || !user) return null;
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (!userData) return null;
+
+  return {
+    id: userData.id,
+    email: userData.email,
+    username: userData.username || undefined,
+    isAdmin: userData.is_admin || false,
+    stripeCustomerId: userData.stripe_customer_id || undefined,
+    subscriptionStatus: userData.subscription_status || undefined,
+    subscriptionId: userData.subscription_id || undefined,
+    planId: userData.plan_id || undefined,
+    currentPeriodEnd: userData.current_period_end || undefined,
+    apiCallsUsed: userData.api_calls_used || 0,
+    apiCallsLimit: userData.api_calls_limit || 100,
+    createdAt: userData.created_at,
+    updatedAt: userData.updated_at,
+  };
+}
+
+export async function createAdminUser(email: string, password: string): Promise<void> {
+  if (!supabaseAdmin) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+  }
+
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (error) throw error;
+
+  await supabase
+    .from('users')
+    .update({ is_admin: true, username: 'Admin' })
+    .eq('id', data.user.id);
+
+  console.log(`✅ Admin user created: ${email}`);
+}
+
+export function supabaseAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader?.startsWith('Bearer ')) {
+    (req as any).user = null;
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  getSupabaseUser(token)
+    .then(user => {
+      (req as any).user = user;
+      next();
+    })
+    .catch(() => {
+      (req as any).user = null;
+      next();
+    });
+}

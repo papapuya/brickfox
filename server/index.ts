@@ -1,8 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import session from 'express-session';
-import createMemoryStore from 'memorystore';
-import passport from './auth';
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes-supabase";
 import { setupVite, serveStatic, log } from "./vite";
 import fs from 'fs';
 import path from 'path';
@@ -28,26 +25,6 @@ if (fs.existsSync(envPath)) {
 }
 
 const app = express();
-
-// Session configuration
-const MemoryStore = createMemoryStore(session);
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'pimpilot-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  store: new MemoryStore({
-    checkPeriod: 86400000 // 24 hours
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  }
-}));
-
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
 
 declare module 'http' {
   interface IncomingMessage {

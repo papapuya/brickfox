@@ -51,7 +51,12 @@ export default function Register() {
       
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store access token for Supabase Auth
+      if (data.access_token) {
+        localStorage.setItem('supabase_token', data.access_token);
+      }
+      
       toast({
         title: 'Erfolgreich registriert',
         description: 'Wählen Sie jetzt Ihren Plan...',
