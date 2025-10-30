@@ -220,10 +220,13 @@ export default function CSVBulkDescription() {
 
           productData.productName = produktname;
 
+          const token = localStorage.getItem('supabase_token');
           const response = await fetch('/api/generate-description', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
               extractedData: [{ extractedText: JSON.stringify(productData) }],
               customAttributes: { exactProductName: produktname },
