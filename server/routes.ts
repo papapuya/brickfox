@@ -15,7 +15,8 @@ import {
   requireAuth, 
   requireSubscription, 
   checkApiLimit, 
-  trackApiUsage 
+  trackApiUsage,
+  requireAdmin
 } from './middleware/subscription';
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
@@ -240,6 +241,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard Routes
+  
+  // User Dashboard - Get personal stats
+  app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Get user's projects
+      const projects = await storage.getProjectsByUserId(user.id);
+      
+      // Count total products across all projects
+      let totalProducts = 0;
+      for (const project of projects) {
+        const products = await storage.getProducts(project.id);
+        totalProducts += products.length;
+      }
+      
+      // Get user's current subscription info
+      const freshUser = await storage.getUserById(user.id);
+      
+      res.json({
+        success: true,
+        stats: {
+          projectCount: projects.length,
+          productCount: totalProducts,
+          apiCallsUsed: freshUser?.apiCallsUsed || 0,
+          apiCallsLimit: freshUser?.apiCallsLimit || 500,
+          planId: freshUser?.planId || 'trial',
+          subscriptionStatus: freshUser?.subscriptionStatus || 'trial',
+        },
+        recentProjects: projects.slice(0, 5), // Last 5 projects
+      });
+    } catch (error) {
+      console.error('Dashboard stats error:', error);
+      res.status(500).json({ error: 'Fehler beim Laden der Dashboard-Daten' });
+    }
+  });
+  
+  // Admin Dashboard - Get all customers
+  app.get('/api/admin/customers', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // Get project count and product count for each user
+      const customersWithStats = await Promise.all(
+        users.map(async (user) => {
+          const projects = await storage.getProjectsByUserId(user.id);
+          let totalProducts = 0;
+          for (const project of projects) {
+            const products = await storage.getProducts(project.id);
+            totalProducts += products.length;
+          }
+          
+          return {
+            ...user,
+            projectCount: projects.length,
+            productCount: totalProducts,
+          };
+        })
+      );
+      
+      res.json({
+        success: true,
+        customers: customersWithStats,
+      });
+    } catch (error) {
+      console.error('Admin customers error:', error);
+      res.status(500).json({ error: 'Fehler beim Laden der Kundendaten' });
+    }
+  });
+  
   // API-Schlüssel-Verwaltung
   app.post('/api/encrypt-api-key', async (req, res) => {
     try {
