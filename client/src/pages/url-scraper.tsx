@@ -1732,26 +1732,11 @@ export default function URLScraper() {
             
             {testResults && (
               <div className="space-y-6">
-                {/* Summary Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <Card className="p-4">
-                    <div className="text-2xl font-bold text-green-600">
-                      {testResults.results.filter((r: any) => r.found).length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Gefunden</div>
-                  </Card>
-                  <Card className="p-4">
-                    <div className="text-2xl font-bold text-red-600">
-                      {testResults.results.filter((r: any) => !r.found).length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Fehlt</div>
-                  </Card>
-                  <Card className="p-4">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {testResults.results.length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Gesamt</div>
-                  </Card>
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <h4 className="font-semibold mb-2">✅ Test erfolgreich</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Produktdaten wurden erfolgreich extrahiert. Sie können jetzt mit "Produktdaten scrapen" fortfahren.
+                  </p>
                 </div>
 
                 {/* Results Table */}
@@ -1759,97 +1744,52 @@ export default function URLScraper() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">Status</TableHead>
                         <TableHead>Feld</TableHead>
-                        <TableHead>CSS-Selektor</TableHead>
                         <TableHead>Extrahierter Wert</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {testResults.results.map((result: any, index: number) => (
-                        <TableRow key={index} className={result.found ? '' : 'bg-red-50'}>
-                          <TableCell className="text-center text-2xl">
-                            {result.found ? '✅' : '❌'}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {result.field}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">
-                            {result.selector || (
-                              <span className="text-muted-foreground italic">
-                                {result.field === 'images' ? 'Auto-Erkennung' : 'Kein Selektor'}
+                      {Object.entries(testResults).map(([key, value]: [string, any], index: number) => {
+                        // Skip internal fields
+                        if (key === 'autoExtractedDescription' || key === 'technicalDataTable' || key === 'pdfManualUrl' || key === 'safetyWarnings' || key === 'rawHtml' || key === 'images') return null;
+                        if (!value) return null;
+                        
+                        return (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{key}</TableCell>
+                            <TableCell className="max-w-md">
+                              <span className="break-words text-sm">
+                                {typeof value === 'object' ? JSON.stringify(value) : String(value).substring(0, 150)}
+                                {String(value).length > 150 ? '...' : ''}
                               </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="max-w-md">
-                            {result.found ? (
-                              <div className="text-sm">
-                                {result.field === 'images' && Array.isArray(result.value) ? (
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold">{result.value.length} Bild(er)</span>
-                                    {result.value[0] && (
-                                      <img 
-                                        src={result.value[0]} 
-                                        alt="Preview"
-                                        className="w-12 h-12 object-cover rounded border"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%23e5e7eb"/></svg>';
-                                        }}
-                                      />
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="break-words">
-                                    {String(result.value).substring(0, 150)}
-                                    {String(result.value).length > 150 ? '...' : ''}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground italic">Nicht gefunden</span>
-                            )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {testResults.images && testResults.images.length > 0 && (
+                        <TableRow>
+                          <TableCell className="font-medium">images</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{testResults.images.length} gefunden</span>
+                              {testResults.images[0] && (
+                                <img 
+                                  src={testResults.images[0]} 
+                                  alt="Preview"
+                                  className="w-12 h-12 object-cover rounded border"
+                                />
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
 
-                {/* Info Box */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>💡 Tipp:</strong> Felder mit ❌ bedeuten, dass der CSS-Selektor kein passendes Element gefunden hat.
-                    Passen Sie die Selektoren an oder speichern Sie diese Konfiguration als Lieferantenprofil für zukünftige Verwendung.
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
+                {/* Action Button */}
                 <div className="flex gap-3 justify-end">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setShowTestPreview(false);
-                      setShowAdvanced(true);
-                    }}
-                  >
-                    <Settings2 className="w-4 h-4 mr-2" />
-                    Selektoren anpassen
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      setShowTestPreview(false);
-                      setLocation('/suppliers');
-                    }}
-                  >
-                    <FolderPlus className="w-4 h-4 mr-2" />
-                    Als Lieferantenprofil speichern
-                  </Button>
-                  <Button 
-                    variant="default"
-                    onClick={() => {
-                      setShowTestPreview(false);
-                    }}
-                  >
+                  <Button onClick={() => setShowTestPreview(false)}>
                     Schließen
                   </Button>
                 </div>
