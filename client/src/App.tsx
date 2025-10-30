@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -28,14 +28,14 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      {/* Public routes */}
+      {/* Public routes - no sidebar */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/success" component={Success} />
-      
-      {/* Protected routes */}
       <Route path="/" component={Landing} />
+      
+      {/* Protected routes - with sidebar */}
       <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
@@ -87,33 +87,56 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
+  const [location] = useLocation();
+  
+  // Public routes that should NOT show sidebar
+  const publicRoutes = ['/', '/login', '/register', '/pricing', '/success'];
+  const isPublicRoute = publicRoutes.includes(location);
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
 
+  if (isPublicRoute) {
+    // Public layout - no sidebar
+    return (
+      <>
+        <Router />
+        <Toaster />
+      </>
+    );
+  }
+
+  // Protected layout - with sidebar
+  return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <header className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <div className="flex items-center gap-4">
+              <SubscriptionBadge />
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto">
+            <Router />
+          </main>
+        </div>
+      </div>
+      <Toaster />
+    </SidebarProvider>
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-col flex-1 overflow-hidden">
-                <header className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <div className="flex items-center gap-4">
-                    <SubscriptionBadge />
-                  </div>
-                </header>
-                <main className="flex-1 overflow-auto">
-                  <Router />
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
-          <Toaster />
+          <AppContent />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
