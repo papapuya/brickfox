@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +55,7 @@ export default function URLScraper() {
   const [aiGenerationProgress, setAiGenerationProgress] = useState({ current: 0, total: 0 });
   
   // Abort scraping control
-  const abortScrapingRef = React.useRef(false);
+  const abortScrapingRef = useRef(false);
   
   // Pagination options for multi-page scraping
   const [enablePagination, setEnablePagination] = useState(false);
@@ -209,7 +209,7 @@ export default function URLScraper() {
         // Use SSE for multi-page scraping with live progress
         productUrls = await new Promise((resolve, reject) => {
           const requestBody = {
-            listUrl: url.trim(),
+            url: url.trim(),
             productLinkSelector: productLinkSelector.trim() || null,
             paginationSelector: paginationSelector.trim() || null,
             maxPages,
@@ -310,7 +310,7 @@ export default function URLScraper() {
       } else {
         // Single page scraping (no SSE needed)
         const requestBody = {
-          listUrl: url.trim(),
+          url: url.trim(),
           productLinkSelector: productLinkSelector.trim() || null,
           maxProducts,
           userAgent: userAgent || undefined,
