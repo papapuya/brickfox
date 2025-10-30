@@ -49,7 +49,14 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 
 ## Recent Changes (Okt 2025)
 
-### Pixi ERP Integration (Latest)
+### Multi-Tenant Database Migration (30. Okt 2025) ✅ COMPLETED
+- **Database**: Successfully migrated Supabase Remote database to multi-tenant architecture
+- **Schema Changes**: Added `organizations` table and `organization_id` + `role` columns to all relevant tables
+- **User Setup**: Admin user (saranzerrer@icloud.com) assigned to AkkuShop organization as admin
+- **Status**: Project creation now working with full organization isolation
+- **Database**: Exclusively uses Supabase Remote (lxemqwvdaxzeldpjmxoc.supabase.co) - local Helium DB deprecated
+
+### Pixi ERP Integration
 - **New Service**: `server/services/pixi-service.ts` - Pixi API integration with 5-min caching
 - **API Endpoints**: 
   - `POST /api/pixi/compare` - CSV upload & comparison
