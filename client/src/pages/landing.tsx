@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield, Mail, Phone, MapPin } from "lucide-react";
+import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield } from "lucide-react";
 
 export default function Landing() {
   return (
@@ -245,29 +245,15 @@ export default function Landing() {
             {/* Company Info */}
             <div>
               <h3 className="text-xl font-bold mb-4 text-white">PIMPilot</h3>
-              <p className="text-indigo-200 text-sm mb-4">
+              <p className="text-white/70 text-sm">
                 Ihr AI-Tool für automatische PIM-Daten Generierung. Professionell, schnell, zuverlässig.
               </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-indigo-200">
-                  <Mail className="w-4 h-4" />
-                  <span>info@pimpilot.de</span>
-                </div>
-                <div className="flex items-center gap-2 text-indigo-200">
-                  <Phone className="w-4 h-4" />
-                  <span>+49 (0) 123 456789</span>
-                </div>
-                <div className="flex items-center gap-2 text-indigo-200">
-                  <MapPin className="w-4 h-4" />
-                  <span>Berlin, Deutschland</span>
-                </div>
-              </div>
             </div>
 
             {/* Products */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Produkt</h4>
-              <ul className="space-y-2 text-sm text-indigo-100">
+              <ul className="space-y-2 text-sm text-white/80">
                 <li><Link href="/pricing" className="hover:text-white transition-colors">Preise</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Kostenlos testen</Link></li>
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
@@ -278,7 +264,7 @@ export default function Landing() {
             {/* Company */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Unternehmen</h4>
-              <ul className="space-y-2 text-sm text-indigo-100">
+              <ul className="space-y-2 text-sm text-white/80">
                 <li><a href="#" className="hover:text-white transition-colors">Über uns</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Karriere</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
@@ -289,7 +275,7 @@ export default function Landing() {
             {/* Legal */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Rechtliches</h4>
-              <ul className="space-y-2 text-sm text-indigo-100">
+              <ul className="space-y-2 text-sm text-white/80">
                 <li><a href="#" className="hover:text-white transition-colors">Impressum</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Datenschutz</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">AGB</a></li>
@@ -300,28 +286,28 @@ export default function Landing() {
 
           {/* Payment Methods */}
           <div className="border-t border-white/10 pt-8 mb-8">
-            <p className="text-sm text-indigo-200 mb-4 text-center">Sichere Zahlungsmethoden</p>
+            <p className="text-sm text-white/70 mb-4 text-center">Sichere Zahlungsmethoden</p>
             <div className="flex flex-wrap justify-center items-center gap-4">
               <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-indigo-100 font-semibold text-sm">VISA</span>
+                <span className="text-white/80 font-semibold text-sm">VISA</span>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-indigo-100 font-semibold text-sm">Mastercard</span>
+                <span className="text-white/80 font-semibold text-sm">Mastercard</span>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-indigo-100 font-semibold text-sm">PayPal</span>
+                <span className="text-white/80 font-semibold text-sm">PayPal</span>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-indigo-100 font-semibold text-sm">Stripe</span>
+                <span className="text-white/80 font-semibold text-sm">Stripe</span>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                <span className="text-indigo-100 font-semibold text-sm">SEPA</span>
+                <span className="text-white/80 font-semibold text-sm">SEPA</span>
               </div>
             </div>
           </div>
 
           {/* Copyright */}
-          <div className="border-t border-white/10 pt-8 text-center text-sm text-indigo-200">
+          <div className="border-t border-white/10 pt-8 text-center text-sm text-white/70">
             <p>&copy; {new Date().getFullYear()} PIMPilot. Alle Rechte vorbehalten.</p>
           </div>
         </div>
