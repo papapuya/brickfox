@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, CheckCircle, XCircle, Download } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, FileText, CheckCircle, XCircle, Download, Database } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import type { Project, Supplier } from '@shared/schema';
 
 interface ComparisonResult {
   artikelnummer: string;
@@ -31,12 +34,60 @@ interface ComparisonResponse {
 
 export default function PixiComparePage() {
   const { user } = useAuth();
+  
+  // CSV Mode State
   const [file, setFile] = useState<File | null>(null);
   const [supplNr, setSupplNr] = useState('7077');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Project Mode State
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
+  const [loadingData, setLoadingData] = useState(false);
+  
+  // Shared State
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ComparisonResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'csv' | 'project'>('project');
+
+  useEffect(() => {
+    if (activeTab === 'project') {
+      loadProjectsAndSuppliers();
+    }
+  }, [activeTab]);
+
+  const loadProjectsAndSuppliers = async () => {
+    setLoadingData(true);
+    try {
+      const token = localStorage.getItem('supabase_token');
+      
+      const [projectsRes, suppliersRes] = await Promise.all([
+        fetch('/api/projects', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+        fetch('/api/suppliers', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+      ]);
+
+      if (projectsRes.ok) {
+        const projectsData = await projectsRes.json();
+        setProjects(projectsData.projects || []);
+      }
+
+      if (suppliersRes.ok) {
+        const suppliersData = await suppliersRes.json();
+        setSuppliers(suppliersData || []);
+      }
+    } catch (err: any) {
+      console.error('Failed to load data:', err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -51,7 +102,51 @@ export default function PixiComparePage() {
     }
   };
 
-  const handleCompare = async () => {
+  const handleProjectCompare = async () => {
+    if (!selectedProject) {
+      setError('Bitte wählen Sie ein Projekt aus');
+      return;
+    }
+
+    if (!selectedSupplier) {
+      setError('Bitte wählen Sie einen Lieferanten aus');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const token = localStorage.getItem('supabase_token');
+
+      const response = await fetch('/api/pixi/compare-project', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: selectedProject,
+          supplierId: selectedSupplier,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Vergleich fehlgeschlagen');
+      }
+
+      setResult(data);
+    } catch (err: any) {
+      setError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCSVCompare = async () => {
     if (!file) {
       setError('Bitte wählen Sie eine CSV-Datei aus');
       return;
@@ -128,77 +223,162 @@ export default function PixiComparePage() {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>CSV-Upload & Vergleich</CardTitle>
-            <CardDescription>
-              Laden Sie eine CSV-Datei mit Produktdaten hoch und vergleichen Sie diese mit Pixi
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="supplNr">Lieferantennummer</Label>
-                <Input
-                  id="supplNr"
-                  value={supplNr}
-                  onChange={(e) => setSupplNr(e.target.value)}
-                  placeholder="z.B. 7077"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="csvFile">CSV-Datei</Label>
-                <div className="flex gap-2">
-                  <Input
-                    ref={fileInputRef}
-                    id="csvFile"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileChange}
-                    disabled={loading}
-                    className="flex-1"
-                  />
-                  {file && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setFile(null);
-                        if (fileInputRef.current) fileInputRef.current.value = '';
-                      }}
-                      disabled={loading}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                {file && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
-                    {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <Button
-              onClick={handleCompare}
-              disabled={!file || !supplNr || loading}
-              className="w-full"
-            >
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'csv' | 'project')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="project">
+              <Database className="mr-2 h-4 w-4" />
+              Projekt-basiert
+            </TabsTrigger>
+            <TabsTrigger value="csv">
               <Upload className="mr-2 h-4 w-4" />
-              {loading ? 'Vergleiche mit Pixi...' : 'Jetzt vergleichen'}
-            </Button>
-          </CardContent>
-        </Card>
+              CSV-Upload
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="project">
+            <Card>
+              <CardHeader>
+                <CardTitle>Projekt-basierter Vergleich</CardTitle>
+                <CardDescription>
+                  Wählen Sie ein Projekt und einen Lieferanten aus Ihrer Datenbank
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="project">Projekt</Label>
+                    <Select
+                      value={selectedProject}
+                      onValueChange={setSelectedProject}
+                      disabled={loading || loadingData}
+                    >
+                      <SelectTrigger id="project">
+                        <SelectValue placeholder="Projekt auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="supplier">Lieferant</Label>
+                    <Select
+                      value={selectedSupplier}
+                      onValueChange={setSelectedSupplier}
+                      disabled={loading || loadingData}
+                    >
+                      <SelectTrigger id="supplier">
+                        <SelectValue placeholder="Lieferant auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map((supplier) => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                            {supplier.supplNr && ` (${supplier.supplNr})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  onClick={handleProjectCompare}
+                  disabled={!selectedProject || !selectedSupplier || loading || loadingData}
+                  className="w-full"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  {loading ? 'Vergleiche mit Pixi...' : 'Jetzt vergleichen'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="csv">
+            <Card>
+              <CardHeader>
+                <CardTitle>CSV-Upload & Vergleich</CardTitle>
+                <CardDescription>
+                  Laden Sie eine CSV-Datei mit Produktdaten hoch und vergleichen Sie diese mit Pixi
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="supplNr">Lieferantennummer</Label>
+                    <Input
+                      id="supplNr"
+                      value={supplNr}
+                      onChange={(e) => setSupplNr(e.target.value)}
+                      placeholder="z.B. 7077"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="csvFile">CSV-Datei</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        ref={fileInputRef}
+                        id="csvFile"
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileChange}
+                        disabled={loading}
+                        className="flex-1"
+                      />
+                      {file && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          disabled={loading}
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {file && (
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  onClick={handleCSVCompare}
+                  disabled={!file || !supplNr || loading}
+                  className="w-full"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {loading ? 'Vergleiche mit Pixi...' : 'Jetzt vergleichen'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {result && (
           <>
