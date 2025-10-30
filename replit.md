@@ -39,8 +39,23 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 - **AI Generation**: Automated product descriptions in a MediaMarkt-like format using OpenAI GPT-4o-mini, with dynamic, product-specific prompts.
 - **Project Management**: Save and organize generated products into projects.
 - **Supplier Profiles**: Manage multiple suppliers with saved selectors.
+- **Pixi ERP Integration**: Automated product comparison with Pixi ERP system to identify new vs. existing products, with CSV upload, intelligent matching (article number + EAN validation), 5-minute caching, and CSV export functionality.
 
 ## External Dependencies
 -   **OpenAI API**: Used for AI-driven text generation (GPT-4o-mini).
 -   **Supabase (PostgreSQL)**: The production database, leveraged for its PostgreSQL capabilities, UUID primary keys, and organization-based multi-tenancy support.
 -   **Stripe**: Integrated for subscription management and payment processing.
+-   **Pixi ERP API**: External integration for product inventory comparison and duplicate detection.
+
+## Recent Changes (Okt 2025)
+
+### Pixi ERP Integration (Latest)
+- **New Service**: `server/services/pixi-service.ts` - Pixi API integration with 5-min caching
+- **API Endpoints**: 
+  - `POST /api/pixi/compare` - CSV upload & comparison
+  - `POST /api/pixi/compare-json` - JSON-based comparison
+  - `DELETE /api/pixi/cache` - Manual cache clearing
+- **Frontend**: New page `/pixi-compare` with upload UI, statistics, and CSV export
+- **Matching Logic**: Article number (primary) + EAN validation (secondary)
+- **Security**: Full multi-tenant isolation with requireAuth middleware
+- **Documentation**: See `PIXI_INTEGRATION.md` for details
