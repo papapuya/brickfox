@@ -424,30 +424,55 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
     }
   }
 
-  // 2. AUTO-EXTRACT TECHNICAL DATA TABLE (look for "Technische Daten" table)
-  const technicalDataSelectors = [
-    '#lds-technical-data-tab-pane table', // Nitecore specific
-    '[id*="technical"] table',
-    '[id*="technische-daten"] table',
-    '[class*="technical"] table',
-    '.tab-content table',
-    'table[border="0"]', // Nitecore uses this pattern
+  // 2. AUTO-EXTRACT TECHNICAL DATA TABLE - FULL HTML (look for "Technische Daten" tab content)
+  // STRATEGY: Extract the entire tab pane content, not just a single table
+  const technicalDataPaneSelectors = [
+    '#technical-data-516d15ca626445a38719925615405a64-pane', // Nitecore specific tab pane (FULL CONTENT)
+    '[id*="technical-data"]', // Generic technical data pane
+    '[id*="technische-daten"]', // German technical data pane
   ];
 
-  for (const selector of technicalDataSelectors) {
+  // Try to get the COMPLETE tab pane first (all DIVs and tables)
+  for (const selector of technicalDataPaneSelectors) {
     try {
-      const table = $(selector).first();
-      if (table.length > 0) {
-        // Check if it's a technical data table (has at least 3 rows)
-        const rows = table.find('tr');
-        if (rows.length >= 3) {
-          result.technicalDataTable = table.toString();
-          console.log(`Auto-extracted technical data table using: ${selector} (${rows.length} rows)`);
+      const pane = $(selector).first();
+      if (pane.length > 0) {
+        const content = pane.html();
+        if (content && content.length > 100) {
+          // Build a complete HTML table structure from the pane content
+          result.technicalDataTable = `<div class="technical-data-section">${content}</div>`;
+          console.log(`Auto-extracted FULL technical data pane using: ${selector} (${content.length} chars)`);
           break;
         }
       }
     } catch (error) {
       continue;
+    }
+  }
+
+  // Fallback: Try individual table selectors
+  if (!result.technicalDataTable) {
+    const tableSelectors = [
+      '.tab-content table',
+      'table.product-detail-properties-table',
+      'table.table-striped',
+      'table[border="0"]',
+    ];
+
+    for (const selector of tableSelectors) {
+      try {
+        const table = $(selector).first();
+        if (table.length > 0) {
+          const rows = table.find('tr');
+          if (rows.length >= 3) {
+            result.technicalDataTable = table.toString();
+            console.log(`Auto-extracted technical data table using: ${selector} (${rows.length} rows)`);
+            break;
+          }
+        }
+      } catch (error) {
+        continue;
+      }
     }
   }
 
