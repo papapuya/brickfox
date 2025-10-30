@@ -346,8 +346,8 @@ export const registerUserSchema = z.object({
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 
 export const loginUserSchema = z.object({
-  email: z.string().email("Ungültige E-Mail-Adresse"),
-  password: z.string(),
+  email: z.string().min(1, "Benutzername oder E-Mail erforderlich"), // Accepts username OR email
+  password: z.string().min(1, "Passwort erforderlich"),
 });
 
 export type LoginUser = z.infer<typeof loginUserSchema>;
