@@ -212,10 +212,16 @@ export default function CSVBulkDescription() {
             productData[normalizedKey] = row[key];
           });
 
+          // Produktname aus verschiedenen möglichen Spalten lesen
           const produktname =
             productData.produktname ||
+            productData.bezeichnung ||
+            productData.name ||
             row['Produktname'] ||
+            row['Bezeichnung'] ||
+            row['Name'] ||
             row['produktname'] ||
+            row['bezeichnung'] ||
             'Unbekanntes Produkt';
 
           productData.productName = produktname;
