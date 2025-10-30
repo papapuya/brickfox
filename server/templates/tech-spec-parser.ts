@@ -146,16 +146,16 @@ export function extractTechSpecsFromStructured(
     const value = structuredData[key];
     
     // Skip bereits verarbeitete Felder (normalisiert vergleichen)
-    const normalizedKey = normalizeFieldName(key);
-    if (processedKeys.has(normalizedKey)) {
-      console.log(`⏭️ Skipping ${key} (already processed as ${normalizedKey})`);
+    const normalizedKeyField = normalizeFieldName(key);
+    if (processedKeys.has(normalizedKeyField)) {
+      console.log(`⏭️ Skipping ${key} (already processed as ${normalizedKeyField})`);
       continue;
     }
     
     // Skip Meta-Felder und Business-Daten (nur echte technische Spezifikationen erlauben)
     const metaFields = [
-      'productName', 'product_name', 'produktname', 'bezeichnung', 'name',
-      'seoName', 'description', 'beschreibung', 'beschreibung_lieferant',
+      'productname', 'product_name', 'produktname', 'bezeichnung', 'name',
+      'seoname', 'description', 'beschreibung', 'beschreibung_lieferant',
       'hersteller', 'manufacturer', 'brand', 'marke',
       'artikelnummer', 'sku', 'article_number', 'modellnummer',
       'kategorie', 'category',
@@ -167,8 +167,11 @@ export function extractTechSpecsFromStructured(
       'url', 'link', 'website',
     ];
     
-    if (metaFields.includes(key.toLowerCase().replace(/\s+/g, '_').replace(/[()€]/g, ''))) {
-      console.log(`⏭️ Skipping ${key} (meta/business field)`);
+    // Normalisiere Feldname: entferne Leerzeichen, Sonderzeichen, Unterstriche
+    const normalizedMetaKey = key.toLowerCase().replace(/[\s()€_-]/g, '');
+    
+    if (metaFields.includes(normalizedMetaKey)) {
+      console.log(`⏭️ Skipping ${key} (meta/business field, normalized: ${normalizedMetaKey})`);
       continue;
     }
     
@@ -181,7 +184,7 @@ export function extractTechSpecsFromStructured(
     // Formatiere Feldnamen (z.B. "capacity_mah" → "Kapazität Mah", "Länge mm" → "Länge Mm")
     const formattedKey = formatFieldName(key);
     specs[formattedKey] = value;
-    processedKeys.add(normalizedKey);
+    processedKeys.add(normalizedKeyField);
     console.log(`✅ 1:1 Dynamisches Feld: ${formattedKey} = ${value}`);
   }
   
