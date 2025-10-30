@@ -1311,8 +1311,30 @@ export default function URLScraper() {
                     // Skip description if it's an HTML object or auto-extracted flag
                     if (key === 'autoExtractedDescription' || key === 'technicalDataTable' || key === 'pdfManualUrl' || key === 'safetyWarnings' || key === 'rawHtml') return null;
                     
-                    // Use original selector name (keep camelCase)
-                    const fieldName = key;
+                    // German field name mapping (Nitecore selector names)
+                    const fieldNameMap: Record<string, string> = {
+                      articleNumber: 'Artikelnummer',
+                      productName: 'Produktname',
+                      ean: 'EAN',
+                      manufacturer: 'Hersteller',
+                      price: 'Preis',
+                      weight: 'Gewicht (g)',
+                      category: 'Kategorie',
+                      description: 'Beschreibung',
+                      length: 'Länge (mm)',
+                      bodyDiameter: 'Gehäusedurchmesser (mm)',
+                      headDiameter: 'Kopfdurchmesser (mm)',
+                      weightWithoutBattery: 'Gewicht ohne Batterie (g)',
+                      totalWeight: 'Gesamt Gewicht (g)',
+                      powerSupply: 'Stromversorgung',
+                      led1: 'Leuchtmittel 1',
+                      led2: 'Leuchtmittel 2',
+                      spotIntensity: 'Spotintensität (cd)',
+                      maxLuminosity: 'Leuchtleistung max. (Lumen)',
+                      maxBeamDistance: 'Max. Leuchtweite (m)',
+                    };
+                    
+                    const fieldName = fieldNameMap[key] || key;
                     
                     return (
                       <TableRow key={key}>
@@ -1330,7 +1352,7 @@ export default function URLScraper() {
 
             {/* Image Gallery */}
             {scrapedProduct.images && scrapedProduct.images.length > 0 && (
-              <div className="mt-6">
+              <div className="mt-6 border-t pt-6">
                 <h4 className="text-md font-semibold mb-3">
                   Produktbilder ({scrapedProduct.images.length} gefunden)
                 </h4>
