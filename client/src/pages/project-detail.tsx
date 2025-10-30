@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, FileText, Trash2, Upload, Download, Calendar, FolderOpen, Table } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Plus, FileText, Trash2, Upload, Download, Calendar, FolderOpen, Table, TrendingUp, CheckCircle, XCircle } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -21,9 +23,15 @@ export default function ProjectDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"products" | "brickfox">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "brickfox" | "pixi">("products");
   const [selectedProduct, setSelectedProduct] = useState<ProductInProject | null>(null);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  
+  // Pixi comparison state
+  const [isPixiDialogOpen, setIsPixiDialogOpen] = useState(false);
+  const [pixiSupplNr, setPixiSupplNr] = useState('7077');
+  const [pixiLoading, setPixiLoading] = useState(false);
+  const [pixiResults, setPixiResults] = useState<any>(null);
 
   const defaultColumns: ExportColumn[] = [
     { id: 'name', label: 'Produktname', field: 'name', enabled: true },
@@ -146,6 +154,89 @@ export default function ProjectDetail() {
     setIsProductDialogOpen(true);
   };
 
+  const handlePixiCompare = async () => {
+    if (!pixiSupplNr) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine Lieferantennummer ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPixiLoading(true);
+    setPixiResults(null);
+
+    try {
+      // Convert project products to CSV format expected by Pixi API
+      const csvProducts = products.map(p => ({
+        Artikelnummer: p.customAttributes?.find(a => a.key === 'artikelnummer')?.value || p.articleNumber || '',
+        Produktname: p.name || '',
+        EAN: p.customAttributes?.find(a => a.key === 'ean')?.value || '',
+        Hersteller: p.customAttributes?.find(a => a.key === 'hersteller')?.value || '',
+      }));
+
+      const response = await fetch('/api/pixi/compare-json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          products: csvProducts,
+          supplNr: pixiSupplNr,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Vergleich fehlgeschlagen');
+      }
+
+      setPixiResults(data);
+      setIsPixiDialogOpen(false);
+      setActiveTab('pixi');
+      
+      toast({
+        title: "Pixi-Vergleich abgeschlossen",
+        description: `${data.summary.neu} neue, ${data.summary.vorhanden} vorhandene Produkte`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Fehler",
+        description: err.message || 'Pixi-Vergleich fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setPixiLoading(false);
+    }
+  };
+
+  const downloadPixiResults = () => {
+    if (!pixiResults) return;
+
+    const csvContent = [
+      ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status', 'Pixi EAN'].join(';'),
+      ...pixiResults.products.map((p: any) => 
+        [
+          p.artikelnummer,
+          `"${p.produktname}"`,
+          p.ean,
+          p.hersteller,
+          p.pixi_status,
+          p.pixi_ean || ''
+        ].join(';')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${project?.name || 'projekt'}_pixi-vergleich.csv`;
+    link.click();
+  };
+
   const handleExportProject = () => {
     if (products.length === 0) {
       toast({
@@ -245,6 +336,15 @@ export default function ProjectDetail() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                onClick={() => setIsPixiDialogOpen(true)}
+                disabled={products.length === 0}
+                data-testid="button-pixi-compare"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Mit Pixi vergleichen
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setIsExportDialogOpen(true)}
                 disabled={products.length === 0}
                 data-testid="button-export-project"
@@ -264,7 +364,7 @@ export default function ProjectDetail() {
         </div>
 
         {/* Tabs für verschiedene Ansichten */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "products" | "brickfox")} className="mb-6">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "products" | "brickfox" | "pixi")} className="mb-6">
           <TabsList>
             <TabsTrigger value="products" className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4" />
@@ -273,6 +373,10 @@ export default function ProjectDetail() {
             <TabsTrigger value="brickfox" className="flex items-center gap-2" disabled={products.length === 0}>
               <Table className="w-4 h-4" />
               Brickfox PIM
+            </TabsTrigger>
+            <TabsTrigger value="pixi" className="flex items-center gap-2" disabled={!pixiResults}>
+              <TrendingUp className="w-4 h-4" />
+              Pixi Vergleich {pixiResults && `(${pixiResults.summary.total})`}
             </TabsTrigger>
           </TabsList>
           
@@ -366,7 +470,154 @@ export default function ProjectDetail() {
           <TabsContent value="brickfox" className="mt-6">
             <BrickfoxDataPreview products={products} projectName={project?.name} />
           </TabsContent>
+
+          <TabsContent value="pixi" className="mt-6">
+            {pixiResults && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5" />
+                        Pixi ERP Vergleich
+                      </CardTitle>
+                      <CardDescription>
+                        {pixiResults.summary.total} Produkte verglichen
+                      </CardDescription>
+                    </div>
+                    <Button onClick={downloadPixiResults} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      CSV Export
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Statistiken */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{pixiResults.summary.total}</div>
+                          <div className="text-xs text-muted-foreground">Gesamt</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-green-200 bg-green-50">
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-700">{pixiResults.summary.neu}</div>
+                          <div className="text-xs text-green-700">Neu</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-blue-200 bg-blue-50">
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-700">{pixiResults.summary.vorhanden}</div>
+                          <div className="text-xs text-blue-700">Vorhanden</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Tabelle */}
+                  <div className="border rounded-md">
+                    <div className="max-h-[500px] overflow-auto">
+                      <table className="w-full">
+                        <thead className="bg-muted sticky top-0">
+                          <tr>
+                            <th className="text-left p-3 text-sm font-medium">Status</th>
+                            <th className="text-left p-3 text-sm font-medium">Artikelnummer</th>
+                            <th className="text-left p-3 text-sm font-medium">Produktname</th>
+                            <th className="text-left p-3 text-sm font-medium">EAN</th>
+                            <th className="text-left p-3 text-sm font-medium">Hersteller</th>
+                            <th className="text-left p-3 text-sm font-medium">Pixi EAN</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pixiResults.products.map((product: any, idx: number) => (
+                            <tr key={idx} className="border-t hover:bg-muted/50">
+                              <td className="p-3">
+                                {product.pixi_status === 'NEU' ? (
+                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    NEU
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    VORHANDEN
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="p-3 text-sm">{product.artikelnummer}</td>
+                              <td className="p-3 text-sm">{product.produktname}</td>
+                              <td className="p-3 text-sm font-mono text-xs">{product.ean}</td>
+                              <td className="p-3 text-sm">{product.hersteller}</td>
+                              <td className="p-3 text-sm font-mono text-xs">{product.pixi_ean || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
+
+        {/* Pixi Comparison Dialog */}
+        <Dialog open={isPixiDialogOpen} onOpenChange={setIsPixiDialogOpen}>
+          <DialogContent data-testid="dialog-pixi-compare">
+            <DialogHeader>
+              <DialogTitle>Mit Pixi ERP vergleichen</DialogTitle>
+              <DialogDescription>
+                Vergleichen Sie die Produkte dieses Projekts mit Ihrem Pixi ERP-System
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="pixi-supplnr">Lieferantennummer</Label>
+                <Input
+                  id="pixi-supplnr"
+                  placeholder="z.B. 7077"
+                  value={pixiSupplNr}
+                  onChange={(e) => setPixiSupplNr(e.target.value)}
+                  disabled={pixiLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {products.length} Produkt{products.length !== 1 ? 'e' : ''} werden verglichen
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPixiDialogOpen(false)}
+                disabled={pixiLoading}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handlePixiCompare}
+                disabled={pixiLoading || !pixiSupplNr}
+              >
+                {pixiLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                    Vergleichen...
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Vergleichen
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Product Detail Dialog */}
         <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
