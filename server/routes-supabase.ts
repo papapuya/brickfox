@@ -393,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/suppliers/:id', requireAuth, async (req: any, res) => {
     try {
-      const supplier = await supabaseStorage.updateSupplier(req.params.id, req.user.id, req.body);
+      const supplier = await supabaseStorage.updateSupplier(req.params.id, req.body);
       res.json({ success: true, supplier });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message || 'Fehler beim Aktualisieren des Lieferanten' });
@@ -402,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/suppliers/:id', requireAuth, async (req: any, res) => {
     try {
-      await supabaseStorage.deleteSupplier(req.params.id, req.user.id);
+      await supabaseStorage.deleteSupplier(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message || 'Fehler beim Löschen des Lieferanten' });

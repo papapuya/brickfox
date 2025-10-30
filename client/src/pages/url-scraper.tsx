@@ -77,7 +77,12 @@ export default function URLScraper() {
     queryKey: ['/api/projects'],
     enabled: showSaveDialog,
     queryFn: async () => {
-      const response = await fetch('/api/projects');
+      const token = localStorage.getItem('supabase_token');
+      const response = await fetch('/api/projects', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
       }
@@ -89,7 +94,12 @@ export default function URLScraper() {
   const { data: suppliersData, isLoading: isSuppliersLoading } = useQuery<{ success: boolean; suppliers: any[] }>({
     queryKey: ['/api/suppliers'],
     queryFn: async () => {
-      const response = await fetch('/api/suppliers');
+      const token = localStorage.getItem('supabase_token');
+      const response = await fetch('/api/suppliers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch suppliers');
       }
