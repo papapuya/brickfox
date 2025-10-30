@@ -1157,20 +1157,24 @@ export default function URLScraper() {
           {/* Advanced Selectors */}
           <div className="mt-4 space-y-4">
             <div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="advanced"
-                  checked={showAdvanced}
-                  onCheckedChange={(checked) => setShowAdvanced(!!checked)}
-                />
-                <Label htmlFor="advanced" className="cursor-pointer">
-                  <Settings2 className="w-4 h-4 inline mr-1" />
-                  Erweiterte CSS-Selektoren
-                </Label>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Standard-Selektoren funktionieren für die meisten Websites. Nur bei Bedarf anpassen.
-              </p>
+              {selectedSupplierId === "__none__" && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="advanced"
+                      checked={showAdvanced}
+                      onCheckedChange={(checked) => setShowAdvanced(!!checked)}
+                    />
+                    <Label htmlFor="advanced" className="cursor-pointer">
+                      <Settings2 className="w-4 h-4 inline mr-1" />
+                      Erweiterte CSS-Selektoren
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Standard-Selektoren funktionieren für die meisten Websites. Nur bei Bedarf anpassen.
+                  </p>
+                </>
+              )}
             </div>
 
             {showAdvanced && (
