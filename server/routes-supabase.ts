@@ -453,6 +453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/products/:id', requireAuth, async (req: any, res) => {
+    try {
+      const success = await supabaseStorage.deleteProduct(req.params.id, req.user.id);
+      if (!success) {
+        return res.status(404).json({ error: 'Produkt nicht gefunden oder keine Berechtigung' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[DELETE /products] Error:', error);
+      res.status(500).json({ error: 'Fehler beim Löschen des Produkts' });
+    }
+  });
+
   app.get('/api/suppliers', requireAuth, async (req: any, res) => {
     try {
       const suppliers = await supabaseStorage.getSuppliers(req.user.id);
