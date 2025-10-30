@@ -559,7 +559,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // COST OPTIMIZATION: Use GPT-4o-mini (30× cheaper) by default
       const aiModel = model || 'gpt-4o-mini';
-      const description = await generateProductDescription(enhancedData, undefined, customAttributes, aiModel);
+      const description = await generateProductDescription(
+        enhancedData, 
+        undefined, 
+        {
+          ...customAttributes,
+          technicalDataTable // Pass the original HTML table
+        }, 
+        aiModel
+      );
 
       await trackApiUsage(req, res, () => {});
       res.json({ success: true, description });

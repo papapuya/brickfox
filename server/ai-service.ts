@@ -188,6 +188,7 @@ export async function generateProductDescription(
     exactProductName?: string;
     articleNumber?: string;
     customAttributes?: Array<{key: string, value: string, type: string}>;
+    technicalDataTable?: string; // Original HTML table from supplier
   },
   model: string = 'gpt-4o-mini', // COST OPTIMIZATION: 30× günstiger!
   onProgress?: (step: number, message: string) => void
@@ -226,6 +227,7 @@ export async function generateProductDescription(
     categoryConfig,
     copy,
     layoutStyle: 'mediamarkt',
+    technicalDataTable: customAttributes?.technicalDataTable // Pass original HTML table
   });
 
   return html;

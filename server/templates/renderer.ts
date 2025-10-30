@@ -6,6 +6,7 @@ export interface RenderOptions {
   categoryConfig: ProductCategoryConfig;
   copy: ProductCopyPayload;
   layoutStyle?: 'mediamarkt' | 'minimal' | 'detailed';
+  technicalDataTable?: string; // Original HTML table from supplier website
 }
 
 function cleanMarkdown(text: string): string {
@@ -29,13 +30,14 @@ function cleanMarkdown(text: string): string {
 }
 
 export function renderProductHtml(options: RenderOptions): string {
-  const { productName, categoryConfig, copy, layoutStyle = 'mediamarkt' } = options;
+  const { productName, categoryConfig, copy, layoutStyle = 'mediamarkt', technicalDataTable } = options;
   
   const cleanProductName = cleanMarkdown(productName);
 
   const safetyNotice = cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
   const packageContents = cleanMarkdown(copy.packageContents || 'Produkt wie beschrieben');
 
+  // Use original HTML table if available, otherwise build from specs
   const technicalSpecs = buildTechnicalSpecsTable(
     copy.technicalSpecs,
     categoryConfig.technicalFields
@@ -62,6 +64,7 @@ export function renderProductHtml(options: RenderOptions): string {
       technicalSpecs,
       safetyNotice,
       packageContents,
+      technicalDataTable, // Pass original HTML table
     });
   }
 
@@ -72,6 +75,7 @@ export function renderProductHtml(options: RenderOptions): string {
     technicalSpecs,
     safetyNotice,
     packageContents,
+    technicalDataTable, // Pass original HTML table
   });
 }
 
@@ -114,12 +118,19 @@ function renderMediaMarktLayout(data: {
   technicalSpecs: Array<{label: string, value: string}>;
   safetyNotice: string;
   packageContents: string;
+  technicalDataTable?: string; // Original HTML table from supplier
 }): string {
   const uspHtml = data.uspBullets
     .map(usp => `✅ ${usp}`)
     .join('<br />\n');
 
-  const techTableHtml = data.technicalSpecs.length > 0
+  // Use original HTML table if available (1:1 from supplier website)
+  const techTableHtml = data.technicalDataTable
+    ? `<h4>Technische Daten:</h4>
+${data.technicalDataTable}
+
+`
+    : data.technicalSpecs.length > 0
     ? `<h4>Technische Daten:</h4>
 <table border="0" summary="">
 <tbody>
