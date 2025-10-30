@@ -538,6 +538,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/generate-description', requireAuth, checkApiLimit, async (req, res) => {
+    try {
+      const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable, model } = req.body;
+
+      if (!extractedData || !Array.isArray(extractedData)) {
+        return res.status(400).json({ error: 'Invalid extracted data' });
+      }
+
+      // SMART AUTO-EXTRACTION: Combine manual extracted data with auto-extracted data
+      const enhancedData = [...extractedData];
+      
+      if (autoExtractedDescription) {
+        enhancedData.push(`Produktbeschreibung:\n${autoExtractedDescription}`);
+      }
+      
+      if (technicalDataTable) {
+        enhancedData.push(`Technische Daten (HTML-Tabelle):\n${technicalDataTable}`);
+      }
+
+      // COST OPTIMIZATION: Use GPT-4o-mini (30× cheaper) by default
+      const aiModel = model || 'gpt-4o-mini';
+      const description = await generateProductDescription(enhancedData, undefined, customAttributes, aiModel);
+
+      await trackApiUsage(req, res, () => {});
+      res.json({ success: true, description });
+    } catch (error) {
+      console.error('Description generation error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Description generation failed' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
