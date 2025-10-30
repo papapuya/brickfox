@@ -441,11 +441,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/projects/:projectId/products', requireAuth, checkApiLimit, async (req: any, res) => {
     try {
+      console.log('[POST /products] Request body:', JSON.stringify(req.body, null, 2));
       const data = createProductInProjectSchema.parse(req.body);
       const product = await supabaseStorage.createProduct(req.params.projectId, data, req.user.id);
       await trackApiUsage(req, res, () => {});
       res.json(product);
     } catch (error: any) {
+      console.error('[POST /products] Validation error:', error);
       res.status(400).json({ error: error.message || 'Ungültige Produktdaten' });
     }
   });
