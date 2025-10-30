@@ -1324,30 +1324,37 @@ export default function URLScraper() {
                     );
                   })}
                   
-                  {/* Show image count */}
-                  {scrapedProduct.images && scrapedProduct.images.length > 0 && (
-                    <TableRow>
-                      <TableCell className="font-medium text-muted-foreground">images</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{scrapedProduct.images.length} gefunden</span>
-                          {scrapedProduct.images[0] && (
-                            <img 
-                              src={scrapedProduct.images[0]} 
-                              alt="Thumbnail"
-                              className="w-16 h-16 object-cover rounded border"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             </div>
+
+            {/* Image Gallery */}
+            {scrapedProduct.images && scrapedProduct.images.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-md font-semibold mb-3">
+                  Produktbilder ({scrapedProduct.images.length} gefunden)
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {scrapedProduct.images.map((imgUrl, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={imgUrl} 
+                        alt={`Produktbild ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-all cursor-pointer"
+                        onClick={() => window.open(imgUrl, '_blank')}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EFehler%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all pointer-events-none" />
+                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                        #{index + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 flex gap-2">
               <Button onClick={handleGenerateDescription} disabled={isGenerating}>
