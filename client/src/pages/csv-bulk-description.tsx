@@ -196,6 +196,7 @@ export default function CSVBulkDescription() {
         const response = await fetch('/api/generate-description', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             extractedData: [{ extractedText: JSON.stringify(productData) }],
             customAttributes: {
@@ -370,6 +371,7 @@ export default function CSVBulkDescription() {
         const response = await fetch('/api/bulk-save-to-project', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             projectName: projectName.trim(),
             products: bulkProducts,
@@ -437,6 +439,7 @@ export default function CSVBulkDescription() {
       const response = await fetch(`/api/projects/${projectId}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(productData),
       });
 
