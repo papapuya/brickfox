@@ -566,9 +566,11 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
     }
   });
 
+  // LIMIT: Nur die 4 wichtigsten Sicherheitshinweise
   if (safetyWarnings.length > 0) {
-    result.safetyWarnings = safetyWarnings.join('\n\n');
-    console.log(`Auto-extracted ${safetyWarnings.length} safety warning(s)`);
+    const topWarnings = safetyWarnings.slice(0, 4);
+    result.safetyWarnings = topWarnings.join('\n\n');
+    console.log(`Auto-extracted ${topWarnings.length} safety warning(s) (top 4 from ${safetyWarnings.length} total)`);
   }
 
   return result;
