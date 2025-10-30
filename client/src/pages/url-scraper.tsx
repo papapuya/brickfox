@@ -1534,11 +1534,20 @@ export default function URLScraper() {
               </div>
             )}
             
+            {/* Info Banner */}
+            <div className="mb-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-sm text-foreground flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <strong>KI-Felder (blau markiert)</strong> werden nach Klick auf "Alle AI-Beschreibungen generieren" automatisch befüllt
+              </p>
+            </div>
+            
             <div className="border rounded-lg overflow-x-auto">
               <div className="max-h-96 overflow-y-auto">
                 <Table>
                   <TableHeader className="bg-muted sticky top-0 z-20">
                     <TableRow>
+                      {/* Scraped Data Columns (weiß) */}
                       <TableHead className="w-12 sticky left-0 bg-muted z-20">#</TableHead>
                       <TableHead className="sticky left-12 bg-muted z-20">Bild</TableHead>
                       <TableHead className="min-w-[120px]">Artikelnummer</TableHead>
@@ -1561,8 +1570,26 @@ export default function URLScraper() {
                       <TableHead className="min-w-[150px]">Leuchtweite max. (m)</TableHead>
                       <TableHead className="min-w-[200px]">PDF Bedienungsanleitung</TableHead>
                       <TableHead className="min-w-[250px]">Sicherheitshinweise</TableHead>
-                      <TableHead className="min-w-[250px]">Beschreibung</TableHead>
-                      <TableHead className="min-w-[100px]">AI Status</TableHead>
+                      
+                      {/* KI-generierte Spalten (blau markiert) */}
+                      <TableHead className="min-w-[180px] bg-primary/10 text-primary font-semibold">
+                        🤖 MediaMarkt V1
+                      </TableHead>
+                      <TableHead className="min-w-[150px] bg-primary/10 text-primary font-semibold">
+                        🤖 MediaMarkt V2
+                      </TableHead>
+                      <TableHead className="min-w-[200px] bg-primary/10 text-primary font-semibold">
+                        🤖 SEO Titel
+                      </TableHead>
+                      <TableHead className="min-w-[250px] bg-primary/10 text-primary font-semibold">
+                        🤖 SEO Produktbeschreibung
+                      </TableHead>
+                      <TableHead className="min-w-[200px] bg-primary/10 text-primary font-semibold">
+                        🤖 SEO Keywords
+                      </TableHead>
+                      <TableHead className="min-w-[250px] bg-primary/10 text-primary font-semibold">
+                        🤖 Produktbeschreibung (HTML)
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1627,7 +1654,44 @@ export default function URLScraper() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="text-xs font-mono">
+                        
+                        {/* KI-generierte Spalten (blau markiert) */}
+                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                          {generatedDescriptions.has(product.articleNumber) ? (
+                            `${product.category || 'Produkt'} ${product.articleNumber}`
+                          ) : (
+                            'wird generiert...'
+                          )}
+                        </TableCell>
+                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                          {generatedDescriptions.has(product.articleNumber) ? (
+                            product.articleNumber || '-'
+                          ) : (
+                            'wird generiert...'
+                          )}
+                        </TableCell>
+                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                          {generatedDescriptions.has(product.articleNumber) ? (
+                            product.productName || '-'
+                          ) : (
+                            'wird generiert...'
+                          )}
+                        </TableCell>
+                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                          {generatedDescriptions.has(product.articleNumber) ? (
+                            <span className="line-clamp-2">SEO-optimierte Beschreibung für {product.productName}</span>
+                          ) : (
+                            'wird generiert...'
+                          )}
+                        </TableCell>
+                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                          {generatedDescriptions.has(product.articleNumber) ? (
+                            <span className="line-clamp-1">{product.manufacturer}, {product.category}, {product.articleNumber}</span>
+                          ) : (
+                            'wird generiert...'
+                          )}
+                        </TableCell>
+                        <TableCell className="bg-primary/5 text-xs font-mono">
                           {generatedDescriptions.has(product.articleNumber) ? (
                             <div className="flex items-center gap-2">
                               <span className="max-w-xs truncate text-muted-foreground" title={generatedDescriptions.get(product.articleNumber)}>
@@ -1646,17 +1710,7 @@ export default function URLScraper() {
                               </Button>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground">Noch nicht generiert</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {generatedDescriptions.has(product.articleNumber) ? (
-                            <span className="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
-                              <Sparkles className="w-3 h-3" />
-                              Fertig
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
+                            <span className="text-muted-foreground italic">wird generiert...</span>
                           )}
                         </TableCell>
                       </TableRow>
