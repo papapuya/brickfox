@@ -470,7 +470,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/scrape-product-list', requireAuth, checkApiLimit, async (req, res) => {
+  // Scraping is FREE - no API limit check
+  app.post('/api/scrape-product-list', requireAuth, async (req, res) => {
     try {
       const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies } = req.body;
       
@@ -485,19 +486,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { selectors: selectors || defaultSelectors, userAgent, cookies }
       );
       
-      await trackApiUsage(req, res, () => {});
+      // No usage tracking for scraping (it's free)
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  app.post('/api/scrape-all-pages', requireAuth, checkApiLimit, async (req, res) => {
+  // Scraping is FREE - no API limit check (only AI generation costs credits)
+  app.post('/api/scrape-all-pages', requireAuth, async (req, res) => {
     try {
-      const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies } = req.body;
+      const { url, listUrl, productLinkSelector, paginationSelector, maxPages, maxProducts, selectors, userAgent, cookies } = req.body;
       
-      if (!listUrl) {
-        return res.status(400).json({ error: 'Listen-URL ist erforderlich' });
+      // Support both 'url' and 'listUrl' for backwards compatibility
+      const targetUrl = url || listUrl;
+      
+      if (!targetUrl) {
+        return res.status(400).json({ error: 'URL ist erforderlich' });
       }
 
       // Set headers for streaming
@@ -505,17 +510,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const result = await scrapeProductList(
-        listUrl,
-        productLinkSelector || 'a.product-link',
-        maxProducts || 50,
-        { selectors: selectors || defaultSelectors, userAgent, cookies }
+      console.log(`Starting multi-page scraping from: ${targetUrl}`);
+      console.log(`Max pages: ${maxPages || 10}, Max products: ${maxProducts || 500}`);
+
+      // Import scrapeAllPages function
+      const { scrapeAllPages } = await import('./scraper-service.js');
+
+      // Progress callback to send updates
+      const progressCallback = (currentPage: number, totalProducts: number) => {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'progress',
+          currentPage, 
+          totalProducts,
+          message: `📄 Seite ${currentPage} gescraped - ${totalProducts} Produkte gefunden`
+        })}\n\n`);
+      };
+
+      const productUrls = await scrapeAllPages(
+        targetUrl,
+        productLinkSelector || null,
+        paginationSelector || null,
+        maxPages || 10,
+        maxProducts || 500,
+        {
+          userAgent,
+          cookies,
+          timeout: 15000
+        },
+        progressCallback
       );
       
-      await trackApiUsage(req, res, () => {});
+      // No usage tracking for scraping (it's free)
       
-      // Send in the format the frontend expects (result is already the productUrls array)
-      res.write(`data: ${JSON.stringify({ type: 'complete', productUrls: result })}\n\n`);
+      // Send final result
+      res.write(`data: ${JSON.stringify({ 
+        type: 'complete',
+        success: true,
+        productUrls,
+        count: productUrls.length,
+        message: `✓ Fertig! ${productUrls.length} Produkte von mehreren Seiten gescraped`
+      })}\n\n`);
       res.end();
     } catch (error: any) {
       res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
