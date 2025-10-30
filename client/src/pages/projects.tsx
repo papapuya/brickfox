@@ -28,7 +28,7 @@ export default function Projects() {
 
   // Fetch product counts for each project
   const { data: productCountsData } = useQuery({
-    queryKey: ['/api/projects/product-counts'],
+    queryKey: ['/api/projects/product-counts', projects.map(p => p.id).join(',')],
     queryFn: async () => {
       const counts: Record<string, number> = {};
       await Promise.all(
@@ -40,6 +40,8 @@ export default function Projects() {
       return counts;
     },
     enabled: projects.length > 0,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
   });
 
   const productCounts = productCountsData || {};
