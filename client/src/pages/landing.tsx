@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield } from "lucide-react";
+import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield, Mail, Phone, MapPin } from "lucide-react";
 
 export default function Landing() {
   return (
@@ -237,6 +237,95 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-black text-white">
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Company Info */}
+            <div>
+              <h3 className="text-xl font-bold mb-4">PIMPilot</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Ihr AI-Tool für automatische PIM-Daten Generierung. Professionell, schnell, zuverlässig.
+              </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Mail className="w-4 h-4" />
+                  <span>info@pimpilot.de</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Phone className="w-4 h-4" />
+                  <span>+49 (0) 123 456789</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <MapPin className="w-4 h-4" />
+                  <span>Berlin, Deutschland</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Products */}
+            <div>
+              <h4 className="font-semibold mb-4">Produkt</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><Link href="/pricing" className="hover:text-white transition-colors">Preise</Link></li>
+                <li><Link href="/register" className="hover:text-white transition-colors">Kostenlos testen</Link></li>
+                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Login</Link></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="font-semibold mb-4">Unternehmen</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Über uns</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Karriere</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Kontakt</a></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold mb-4">Rechtliches</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Impressum</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Datenschutz</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">AGB</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Widerrufsrecht</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Payment Methods */}
+          <div className="border-t border-gray-800 pt-8 mb-8">
+            <p className="text-sm text-gray-400 mb-4 text-center">Sichere Zahlungsmethoden</p>
+            <div className="flex flex-wrap justify-center items-center gap-6 opacity-70">
+              <div className="bg-white rounded px-4 py-2">
+                <span className="text-blue-600 font-bold text-sm">VISA</span>
+              </div>
+              <div className="bg-white rounded px-4 py-2">
+                <span className="text-orange-600 font-bold text-sm">Mastercard</span>
+              </div>
+              <div className="bg-white rounded px-4 py-2">
+                <span className="text-blue-700 font-bold text-sm">PayPal</span>
+              </div>
+              <div className="bg-white rounded px-4 py-2">
+                <span className="text-purple-600 font-bold text-sm">Stripe</span>
+              </div>
+              <div className="bg-white rounded px-4 py-2">
+                <span className="text-gray-800 font-bold text-sm">SEPA</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+            <p>&copy; {new Date().getFullYear()} PIMPilot. Alle Rechte vorbehalten.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
