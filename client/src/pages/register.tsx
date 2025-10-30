@@ -82,6 +82,14 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <div className="flex items-center justify-between mb-2">
+            <a 
+              href="/" 
+              className="text-sm text-gray-600 hover:text-indigo-600 flex items-center gap-1 transition-colors"
+            >
+              ← Zurück zur Startseite
+            </a>
+          </div>
           <CardTitle className="text-2xl font-bold text-center">PIMPilot</CardTitle>
           <CardDescription className="text-center">
             Erstellen Sie Ihren Account
