@@ -600,23 +600,40 @@ export default function CSVBulkDescription() {
               </div>
             </Card>
 
-            {/* CSV Rohdaten Vorschau */}
+            {/* CSV Rohdaten Vorschau mit KI-Spalten */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">
-                CSV Vorschau ({rawData.length} Zeilen)
+                CSV Vorschau ({rawData.length} Zeilen) + KI-Felder
               </h3>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+                <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-muted">
+                      {/* CSV Spalten */}
                       {Object.keys(rawData[0] || {}).map((header) => (
                         <th
                           key={header}
-                          className="px-4 py-3 text-left text-sm font-semibold text-foreground border-b border-border"
+                          className="px-4 py-3 text-left text-xs font-semibold text-foreground border-b border-border whitespace-nowrap"
                         >
                           {header}
                         </th>
                       ))}
+                      {/* KI-generierte Spalten */}
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-primary border-b border-border whitespace-nowrap bg-primary/10">
+                        🤖 MediaMarkt V1
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-primary border-b border-border whitespace-nowrap bg-primary/10">
+                        🤖 MediaMarkt V2
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-primary border-b border-border whitespace-nowrap bg-primary/10">
+                        🤖 SEO Titel
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-primary border-b border-border whitespace-nowrap bg-primary/10">
+                        🤖 SEO Produktbeschreibung
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-primary border-b border-border whitespace-nowrap bg-primary/10">
+                        🤖 SEO Keywords
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -625,14 +642,31 @@ export default function CSVBulkDescription() {
                         key={index}
                         className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                       >
+                        {/* CSV Daten */}
                         {Object.values(row).map((value, cellIndex) => (
                           <td
                             key={cellIndex}
-                            className="px-4 py-3 text-sm text-foreground border-b border-border"
+                            className="px-4 py-3 text-xs text-foreground border-b border-border"
                           >
                             {value || '-'}
                           </td>
                         ))}
+                        {/* Leere KI-Spalten (werden befüllt) */}
+                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
+                          wird generiert...
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
+                          wird generiert...
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
+                          wird generiert...
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
+                          wird generiert...
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
+                          wird generiert...
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -643,6 +677,12 @@ export default function CSVBulkDescription() {
                   Zeige erste 10 von {rawData.length} Zeilen
                 </p>
               )}
+              <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <strong>KI-Felder (blau markiert)</strong> werden nach Klick auf "AI Beschreibungen generieren" automatisch befüllt
+                </p>
+              </div>
             </Card>
           </div>
         )}
