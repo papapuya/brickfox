@@ -83,7 +83,7 @@ export class SupabaseStorage implements IStorage {
       planId: user.plan_id || undefined,
       currentPeriodEnd: user.current_period_end || undefined,
       apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 100,
+      apiCallsLimit: user.api_calls_limit || 3000, // GPT-4o-mini adjustment
       createdAt: user.created_at,
       updatedAt: user.updated_at,
     };
@@ -114,7 +114,7 @@ export class SupabaseStorage implements IStorage {
       planId: user.plan_id || undefined,
       currentPeriodEnd: user.current_period_end || undefined,
       apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 100,
+      apiCallsLimit: user.api_calls_limit || 3000, // GPT-4o-mini adjustment
       createdAt: user.created_at,
       updatedAt: user.updated_at,
     };
@@ -145,7 +145,7 @@ export class SupabaseStorage implements IStorage {
       planId: user.plan_id || undefined,
       currentPeriodEnd: user.current_period_end || undefined,
       apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 100,
+      apiCallsLimit: user.api_calls_limit || 3000, // GPT-4o-mini adjustment
       createdAt: user.created_at,
       updatedAt: user.updated_at,
     };
@@ -174,7 +174,7 @@ export class SupabaseStorage implements IStorage {
       planId: user.plan_id || undefined,
       currentPeriodEnd: user.current_period_end || undefined,
       apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 100,
+      apiCallsLimit: user.api_calls_limit || 3000, // GPT-4o-mini adjustment
       createdAt: user.created_at,
       updatedAt: user.updated_at,
     }));
@@ -220,7 +220,7 @@ export class SupabaseStorage implements IStorage {
       planId: user.plan_id || undefined,
       currentPeriodEnd: user.current_period_end || undefined,
       apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 100,
+      apiCallsLimit: user.api_calls_limit || 3000, // GPT-4o-mini adjustment
       createdAt: user.created_at,
       updatedAt: user.updated_at,
     };

@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           is_admin: false,
           subscription_status: 'trial',
           plan_id: 'trial',
-          api_calls_limit: 100,
+          api_calls_limit: 3000, // 3000 GPT-4o-mini calls = same cost as 100 GPT-4o calls
           api_calls_used: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           projectCount: projects.length,
           productCount: totalProducts,
           apiCallsUsed: freshUser?.apiCallsUsed || 0,
-          apiCallsLimit: freshUser?.apiCallsLimit || 100,
+          apiCallsLimit: freshUser?.apiCallsLimit || 3000, // Updated for GPT-4o-mini
           planId: freshUser?.planId || 'trial',
           subscriptionStatus: freshUser?.subscriptionStatus || 'trial',
         },

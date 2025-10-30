@@ -30,7 +30,7 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
     planId: userData.plan_id || undefined,
     currentPeriodEnd: userData.current_period_end || undefined,
     apiCallsUsed: userData.api_calls_used || 0,
-    apiCallsLimit: userData.api_calls_limit || 100,
+    apiCallsLimit: userData.api_calls_limit || 3000, // 30× more for GPT-4o-mini
     createdAt: userData.created_at,
     updatedAt: userData.updated_at,
   };
@@ -58,7 +58,7 @@ export async function createAdminUser(email: string, password: string): Promise<
       is_admin: true,
       subscription_status: 'trial',
       plan_id: 'trial',
-      api_calls_limit: 100,
+      api_calls_limit: 3000, // 3000 GPT-4o-mini = same cost as 100 GPT-4o
       api_calls_used: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

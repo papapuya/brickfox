@@ -289,14 +289,14 @@ export async function getSubscriptionStatus(userId: string) {
         subscriptionStatus: user.subscriptionStatus || 'trial',
         planId: user.planId || 'trial',
         apiCallsUsed: user.apiCallsUsed || 0,
-        apiCallsLimit: user.apiCallsLimit || 100,
+        apiCallsLimit: user.apiCallsLimit || 3000, // GPT-4o-mini adjustment
       },
       plan: planId && PLANS[planId] ? PLANS[planId] : {
         id: 'trial',
         name: 'Trial',
         price: 0,
         currency: 'eur',
-        apiCallsLimit: 100,
+        apiCallsLimit: 3000, // GPT-4o-mini: 30× cheaper than GPT-4o
         features: [
           '100 AI-Generierungen (Trial)',
           'Alle Features zum Testen',
