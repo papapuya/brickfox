@@ -167,7 +167,7 @@ export default function Account() {
                     <span>Features:</span>
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    {plan.features.map((feature, idx) => (
+                    {plan.features.map((feature: string, idx: number) => (
                       <li key={idx}>• {feature}</li>
                     ))}
                   </ul>
