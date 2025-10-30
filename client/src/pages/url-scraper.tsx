@@ -1594,67 +1594,6 @@ export default function URLScraper() {
           </Card>
         )}
 
-        {/* Generated Description */}
-        {generatedDescription && (
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Generierte Produktbeschreibung</h3>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">HTML-Vorschau</Label>
-                <div className="p-6 bg-white dark:bg-gray-900 border rounded-lg max-h-96 overflow-y-auto">
-                  <style dangerouslySetInnerHTML={{ __html: `
-                    .product-preview h2 { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; }
-                    .product-preview h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-                    .product-preview h4 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
-                    .product-preview p { margin: 0.75rem 0; line-height: 1.6; }
-                    .product-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-                    .product-preview table th,
-                    .product-preview table td { border: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; }
-                    .product-preview table th { background-color: #f3f4f6; font-weight: 600; }
-                    .product-preview table tr:nth-child(even) { background-color: #f9fafb; }
-                    .product-preview .properties-label { font-weight: 600; width: 40%; }
-                    .product-preview .properties-value { width: 60%; }
-                    .dark .product-preview table th,
-                    .dark .product-preview table td { border-color: #374151; }
-                    .dark .product-preview table th { background-color: #1f2937; }
-                    .dark .product-preview table tr:nth-child(even) { background-color: #111827; }
-                  ` }} />
-                  <div 
-                    className="product-preview"
-                    dangerouslySetInnerHTML={{ __html: generatedDescription }} 
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Label className="text-xs text-muted-foreground">HTML-Code</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(generatedDescription);
-                      toast({
-                        title: "Kopiert!",
-                        description: "HTML-Code wurde in die Zwischenablage kopiert",
-                      });
-                    }}
-                  >
-                    📋 Kopieren
-                  </Button>
-                </div>
-                <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-xs font-mono max-h-96 overflow-y-auto">
-                  <code>{generatedDescription}</code>
-                </pre>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={() => setShowSaveDialog(true)}>
-                  Zu Projekt hinzufügen
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {/* Save to Project Dialog */}
         <Dialog open={showSaveDialog} onOpenChange={(open) => {
           setShowSaveDialog(open);
