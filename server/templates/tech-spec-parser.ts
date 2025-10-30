@@ -152,9 +152,23 @@ export function extractTechSpecsFromStructured(
       continue;
     }
     
-    // Skip Meta-Felder
-    if (['productName', 'product_name', 'seoName', 'description', 'productname'].includes(key.toLowerCase())) {
-      console.log(`⏭️ Skipping ${key} (meta field)`);
+    // Skip Meta-Felder und Business-Daten (nur echte technische Spezifikationen erlauben)
+    const metaFields = [
+      'productName', 'product_name', 'produktname', 'bezeichnung', 'name',
+      'seoName', 'description', 'beschreibung', 'beschreibung_lieferant',
+      'hersteller', 'manufacturer', 'brand', 'marke',
+      'artikelnummer', 'sku', 'article_number', 'modellnummer',
+      'kategorie', 'category',
+      'ean', 'gtin', 'barcode',
+      'preis', 'price', 'uvp', 'cost',
+      'lieferant', 'supplier', 'vendor',
+      'lagerbestand', 'stock', 'availability',
+      'bild', 'image', 'foto', 'picture',
+      'url', 'link', 'website',
+    ];
+    
+    if (metaFields.includes(key.toLowerCase().replace(/\s+/g, '_').replace(/[()€]/g, ''))) {
+      console.log(`⏭️ Skipping ${key} (meta/business field)`);
       continue;
     }
     
