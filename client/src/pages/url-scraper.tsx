@@ -204,9 +204,13 @@ export default function URLScraper() {
             }
           });
 
+          const token = localStorage.getItem('supabase_token');
           fetch('/api/scrape-all-pages', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(requestBody)
           }).then(response => {
             const reader = response.body?.getReader();
@@ -291,9 +295,13 @@ export default function URLScraper() {
           cookies: sessionCookies || undefined
         };
 
+        const token = localStorage.getItem('supabase_token');
         const listResponse = await fetch('/api/scrape-product-list', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(requestBody),
         });
 
@@ -343,9 +351,13 @@ export default function URLScraper() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 20000);
 
+          const token = localStorage.getItem('supabase_token');
           const response = await fetch('/api/scrape-product', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
               url: productUrl,
               selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
@@ -425,9 +437,13 @@ export default function URLScraper() {
         }
       });
 
+      const token = localStorage.getItem('supabase_token');
       const response = await fetch('/api/test-scrape-product', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           url: url.trim(),
           selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
@@ -483,9 +499,13 @@ export default function URLScraper() {
         }
       });
 
+      const token = localStorage.getItem('supabase_token');
       const response = await fetch('/api/scrape-product', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           url: url.trim(),
           selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
