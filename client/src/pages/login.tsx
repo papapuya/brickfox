@@ -70,10 +70,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-violet-100 p-4">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">PIMPilot</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">PIMPilot</CardTitle>
           <CardDescription className="text-center">
             Melden Sie sich mit Ihrem Account an
           </CardDescription>
@@ -116,7 +116,7 @@ export default function Login() {
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-gray-600 text-center">
             Noch kein Account?{' '}
-            <a href="/register" className="text-blue-600 hover:underline">
+            <a href="/register" className="text-indigo-600 hover:underline font-medium">
               Jetzt registrieren
             </a>
           </div>
