@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'URL ist erforderlich' });
       }
 
-      const result = await scrapeProduct({ 
+      const product = await scrapeProduct({ 
         url, 
         selectors: selectors || defaultSelectors,
         userAgent,
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       await trackApiUsage(req, res, () => {});
-      res.json(result);
+      res.json({ product });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -457,14 +457,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'URL ist erforderlich' });
       }
 
-      const result = await scrapeProduct({ 
+      const product = await scrapeProduct({ 
         url, 
         selectors: selectors || defaultSelectors,
         userAgent,
         cookies
       });
       
-      res.json(result);
+      res.json({ product });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
