@@ -52,6 +52,18 @@ export interface IStorage {
   getSupplier(id: string): Promise<Supplier | null>;
   updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null>;
   deleteSupplier(id: string): Promise<boolean>;
+  
+  updateProductPixiStatus(productId: string, pixiData: {
+    pixi_status: 'NEU' | 'VORHANDEN';
+    pixi_ean: string | null;
+    pixi_checked_at: string;
+  }): Promise<boolean>;
+  batchUpdateProductsPixiStatus(updates: Array<{
+    id: string;
+    pixi_status: 'NEU' | 'VORHANDEN';
+    pixi_ean: string | null;
+    pixi_checked_at: string;
+  }>): Promise<boolean>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -483,6 +495,9 @@ export class SupabaseStorage implements IStorage {
     if (data.customAttributes !== undefined) updateData.custom_attributes = data.customAttributes;
     if (data.exactProductName !== undefined) updateData.exact_product_name = data.exactProductName;
     if (data.articleNumber !== undefined) updateData.article_number = data.articleNumber;
+    if (data.pixi_status !== undefined) updateData.pixi_status = data.pixi_status;
+    if (data.pixi_ean !== undefined) updateData.pixi_ean = data.pixi_ean;
+    if (data.pixi_checked_at !== undefined) updateData.pixi_checked_at = data.pixi_checked_at;
 
     const { data: product, error } = await supabase
       .from('products_in_projects')
@@ -652,6 +667,7 @@ export class SupabaseStorage implements IStorage {
   async updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null> {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
+    if (data.supplNr !== undefined) updateData.suppl_nr = data.supplNr;
     if (data.urlPattern !== undefined) updateData.url_pattern = data.urlPattern;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.selectors !== undefined) updateData.selectors = data.selectors;
@@ -680,6 +696,56 @@ export class SupabaseStorage implements IStorage {
     return !error;
   }
 
+  async updateProductPixiStatus(productId: string, pixiData: {
+    pixi_status: 'NEU' | 'VORHANDEN';
+    pixi_ean: string | null;
+    pixi_checked_at: string;
+  }): Promise<boolean> {
+    const { error } = await supabase
+      .from('products_in_projects')
+      .update({
+        pixi_status: pixiData.pixi_status,
+        pixi_ean: pixiData.pixi_ean,
+        pixi_checked_at: pixiData.pixi_checked_at,
+      })
+      .eq('id', productId);
+
+    return !error;
+  }
+
+  async batchUpdateProductsPixiStatus(updates: Array<{
+    id: string;
+    pixi_status: 'NEU' | 'VORHANDEN';
+    pixi_ean: string | null;
+    pixi_checked_at: string;
+  }>): Promise<boolean> {
+    try {
+      const timestamp = new Date().toISOString();
+      
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('products_in_projects')
+          .update({
+            pixi_status: update.pixi_status,
+            pixi_ean: update.pixi_ean,
+            pixi_checked_at: update.pixi_checked_at || timestamp,
+          })
+          .eq('id', update.id);
+
+        if (error) {
+          console.error(`[Supabase] Failed to update product ${update.id}:`, error);
+          return false;
+        }
+      }
+
+      console.log(`[Supabase] Successfully updated ${updates.length} products with Pixi status`);
+      return true;
+    } catch (error) {
+      console.error('[Supabase] Batch update failed:', error);
+      return false;
+    }
+  }
+
   private mapProduct(product: any): ProductInProject {
     return {
       id: product.id,
@@ -693,6 +759,9 @@ export class SupabaseStorage implements IStorage {
       customAttributes: product.custom_attributes || undefined,
       exactProductName: product.exact_product_name || undefined,
       articleNumber: product.article_number || undefined,
+      pixi_status: product.pixi_status || undefined,
+      pixi_ean: product.pixi_ean || undefined,
+      pixi_checked_at: product.pixi_checked_at || undefined,
       createdAt: product.created_at,
     };
   }
@@ -701,6 +770,7 @@ export class SupabaseStorage implements IStorage {
     return {
       id: supplier.id,
       name: supplier.name,
+      supplNr: supplier.suppl_nr || undefined,
       urlPattern: supplier.url_pattern || undefined,
       description: supplier.description || undefined,
       selectors: supplier.selectors || {},
