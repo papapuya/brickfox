@@ -15,6 +15,7 @@ interface BulkProduct {
   artikelnummer: string;
   produktname: string;
   produktbeschreibung: string;
+  produktbeschreibung_html: string;
   mediamarktname_v1: string;
   mediamarktname_v2: string;
   seo_beschreibung: string;
@@ -61,7 +62,10 @@ export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml 
                 Produktname
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[400px]">
-                Produktbeschreibung
+                Produktbeschreibung Text
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[500px]">
+                Produktbeschreibung HTML
               </th>
               <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[300px]">
                 MediaMarkt Titel V1
@@ -109,18 +113,26 @@ export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml 
                   </TooltipProvider>
                 </td>
                 <td className="px-4 py-3">
+                  <Textarea
+                    value={product.produktbeschreibung}
+                    onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
+                    className="text-xs resize-none min-h-[100px] font-sans"
+                    data-testid={`input-beschreibung-${product.id}`}
+                  />
+                </td>
+                <td className="px-4 py-3">
                   <div className="flex gap-2 items-start">
                     <Textarea
-                      value={product.produktbeschreibung}
-                      onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
+                      value={product.produktbeschreibung_html}
+                      onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung_html', e.target.value)}
                       className="text-xs resize-none min-h-[100px] font-mono flex-1"
-                      data-testid={`input-beschreibung-${product.id}`}
+                      data-testid={`input-beschreibung-html-${product.id}`}
                     />
-                    {onPreviewHtml && product.produktbeschreibung && (
+                    {onPreviewHtml && product.produktbeschreibung_html && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onPreviewHtml(product.produktbeschreibung)}
+                        onClick={() => onPreviewHtml(product.produktbeschreibung_html)}
                         title="HTML Vorschau anzeigen"
                         className="mt-1 flex-shrink-0"
                       >

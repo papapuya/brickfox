@@ -276,7 +276,8 @@ export default function CSVBulkDescription() {
               productData.sku ||
               '-',
             produktname: produktname,
-            produktbeschreibung: payload.description || '',
+            produktbeschreibung: plainText,
+            produktbeschreibung_html: payload.description || '',
             mediamarktname_v1: mmNameV1.substring(0, 60),
             mediamarktname_v2: mmNameV2.substring(0, 40),
             seo_beschreibung: seoDesc,
@@ -299,6 +300,7 @@ export default function CSVBulkDescription() {
             artikelnummer: '-',
             produktname: 'Fehler',
             produktbeschreibung: '',
+            produktbeschreibung_html: '',
             mediamarktname_v1: '',
             mediamarktname_v2: '',
             seo_beschreibung: '',
