@@ -36,8 +36,8 @@ export function renderProductHtml(options: RenderOptions): string {
   
   const cleanProductName = cleanMarkdown(productName);
 
-  // USE 1:1 SAFETY WARNINGS from supplier if available, otherwise use AI-generated
-  const safetyNotice = safetyWarnings || cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
+  // USE AI-GENERATED SAFETY WARNINGS (based on supplier warnings if available)
+  const safetyNotice = cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
   const packageContents = cleanMarkdown(copy.packageContents || 'Produkt wie beschrieben');
 
   // Use original HTML table if available, otherwise build from specs
