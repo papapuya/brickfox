@@ -572,38 +572,68 @@ export default function CSVBulkDescription() {
           </Card>
         )}
 
-        {/* Schritt 1: CSV eingelesen - zeige Rohdaten + Button */}
-        {!processing && rawData.length > 0 && bulkProducts.length === 0 && (
+        {/* Schritt 1 & 2: CSV eingelesen - zeige Rohdaten + Live-Updates während AI-Generierung */}
+        {rawData.length > 0 && bulkProducts.length < rawData.length && (
           <div className="space-y-6">
-            <Card className="p-8">
-              <div className="flex flex-col items-center justify-center gap-6">
-                <CheckCircle2 className="w-16 h-16 text-chart-2" />
-                <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-bold text-foreground">
-                    CSV erfolgreich eingelesen
-                  </h2>
-                  <p className="text-lg text-muted-foreground">
-                    {rawData.length} Produkte bereit zur Verarbeitung
+            {/* Button Card (nur wenn noch nicht gestartet) */}
+            {!processing && bulkProducts.length === 0 && (
+              <Card className="p-8">
+                <div className="flex flex-col items-center justify-center gap-6">
+                  <CheckCircle2 className="w-16 h-16 text-chart-2" />
+                  <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      CSV erfolgreich eingelesen
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                      {rawData.length} Produkte bereit zur Verarbeitung
+                    </p>
+                  </div>
+                  <Button
+                    size="lg"
+                    onClick={startAIGeneration}
+                    className="px-8 py-6 text-lg"
+                  >
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    AI Beschreibungen generieren ({rawData.length} Produkte)
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Die AI-Generierung benötigt ca. {Math.round(rawData.length * 8 / 60)} Minuten
                   </p>
                 </div>
-                <Button
-                  size="lg"
-                  onClick={startAIGeneration}
-                  className="px-8 py-6 text-lg"
-                >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  AI Beschreibungen generieren ({rawData.length} Produkte)
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Die AI-Generierung benötigt ca. {Math.round(rawData.length * 8 / 60)} Minuten
-                </p>
-              </div>
-            </Card>
+              </Card>
+            )}
 
-            {/* CSV Rohdaten Vorschau mit KI-Spalten */}
+            {/* Progress Bar während Generierung */}
+            {processing && (
+              <Card className="p-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">
+                          PIM-Daten werden generiert...
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {bulkProducts.length} von {rawData.length} Produkten fertig ({progress}%)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* CSV Rohdaten Vorschau mit Live KI-Updates */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">
-                CSV Vorschau ({rawData.length} Zeilen) + KI-Felder
+                CSV Vorschau ({rawData.length} Zeilen) + KI-Felder {processing && '🔄'}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
@@ -637,38 +667,63 @@ export default function CSVBulkDescription() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rawData.slice(0, 10).map((row, index) => (
-                      <tr
-                        key={index}
-                        className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
-                      >
-                        {/* CSV Daten */}
-                        {Object.values(row).map((value, cellIndex) => (
-                          <td
-                            key={cellIndex}
-                            className="px-4 py-3 text-xs text-foreground border-b border-border"
-                          >
-                            {value || '-'}
+                    {rawData.slice(0, 10).map((row, index) => {
+                      // Finde entsprechendes generiertes Produkt (falls bereits generiert)
+                      const generatedProduct = bulkProducts.find(p => p.id === index + 1);
+                      
+                      return (
+                        <tr
+                          key={index}
+                          className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
+                        >
+                          {/* CSV Daten */}
+                          {Object.values(row).map((value, cellIndex) => (
+                            <td
+                              key={cellIndex}
+                              className="px-4 py-3 text-xs text-foreground border-b border-border"
+                            >
+                              {value || '-'}
+                            </td>
+                          ))}
+                          {/* KI-Spalten (live update wenn generiert) */}
+                          <td className="px-4 py-3 text-xs border-b border-border bg-primary/5">
+                            {generatedProduct ? (
+                              <span className="text-foreground font-medium">{generatedProduct.mediamarktname_v1}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic">wird generiert...</span>
+                            )}
                           </td>
-                        ))}
-                        {/* Leere KI-Spalten (werden befüllt) */}
-                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
-                          wird generiert...
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
-                          wird generiert...
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
-                          wird generiert...
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
-                          wird generiert...
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border bg-primary/5 italic">
-                          wird generiert...
-                        </td>
-                      </tr>
-                    ))}
+                          <td className="px-4 py-3 text-xs border-b border-border bg-primary/5">
+                            {generatedProduct ? (
+                              <span className="text-foreground font-medium">{generatedProduct.mediamarktname_v2}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic">wird generiert...</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs border-b border-border bg-primary/5">
+                            {generatedProduct ? (
+                              <span className="text-foreground font-medium line-clamp-1">{generatedProduct.produktname}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic">wird generiert...</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs border-b border-border bg-primary/5">
+                            {generatedProduct ? (
+                              <span className="text-foreground line-clamp-2">{generatedProduct.seo_beschreibung}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic">wird generiert...</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs border-b border-border bg-primary/5">
+                            {generatedProduct ? (
+                              <span className="text-foreground line-clamp-1">{generatedProduct.kurzbeschreibung}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic">wird generiert...</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -680,36 +735,11 @@ export default function CSVBulkDescription() {
               <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
                 <p className="text-sm text-foreground flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
-                  <strong>KI-Felder (blau markiert)</strong> werden nach Klick auf "AI Beschreibungen generieren" automatisch befüllt
+                  <strong>KI-Felder (blau markiert)</strong> werden {processing ? 'live befüllt' : 'nach Klick auf "AI Beschreibungen generieren" automatisch befüllt'}
                 </p>
               </div>
             </Card>
           </div>
-        )}
-
-        {/* Schritt 2: AI-Generierung läuft */}
-        {processing && rawData.length > 0 && (
-          <Card className="p-12">
-            <div className="flex flex-col items-center justify-center gap-6">
-              <Loader2 className="w-12 h-12 text-primary animate-spin" />
-              <div className="text-center space-y-2">
-                <h2 className="text-xl font-semibold text-foreground">
-                  PIM-Daten werden generiert...
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {progress}% abgeschlossen - AI generiert Produktbeschreibungen, SEO-Daten und MediaMarkt-Titel
-                </p>
-              </div>
-              <div className="w-full max-w-md">
-                <div className="h-3 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
         )}
 
         {bulkProducts.length > 0 && !processing && (
