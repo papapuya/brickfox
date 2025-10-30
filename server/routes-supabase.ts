@@ -103,13 +103,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = registerUserSchema.parse(req.body);
       
-      const { data, error } = await supabase.auth.signUp({
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
+      }
+
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email: validatedData.email,
         password: validatedData.password,
-        options: {
-          data: {
-            username: validatedData.username || validatedData.email.split('@')[0],
-          }
+        email_confirm: true,
+        user_metadata: {
+          username: validatedData.username || validatedData.email.split('@')[0],
         }
       });
 
@@ -119,10 +122,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!data.user) {
         return res.status(400).json({ error: 'Registrierung fehlgeschlagen' });
-      }
-
-      if (!supabaseAdmin) {
-        return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
       }
 
       const { error: insertError } = await supabaseAdmin
