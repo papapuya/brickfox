@@ -371,6 +371,28 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   // INTELLIGENT TABLE PARSER: Extract structured technical data from properties tables
   parsePropertiesTable($, product);
 
+  // BUILD COMPLETE HTML TABLE from parsed data (if no complete HTML table was found)
+  if (product.technicalDataTable && !product.technicalDataTable.includes('148,2')) {
+    // The extracted table is incomplete, rebuild from parsed data
+    const fullTableRows: string[] = [];
+    
+    if (product.length) fullTableRows.push(`<tr><td>Länge (mm)</td><td>${product.length}</td></tr>`);
+    if (product.bodyDiameter) fullTableRows.push(`<tr><td>Gehäusedurchmesser (mm)</td><td>${product.bodyDiameter}</td></tr>`);
+    if (product.headDiameter) fullTableRows.push(`<tr><td>Kopfdurchmesser</td><td>${product.headDiameter}</td></tr>`);
+    if (product.weightWithoutBattery) fullTableRows.push(`<tr><td>Gewicht (ohne Batterien/Akku) (g)</td><td>${product.weightWithoutBattery}</td></tr>`);
+    if (product.powerSupply) fullTableRows.push(`<tr><td>Stromversorgung</td><td>${product.powerSupply}</td></tr>`);
+    if (product.led1) fullTableRows.push(`<tr><td>Leuchtmittel 1</td><td>${product.led1}</td></tr>`);
+    if (product.led2) fullTableRows.push(`<tr><td>Leuchtmittel 2</td><td>${product.led2}</td></tr>`);
+    if (product.spotIntensity) fullTableRows.push(`<tr><td>Spotintensität (cd)</td><td>${product.spotIntensity}</td></tr>`);
+    if (product.maxLuminosity) fullTableRows.push(`<tr><td>Leuchtleistung max.</td><td>${product.maxLuminosity}</td></tr>`);
+    if (product.maxBeamDistance) fullTableRows.push(`<tr><td>Leuchtweite max. (m)</td><td>${product.maxBeamDistance}</td></tr>`);
+    
+    if (fullTableRows.length > 0) {
+      product.technicalDataTable = `<table border="0" summary="">\n<tbody>\n${fullTableRows.join('\n')}\n</tbody>\n</table>`;
+      console.log(`✅ Rebuilt COMPLETE HTML table from parsed data (${fullTableRows.length} rows)`);
+    }
+  }
+
   console.log('Scraped product:', {
     articleNumber: product.articleNumber,
     productName: product.productName,
