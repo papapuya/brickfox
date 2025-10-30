@@ -1296,8 +1296,8 @@ export default function URLScraper() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">Feld</TableHead>
-                    <TableHead>Wert</TableHead>
+                    <TableHead className="w-[200px]">Feldname</TableHead>
+                    <TableHead>Extrahierter Wert</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
