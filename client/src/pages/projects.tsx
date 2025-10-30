@@ -106,11 +106,20 @@ export default function Projects() {
     <div className="h-full overflow-auto">
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Meine Projekte</h1>
-          <p className="text-muted-foreground mt-1">
-            Verwalten Sie Ihre Produktbeschreibungs-Projekte
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Meine Projekte</h1>
+            <p className="text-muted-foreground mt-1">
+              Verwalten Sie Ihre Produktbeschreibungs-Projekte
+            </p>
+          </div>
+          
+          {projects.length > 0 && (
+            <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-project">
+              <Plus className="w-4 h-4 mr-2" />
+              Neues Projekt
+            </Button>
+          )}
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
