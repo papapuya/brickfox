@@ -174,80 +174,116 @@ export default function CSVBulkDescription() {
   };
 
   const generateDescriptions = async (data: RawCSVRow[]) => {
-    const results: BulkProduct[] = [];
-    
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
-      setProgress(Math.round(((i + 1) / data.length) * 100));
+    const BATCH_SIZE = 5;
+    const total = data.length;
+    const results: (BulkProduct | undefined)[] = new Array(total);
+    let processedCount = 0;
 
-      try {
-        // Erstelle Produktdaten-Objekt
-        const productData: any = {};
-        Object.keys(row).forEach(key => {
-          const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
-          productData[normalizedKey] = row[key];
-        });
+    for (let i = 0; i < total; i += BATCH_SIZE) {
+      const batch = data.slice(i, Math.min(i + BATCH_SIZE, total));
 
-        // Produktname extrahieren
-        const produktname = productData.produktname || row['Produktname'] || row['produktname'] || 'Unbekanntes Produkt';
-        productData.productName = produktname;
+      const settled = await Promise.allSettled(
+        batch.map(async (row, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          const productData: Record<string, string> = {};
 
-        // API-Aufruf für Beschreibungsgenerierung
-        const response = await fetch('/api/generate-description', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            extractedData: [{ extractedText: JSON.stringify(productData) }],
-            customAttributes: {
-              exactProductName: produktname,
-            },
-          }),
-        });
+          Object.keys(row).forEach((key) => {
+            const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
+            productData[normalizedKey] = row[key];
+          });
 
-        const result = await response.json();
-        
-        // Generiere SEO-Beschreibung und Kurzbeschreibung aus dem Text
-        const plainText = stripHtml(result.description || '');
-        const sentences = plainText.split('.').filter((s: string) => s.trim().length > 10);
-        const seoDesc = sentences[0] ? sentences[0].substring(0, 150) + (sentences[0].length > 150 ? '...' : '') : '';
-        const shortDesc = sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
-        
-        // Generiere MediaMarkt-Namen
-        const capacity = productData.capacity_mah || productData['kapazität_mah'] || productData.capacity || '';
-        const voltage = productData.voltage || productData.spannung || '';
-        const model = productData.model || productData.modell || '';
-        
-        const mmNameV1 = `Akku ${model} ${capacity ? capacity + ' mAh' : ''} ${voltage ? voltage + 'V' : ''}`.trim();
-        const mmNameV2 = `${model} ${capacity ? capacity + 'mAh' : ''}`.trim();
-        
-        results.push({
-          id: i + 1,
-          artikelnummer: productData.modell || productData.artikelnummer || productData.sku || '-',
-          produktname: produktname,
-          produktbeschreibung: result.description || '',
-          mediamarktname_v1: mmNameV1.substring(0, 60),
-          mediamarktname_v2: mmNameV2.substring(0, 40),
-          seo_beschreibung: seoDesc,
-          kurzbeschreibung: shortDesc.substring(0, 300),
-        });
-      } catch (err) {
-        console.error(`Error processing row ${i}:`, err);
-        results.push({
-          id: i + 1,
-          artikelnummer: '-',
-          produktname: 'Fehler',
-          produktbeschreibung: '',
-          mediamarktname_v1: '',
-          mediamarktname_v2: '',
-          seo_beschreibung: '',
-          kurzbeschreibung: '',
-        });
-      }
+          const produktname =
+            productData.produktname ||
+            row['Produktname'] ||
+            row['produktname'] ||
+            'Unbekanntes Produkt';
+
+          productData.productName = produktname;
+
+          const response = await fetch('/api/generate-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              extractedData: [{ extractedText: JSON.stringify(productData) }],
+              customAttributes: { exactProductName: produktname },
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API request failed (${response.status})`);
+          }
+
+          const payload = await response.json();
+          const plainText = stripHtml(payload.description || '');
+          const sentences = plainText
+            .split('.')
+            .filter((sentence) => sentence.trim().length > 10);
+          const seoDesc = sentences[0]
+            ? `${sentences[0].substring(0, 150)}${
+                sentences[0].length > 150 ? '...' : ''
+              }`
+            : '';
+          const shortDesc =
+            sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
+
+          const capacity =
+            productData.capacity_mah ||
+            productData['kapazität_mah'] ||
+            productData.capacity ||
+            '';
+          const voltage = productData.voltage || productData.spannung || '';
+          const model = productData.model || productData.modell || '';
+
+          const mmNameV1 = `Akku ${model} ${
+            capacity ? `${capacity} mAh` : ''
+          } ${voltage ? `${voltage}V` : ''}`.trim();
+          const mmNameV2 = `${model} ${capacity ? `${capacity}mAh` : ''}`.trim();
+
+          return {
+            id: globalIndex + 1,
+            artikelnummer:
+              productData.modell ||
+              productData.artikelnummer ||
+              productData.sku ||
+              '-',
+            produktname: produktname,
+            produktbeschreibung: payload.description || '',
+            mediamarktname_v1: mmNameV1.substring(0, 60),
+            mediamarktname_v2: mmNameV2.substring(0, 40),
+            seo_beschreibung: seoDesc,
+            kurzbeschreibung: shortDesc.substring(0, 300),
+          } satisfies BulkProduct;
+        })
+      );
+
+      settled.forEach((outcome, batchIndex) => {
+        const globalIndex = i + batchIndex;
+        processedCount += 1;
+        setProgress(Math.round((processedCount / total) * 100));
+
+        if (outcome.status === 'fulfilled') {
+          results[globalIndex] = outcome.value;
+        } else {
+          console.error(`Error processing row ${globalIndex}:`, outcome.reason);
+          results[globalIndex] = {
+            id: globalIndex + 1,
+            artikelnummer: '-',
+            produktname: 'Fehler',
+            produktbeschreibung: '',
+            mediamarktname_v1: '',
+            mediamarktname_v2: '',
+            seo_beschreibung: '',
+            kurzbeschreibung: '',
+          } satisfies BulkProduct;
+        }
+      });
     }
 
-    setBulkProducts(results);
-    setSuccessMessage(`${results.length} Produkte erfolgreich verarbeitet`);
+    const completedResults = results.filter(Boolean) as BulkProduct[];
+    setBulkProducts(completedResults);
+    setSuccessMessage(`${completedResults.length} Produkte erfolgreich verarbeitet`);
+    setProgress(100);
     setProcessing(false);
   };
 
