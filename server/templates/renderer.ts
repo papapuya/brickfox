@@ -169,6 +169,6 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
 <p>${uspHtml}</p>
 <br />
 
-${techTableHtml}${techTableHtml ? '<br />\n' : ''}${safetyHtml}${safetyHtml ? '<br />\n' : ''}${pdfHtml}<h3>Lieferumfang</h3>
+${techTableHtml}${techTableHtml ? '<br />\n' : ''}${safetyHtml}${safetyHtml ? '<br />\n' : ''}${pdfHtml}${pdfHtml ? '<br />\n' : ''}<h3>Lieferumfang</h3>
 <p>${data.packageContents}</p>`;
 }
