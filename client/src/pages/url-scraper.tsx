@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,6 +164,25 @@ export default function URLScraper() {
     weight: ".weight",
     category: ".breadcrumb"
   });
+
+  // BUGFIX: Clear state when switching tabs to prevent data leakage
+  useEffect(() => {
+    if (scrapingMode === 'single') {
+      // Switched to single product mode -> clear list data
+      setScrapedProducts([]);
+      setGeneratedDescriptions(new Map());
+      setBatchProgress({ current: 0, total: 0, status: '' });
+      setIsGeneratingBatch(false);
+      setAiGenerationProgress({ current: 0, total: 0 });
+    } else {
+      // Switched to list mode -> clear single product data
+      setScrapedProduct(null);
+      setGeneratedDescription('');
+      setIsGenerating(false);
+      setTestResults(null);
+      setShowTestPreview(false);
+    }
+  }, [scrapingMode]);
 
   const handleScrapeProductList = async () => {
     if (!url.trim()) {
