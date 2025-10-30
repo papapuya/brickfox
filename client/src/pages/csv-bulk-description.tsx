@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import type { Project } from "@shared/schema";
 
 interface RawCSVRow {
@@ -462,11 +463,20 @@ export default function CSVBulkDescription() {
         const savedCount = await addProductsToExistingProject(selectedProjectId, bulkProducts);
         const project = existingProjects.find(p => p.id === selectedProjectId);
         
+        // Invalidate queries to refresh product counts
+        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/projects/product-counts'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProjectId}/products`] });
+        
         toast({
           title: "Produkte hinzugefügt",
           description: `${savedCount} Produkte wurden erfolgreich zu "${project?.name}" hinzugefügt`,
         });
       }
+
+      // Invalidate queries for new project case as well
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects/product-counts'] });
 
       setShowSaveDialog(false);
       setProjectName("");
