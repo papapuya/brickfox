@@ -1,4 +1,4 @@
-import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2, User, CreditCard, LayoutDashboard, Crown } from "lucide-react";
+import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2, User, CreditCard, LayoutDashboard, Crown, GitCompare } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -42,6 +42,11 @@ const menuItems = [
     title: "Lieferanten-Profile",
     url: "/suppliers",
     icon: Building2,
+  },
+  {
+    title: "Pixi Vergleich",
+    url: "/pixi-compare",
+    icon: GitCompare,
   },
   {
     title: "Mein Account",

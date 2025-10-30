@@ -18,6 +18,7 @@ import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
 import CredentialsPage from "@/pages/credentials";
 import Suppliers from "@/pages/suppliers";
+import PixiComparePage from "@/pages/pixi-compare";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Pricing from "@/pages/pricing";
@@ -69,6 +70,11 @@ function Router() {
       <Route path="/suppliers">
         <ProtectedRoute>
           <Suppliers />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/pixi-compare">
+        <ProtectedRoute>
+          <PixiComparePage />
         </ProtectedRoute>
       </Route>
       <Route path="/credentials">
