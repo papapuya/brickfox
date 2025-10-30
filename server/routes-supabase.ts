@@ -121,11 +121,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Registrierung fehlgeschlagen' });
       }
 
-      await supabaseStorage.updateUserSubscription(data.user.id, {
-        subscriptionStatus: 'trial',
-        planId: 'trial',
-        apiCallsLimit: 100,
-      });
+      if (!supabaseAdmin) {
+        return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
+      }
+
+      const { error: insertError } = await supabaseAdmin
+        .from('users')
+        .upsert({
+          id: data.user.id,
+          email: validatedData.email,
+          username: validatedData.username || validatedData.email.split('@')[0],
+          is_admin: false,
+          subscription_status: 'trial',
+          plan_id: 'trial',
+          api_calls_limit: 100,
+          api_calls_used: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'id'
+        });
+
+      if (insertError) {
+        console.error('Failed to create user record:', insertError);
+        return res.status(500).json({ error: 'Fehler beim Erstellen des Benutzerprofils' });
+      }
 
       const { data: sessionData } = await supabase.auth.signInWithPassword({
         email: validatedData.email,
@@ -193,6 +213,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json({ user });
+  });
+
+  app.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
+    try {
+      const user = req.user;
+      
+      const projects = await supabaseStorage.getProjectsByUserId(user.id);
+      
+      let totalProducts = 0;
+      for (const project of projects) {
+        const products = await supabaseStorage.getProducts(project.id);
+        totalProducts += products.length;
+      }
+      
+      const freshUser = await supabaseStorage.getUserById(user.id);
+      
+      res.json({
+        success: true,
+        stats: {
+          projectCount: projects.length,
+          productCount: totalProducts,
+          apiCallsUsed: freshUser?.apiCallsUsed || 0,
+          apiCallsLimit: freshUser?.apiCallsLimit || 100,
+          planId: freshUser?.planId || 'trial',
+          subscriptionStatus: freshUser?.subscriptionStatus || 'trial',
+        },
+        recentProjects: projects.slice(0, 5),
+      });
+    } catch (error) {
+      console.error('Dashboard stats error:', error);
+      res.status(500).json({ error: 'Fehler beim Laden der Dashboard-Daten' });
+    }
+  });
+
+  app.get('/api/admin/customers', requireAdmin, async (req, res) => {
+    try {
+      const users = await supabaseStorage.getAllUsers();
+      
+      const customersWithStats = await Promise.all(
+        users.map(async (user) => {
+          const projects = await supabaseStorage.getProjectsByUserId(user.id);
+          let totalProducts = 0;
+          for (const project of projects) {
+            const products = await supabaseStorage.getProducts(project.id);
+            totalProducts += products.length;
+          }
+          
+          return {
+            ...user,
+            projectCount: projects.length,
+            productCount: totalProducts,
+          };
+        })
+      );
+      
+      res.json({
+        success: true,
+        customers: customersWithStats,
+      });
+    } catch (error) {
+      console.error('Admin customers error:', error);
+      res.status(500).json({ error: 'Fehler beim Laden der Kundendaten' });
+    }
   });
 
   app.get('/api/admin/users', requireAdmin, async (req, res) => {
