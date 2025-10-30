@@ -154,10 +154,10 @@ export function extractTechSpecsFromStructured(
     
     // Skip Meta-Felder und Business-Daten (nur echte technische Spezifikationen erlauben)
     const metaFields = [
-      'productname', 'product_name', 'produktname', 'bezeichnung', 'name',
-      'seoname', 'description', 'beschreibung', 'beschreibung_lieferant',
+      'productname', 'produktname', 'bezeichnung', 'name',
+      'seoname', 'description', 'beschreibung', 'beschreibunglieferant',
       'hersteller', 'manufacturer', 'brand', 'marke',
-      'artikelnummer', 'sku', 'article_number', 'modellnummer',
+      'artikelnummer', 'sku', 'modellnummer',
       'kategorie', 'category',
       'ean', 'gtin', 'barcode',
       'preis', 'price', 'uvp', 'cost',
@@ -170,8 +170,18 @@ export function extractTechSpecsFromStructured(
     // Normalisiere Feldname: entferne Leerzeichen, Sonderzeichen, Unterstriche
     const normalizedMetaKey = key.toLowerCase().replace(/[\s()€_-]/g, '');
     
+    // Check exakte Übereinstimmung
     if (metaFields.includes(normalizedMetaKey)) {
       console.log(`⏭️ Skipping ${key} (meta/business field, normalized: ${normalizedMetaKey})`);
+      continue;
+    }
+    
+    // Check Teilstrings: "beschreibung" in beliebigem Kontext blockieren
+    if (normalizedMetaKey.includes('beschreibung') || 
+        normalizedMetaKey.includes('description') ||
+        normalizedMetaKey.includes('lieferant') ||
+        normalizedMetaKey.includes('supplier')) {
+      console.log(`⏭️ Skipping ${key} (contains description/supplier keyword)`);
       continue;
     }
     
