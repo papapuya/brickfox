@@ -1,8 +1,8 @@
 export async function apiRequest(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem('supabase_token');
   
-  const headers: HeadersInit = {
-    ...(options.headers || {}),
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> || {}),
   };
   
   if (token) {

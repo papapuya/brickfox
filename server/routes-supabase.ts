@@ -219,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/projects', requireAuth, async (req, res) => {
+  app.get('/api/projects', requireAuth, async (req: any, res) => {
     try {
       const projects = await supabaseStorage.getProjectsByUserId(req.user.id);
       res.json(projects);
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/projects', requireAuth, async (req, res) => {
+  app.post('/api/projects', requireAuth, async (req: any, res) => {
     try {
       const data = createProjectSchema.parse(req.body);
       const project = await supabaseStorage.createProject(req.user.id, data);
@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/suppliers', requireAuth, async (req, res) => {
+  app.get('/api/suppliers', requireAuth, async (req: any, res) => {
     try {
       const suppliers = await supabaseStorage.getSuppliers(req.user.id);
       res.json(suppliers);
@@ -300,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const parsedSelectors: ScraperSelectors = selectors ? JSON.parse(selectors) : defaultSelectors;
-      const result = await scrapeProduct(url, parsedSelectors);
+      const result = await scrapeProduct({ url, selectors: parsedSelectors });
       
       await trackApiUsage(req, res, () => {});
       res.json(result);
