@@ -46,14 +46,18 @@ export default function Login() {
       
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: 'Erfolgreich angemeldet',
         description: 'Sie werden weitergeleitet...',
       });
       
-      // Reload page to initialize authenticated state
-      window.location.href = '/';
+      // Redirect based on user role
+      if (data.user?.isAdmin) {
+        window.location.href = '/admin/dashboard';
+      } else {
+        window.location.href = '/dashboard';
+      }
     },
     onError: (error: Error) => {
       setIsLoading(false);
