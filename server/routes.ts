@@ -945,6 +945,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const envPath = path.join(process.cwd(), ".env");
       let openaiKey = '';
+      let pixiKey = '';
+      let channelEngineKey = '';
+      let brickfoxKey = '';
       
       if (fs.existsSync(envPath)) {
         const envContent = fs.readFileSync(envPath, 'utf8');
@@ -953,6 +956,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const line of lines) {
           if (line.startsWith('OPENAI_API_KEY=')) {
             openaiKey = line.split('=')[1] || '';
+          } else if (line.startsWith('PIXI_API_KEY=')) {
+            pixiKey = line.split('=')[1] || '';
+          } else if (line.startsWith('CHANNEL_ENGINE_API_KEY=')) {
+            channelEngineKey = line.split('=')[1] || '';
+          } else if (line.startsWith('BRICKFOX_API_KEY=')) {
+            brickfoxKey = line.split('=')[1] || '';
           }
         }
       }
@@ -960,7 +969,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         credentials: {
-          openaiApiKey: openaiKey
+          openaiApiKey: openaiKey,
+          pixiApiKey: pixiKey,
+          channelEngineApiKey: channelEngineKey,
+          brickfoxApiKey: brickfoxKey,
         }
       });
     } catch (error) {
@@ -974,20 +986,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Credentials Management: Save credentials
   app.post('/api/saveKeys', (req, res) => {
-    const { openaiKey } = req.body;
+    const { openaiKey, pixiKey, channelEngineKey, brickfoxKey } = req.body;
     
-    if (!openaiKey) {
-      return res.status(400).json({ success: false, message: "OpenAI API-Schlüssel erforderlich" });
+    // Build .env content
+    let envContent = '';
+    
+    if (openaiKey) {
+      envContent += `OPENAI_API_KEY=${openaiKey}\n`;
+      process.env.OPENAI_API_KEY = openaiKey;
+    }
+    
+    if (pixiKey) {
+      envContent += `PIXI_API_KEY=${pixiKey}\n`;
+      process.env.PIXI_API_KEY = pixiKey;
+    }
+    
+    if (channelEngineKey) {
+      envContent += `CHANNEL_ENGINE_API_KEY=${channelEngineKey}\n`;
+      process.env.CHANNEL_ENGINE_API_KEY = channelEngineKey;
+    }
+    
+    if (brickfoxKey) {
+      envContent += `BRICKFOX_API_KEY=${brickfoxKey}\n`;
+      process.env.BRICKFOX_API_KEY = brickfoxKey;
     }
 
-    // Speichern in .env Datei
+    // Save to .env file
     const envPath = path.join(process.cwd(), ".env");
-    fs.writeFileSync(envPath, `OPENAI_API_KEY=${openaiKey}\n`);
     
-    // Set environment variable for current session
-    process.env.OPENAI_API_KEY = openaiKey;
+    // Read existing .env and preserve other variables
+    let existingEnv = '';
+    if (fs.existsSync(envPath)) {
+      existingEnv = fs.readFileSync(envPath, 'utf8');
+    }
     
-    res.json({ success: true, message: "OpenAI API-Schlüssel gespeichert" });
+    // Remove old credential entries
+    const filteredLines = existingEnv.split('\n').filter(line => 
+      !line.startsWith('OPENAI_API_KEY=') &&
+      !line.startsWith('PIXI_API_KEY=') &&
+      !line.startsWith('CHANNEL_ENGINE_API_KEY=') &&
+      !line.startsWith('BRICKFOX_API_KEY=')
+    );
+    
+    // Combine with new credentials
+    const finalContent = filteredLines.join('\n') + '\n' + envContent;
+    fs.writeFileSync(envPath, finalContent);
+    
+    res.json({ success: true, message: "API-Schlüssel gespeichert" });
   });
 
 

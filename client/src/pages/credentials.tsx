@@ -20,7 +20,7 @@ export default function CredentialsPage() {
         </Button>
         <h1 className="text-3xl font-bold">API Credentials</h1>
         <p className="text-muted-foreground mt-2">
-          Verwalten Sie Ihren OpenAI API-Schlüssel
+          Verwalten Sie Ihre API-Schlüssel für OpenAI, Pixi, Channel-Engine und Brickfox
         </p>
       </div>
 

@@ -9,11 +9,17 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface Credentials {
   openaiApiKey: string;
+  pixiApiKey: string;
+  channelEngineApiKey: string;
+  brickfoxApiKey: string;
 }
 
 export default function CredentialsManager() {
   const [credentials, setCredentials] = useState<Credentials>({
     openaiApiKey: '',
+    pixiApiKey: '',
+    channelEngineApiKey: '',
+    brickfoxApiKey: '',
   });
   const [showKey, setShowKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -34,6 +40,9 @@ export default function CredentialsManager() {
       if (data.success && data.credentials) {
         setCredentials({
           openaiApiKey: data.credentials.openaiApiKey || '',
+          pixiApiKey: data.credentials.pixiApiKey || '',
+          channelEngineApiKey: data.credentials.channelEngineApiKey || '',
+          brickfoxApiKey: data.credentials.brickfoxApiKey || '',
         });
       }
     } catch (error) {
@@ -49,6 +58,9 @@ export default function CredentialsManager() {
       
       const response = await apiRequest('POST', '/api/saveKeys', {
         openaiKey: credentials.openaiApiKey,
+        pixiKey: credentials.pixiApiKey,
+        channelEngineKey: credentials.channelEngineApiKey,
+        brickfoxKey: credentials.brickfoxApiKey,
       });
       
       const data = await response.json();
@@ -106,7 +118,7 @@ export default function CredentialsManager() {
           API Credentials
         </CardTitle>
         <CardDescription>
-          Verwalten Sie Ihren OpenAI API-Schlüssel für die AI-Generierung
+          Verwalten Sie Ihre API-Schlüssel für AI-Generierung und Integration mit Pixi, Channel-Engine und Brickfox
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -122,7 +134,7 @@ export default function CredentialsManager() {
               type={showKey ? "text" : "password"}
               placeholder="sk-..."
               value={credentials.openaiApiKey}
-              onChange={(e) => setCredentials({ openaiApiKey: e.target.value })}
+              onChange={(e) => setCredentials({ ...credentials, openaiApiKey: e.target.value })}
               className="flex-1"
             />
             <Button
@@ -138,9 +150,72 @@ export default function CredentialsManager() {
           </p>
         </div>
 
+        {/* Pixi API Key */}
+        <div className="space-y-3">
+          <Label htmlFor="pixi-key" className="flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            Pixi API Key
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="pixi-key"
+              type={showKey ? "text" : "password"}
+              placeholder="Pixi API-Schlüssel"
+              value={credentials.pixiApiKey}
+              onChange={(e) => setCredentials({ ...credentials, pixiApiKey: e.target.value })}
+              className="flex-1"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Benötigt für die Integration mit Pixi
+          </p>
+        </div>
+
+        {/* Channel-Engine API Key */}
+        <div className="space-y-3">
+          <Label htmlFor="channel-engine-key" className="flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            Channel-Engine API Key
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="channel-engine-key"
+              type={showKey ? "text" : "password"}
+              placeholder="Channel-Engine API-Schlüssel"
+              value={credentials.channelEngineApiKey}
+              onChange={(e) => setCredentials({ ...credentials, channelEngineApiKey: e.target.value })}
+              className="flex-1"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Benötigt für die Integration mit Channel-Engine
+          </p>
+        </div>
+
+        {/* Brickfox API Key */}
+        <div className="space-y-3">
+          <Label htmlFor="brickfox-key" className="flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            Brickfox API Key
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="brickfox-key"
+              type={showKey ? "text" : "password"}
+              placeholder="Brickfox API-Schlüssel"
+              value={credentials.brickfoxApiKey}
+              onChange={(e) => setCredentials({ ...credentials, brickfoxApiKey: e.target.value })}
+              className="flex-1"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Benötigt für die Integration mit Brickfox
+          </p>
+        </div>
+
         <Button 
           onClick={saveCredentials}
-          disabled={isSaving || !credentials.openaiApiKey}
+          disabled={isSaving}
           className="w-full"
         >
           {isSaving ? 'Speichern...' : 'API-Schlüssel speichern'}
