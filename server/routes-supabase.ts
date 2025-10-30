@@ -223,6 +223,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user });
   });
 
+  // Temporary: Update current user's API limit to 3000
+  app.post('/api/auth/update-my-limit', requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      const { error } = await supabaseAdmin!
+        .from('users')
+        .update({ 
+          api_calls_limit: 3000,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      console.log(`✅ Updated user ${user.email} limit from 100 to 3000`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Dein API-Limit wurde auf 3.000 erhöht (GPT-4o-mini)',
+        oldLimit: 100,
+        newLimit: 3000
+      });
+    } catch (error: any) {
+      console.error('Update limit error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
     try {
       const user = req.user;
