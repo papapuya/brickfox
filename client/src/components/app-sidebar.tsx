@@ -1,4 +1,4 @@
-import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2, User, CreditCard } from "lucide-react";
+import { Home, FileSpreadsheet, Globe, FolderOpen, Settings, Zap, Building2, User, CreditCard, LayoutDashboard, Crown } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   Sidebar,
@@ -17,6 +17,11 @@ const menuItems = [
     title: "Home",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
   },
   {
     title: "CSV Bulk Beschreibungen",

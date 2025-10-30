@@ -9,6 +9,8 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { SubscriptionBadge } from "@/components/subscription-badge";
 import Landing from "@/pages/landing";
+import Dashboard from "@/pages/dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
 import URLScraper from "@/pages/url-scraper";
 import Projects from "@/pages/projects";
@@ -33,6 +35,16 @@ function Router() {
       
       {/* Protected routes */}
       <Route path="/" component={Landing} />
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/dashboard">
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      </Route>
       <Route path="/csv-bulk-description">
         <ProtectedRoute>
           <CSVBulkDescription />
