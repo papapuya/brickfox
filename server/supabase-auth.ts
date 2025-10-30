@@ -24,6 +24,7 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
     email: userData.email,
     username: userData.username || undefined,
     isAdmin: userData.is_admin || false,
+    organizationId: userData.organization_id || undefined,
     stripeCustomerId: userData.stripe_customer_id || undefined,
     subscriptionStatus: userData.subscription_status || undefined,
     subscriptionId: userData.subscription_id || undefined,
