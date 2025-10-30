@@ -33,8 +33,7 @@ export default function Projects() {
       const counts: Record<string, number> = {};
       await Promise.all(
         projects.map(async (project) => {
-          const response = await fetch(`/api/projects/${project.id}/products`);
-          const data = await response.json();
+          const data: any = await apiRequest('GET', `/api/projects/${project.id}/products`);
           counts[project.id] = data.products?.length || 0;
         })
       );
