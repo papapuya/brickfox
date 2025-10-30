@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return res.status(500).json({ error: 'Fehler beim Login nach Registrierung' });
         }
-        res.json({ user: { id: user.id, email: user.email, username: user.username } });
+        res.json({ user: { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin || false } });
       });
     } catch (error) {
       res.status(400).json({ error: 'Ungültige Registrierungsdaten' });
@@ -103,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (loginErr) {
           return res.status(500).json({ error: 'Fehler beim Login' });
         }
-        res.json({ user: { id: user.id, email: user.email, username: user.username } });
+        res.json({ user: { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin || false } });
       });
     })(req, res, next);
   });
@@ -127,6 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id, 
         email: user.email, 
         username: user.username,
+        isAdmin: user.isAdmin || false,
         subscriptionStatus: user.subscriptionStatus,
         planId: user.planId,
         apiCallsUsed: user.apiCallsUsed,

@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthProvider } from "@/lib/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
+import { AdminProtectedRoute } from "@/components/admin-protected-route";
 import { SubscriptionBadge } from "@/components/subscription-badge";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -41,9 +42,9 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/admin/dashboard">
-        <ProtectedRoute>
+        <AdminProtectedRoute>
           <AdminDashboard />
-        </ProtectedRoute>
+        </AdminProtectedRoute>
       </Route>
       <Route path="/csv-bulk-description">
         <ProtectedRoute>
