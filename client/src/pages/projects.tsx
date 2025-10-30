@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, FolderOpen, Trash2, Calendar, Package } from "lucide-react";
+import { Plus, FolderOpen, Trash2, Calendar } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -25,26 +25,6 @@ export default function Projects() {
   });
 
   const projects = projectsData?.projects || [];
-
-  // Fetch product counts for each project
-  const { data: productCountsData } = useQuery({
-    queryKey: ['/api/projects/product-counts', projects.map(p => p.id).join(',')],
-    queryFn: async () => {
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        projects.map(async (project) => {
-          const data: any = await apiRequest('GET', `/api/projects/${project.id}/products`);
-          counts[project.id] = data.products?.length || 0;
-        })
-      );
-      return counts;
-    },
-    enabled: projects.length > 0,
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache
-  });
-
-  const productCounts = productCountsData || {};
 
   // Create project mutation
   const createProjectMutation = useMutation({
@@ -225,10 +205,8 @@ export default function Projects() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Package className="w-4 h-4" />
-                    <span>
-                      {productCounts[project.id] || 0} Produkt{productCounts[project.id] !== 1 ? 'e' : ''}
-                    </span>
+                    <Calendar className="w-4 h-4" />
+                    Klicken zum Öffnen
                   </div>
                 </CardContent>
               </Card>
