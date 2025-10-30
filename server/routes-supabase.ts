@@ -427,6 +427,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/scrape-product', requireAuth, checkApiLimit, async (req, res) => {
+    try {
+      const { url, selectors, userAgent, cookies } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL ist erforderlich' });
+      }
+
+      const result = await scrapeProduct({ 
+        url, 
+        selectors: selectors || defaultSelectors,
+        userAgent,
+        cookies
+      });
+      
+      await trackApiUsage(req, res, () => {});
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/test-scrape-product', requireAuth, async (req, res) => {
+    try {
+      const { url, selectors, userAgent, cookies } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL ist erforderlich' });
+      }
+
+      const result = await scrapeProduct({ 
+        url, 
+        selectors: selectors || defaultSelectors,
+        userAgent,
+        cookies
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/scrape-product-list', requireAuth, checkApiLimit, async (req, res) => {
+    try {
+      const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies } = req.body;
+      
+      if (!listUrl) {
+        return res.status(400).json({ error: 'Listen-URL ist erforderlich' });
+      }
+
+      const result = await scrapeProductList({ 
+        listUrl,
+        productLinkSelector: productLinkSelector || 'a.product-link',
+        maxProducts: maxProducts || 50,
+        selectors: selectors || defaultSelectors,
+        userAgent,
+        cookies
+      });
+      
+      await trackApiUsage(req, res, () => {});
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/scrape-all-pages', requireAuth, checkApiLimit, async (req, res) => {
+    try {
+      const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies } = req.body;
+      
+      if (!listUrl) {
+        return res.status(400).json({ error: 'Listen-URL ist erforderlich' });
+      }
+
+      // Set headers for streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const result = await scrapeProductList({ 
+        listUrl,
+        productLinkSelector: productLinkSelector || 'a.product-link',
+        maxProducts: maxProducts || 50,
+        selectors: selectors || defaultSelectors,
+        userAgent,
+        cookies
+      });
+      
+      await trackApiUsage(req, res, () => {});
+      res.write(`data: ${JSON.stringify(result)}\n\n`);
+      res.end();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post('/api/generate', requireAuth, checkApiLimit, async (req, res) => {
     try {
       const { productData, template } = req.body;
