@@ -539,7 +539,11 @@ export default function URLScraper() {
       }
 
       const data = await response.json();
-      setScrapedProduct(data.product);
+      // Clear description field initially - will be filled after AI generation
+      setScrapedProduct({
+        ...data.product,
+        description: '' // Empty until AI generates content
+      });
       
       toast({
         title: "Erfolgreich",
@@ -601,6 +605,14 @@ export default function URLScraper() {
 
       const data = await response.json();
       setGeneratedDescription(data.description || '');
+      
+      // Update scrapedProduct with generated description
+      if (scrapedProduct) {
+        setScrapedProduct({
+          ...scrapedProduct,
+          description: data.description || ''
+        });
+      }
       
       toast({
         title: "Erfolgreich",
@@ -1559,21 +1571,27 @@ export default function URLScraper() {
                 </div>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">HTML-Code</Label>
-                <Textarea
-                  value={generatedDescription}
-                  onChange={(e) => setGeneratedDescription(e.target.value)}
-                  className="font-mono text-sm"
-                  rows={10}
-                />
+                <div className="flex justify-between items-center mb-2">
+                  <Label className="text-xs text-muted-foreground">HTML-Code</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedDescription);
+                      toast({
+                        title: "Kopiert!",
+                        description: "HTML-Code wurde in die Zwischenablage kopiert",
+                      });
+                    }}
+                  >
+                    📋 Kopieren
+                  </Button>
+                </div>
+                <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-xs font-mono max-h-96 overflow-y-auto">
+                  <code>{generatedDescription}</code>
+                </pre>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => {
-                  navigator.clipboard.writeText(generatedDescription);
-                  toast({ title: "Kopiert", description: "HTML wurde in die Zwischenablage kopiert" });
-                }}>
-                  HTML kopieren
-                </Button>
                 <Button onClick={() => setShowSaveDialog(true)}>
                   Zu Projekt hinzufügen
                 </Button>
