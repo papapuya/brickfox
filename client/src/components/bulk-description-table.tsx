@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -24,9 +24,10 @@ interface BulkProduct {
 interface BulkDescriptionTableProps {
   products: BulkProduct[];
   onUpdateProduct: (id: number, field: keyof BulkProduct, value: string) => void;
+  onPreviewHtml?: (htmlContent: string) => void;
 }
 
-export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescriptionTableProps) {
+export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml }: BulkDescriptionTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
@@ -108,12 +109,25 @@ export function BulkDescriptionTable({ products, onUpdateProduct }: BulkDescript
                   </TooltipProvider>
                 </td>
                 <td className="px-4 py-3">
-                  <Textarea
-                    value={product.produktbeschreibung}
-                    onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
-                    className="text-xs resize-none min-h-[100px] font-mono"
-                    data-testid={`input-beschreibung-${product.id}`}
-                  />
+                  <div className="flex gap-2 items-start">
+                    <Textarea
+                      value={product.produktbeschreibung}
+                      onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
+                      className="text-xs resize-none min-h-[100px] font-mono flex-1"
+                      data-testid={`input-beschreibung-${product.id}`}
+                    />
+                    {onPreviewHtml && product.produktbeschreibung && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPreviewHtml(product.produktbeschreibung)}
+                        title="HTML Vorschau anzeigen"
+                        className="mt-1 flex-shrink-0"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <Textarea

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Settings2, FolderPlus, Sparkles } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Settings2, FolderPlus, Sparkles, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -67,6 +67,8 @@ export default function CSVBulkDescription() {
   const [projectName, setProjectName] = useState("");
   const [savingProject, setSavingProject] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("new");
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+  const [htmlPreviewContent, setHtmlPreviewContent] = useState("");
 
   // Lade bestehende Projekte
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -843,6 +845,10 @@ export default function CSVBulkDescription() {
             <BulkDescriptionTable
               products={bulkProducts}
               onUpdateProduct={handleUpdateProduct}
+              onPreviewHtml={(html) => {
+                setHtmlPreviewContent(html);
+                setShowHtmlPreview(true);
+              }}
             />
           </div>
         )}
@@ -953,6 +959,21 @@ export default function CSVBulkDescription() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog für HTML-Vorschau */}
+      <Dialog open={showHtmlPreview} onOpenChange={setShowHtmlPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>HTML Produktbeschreibung Vorschau</DialogTitle>
+            <DialogDescription>
+              So wird die Produktbeschreibung im MediaMarkt-System dargestellt
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[60vh] border rounded-lg p-6 bg-white">
+            <div dangerouslySetInnerHTML={{ __html: htmlPreviewContent }} />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
