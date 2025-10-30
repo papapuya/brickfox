@@ -67,24 +67,14 @@ export default function ProjectDetail() {
   };
 
   // Fetch project
-  const { data: projectData, isLoading: isLoadingProject } = useQuery<{ success: boolean; project: Project }>({
-    queryKey: ['/api/projects', id],
-    queryFn: async () => {
-      const res = await fetch(`/api/projects/${id}`);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch project');
-      }
-      return data;
-    },
+  const { data: project, isLoading: isLoadingProject } = useQuery<Project>({
+    queryKey: [`/api/projects/${id}`],
     enabled: !!id,
   });
 
-  const project = projectData?.project;
-
   // Fetch products
   const { data: productsData, isLoading: isLoadingProducts } = useQuery<{ success: boolean; products: ProductInProject[] }>({
-    queryKey: ['/api/projects', id, 'products'],
+    queryKey: [`/api/projects/${id}/products`],
     enabled: !!id,
   });
 

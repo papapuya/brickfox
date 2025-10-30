@@ -433,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/projects/:projectId/products', requireAuth, async (req: any, res) => {
     try {
       const products = await supabaseStorage.getProducts(req.params.projectId, req.user.id);
-      res.json(products);
+      res.json({ success: true, products });
     } catch (error) {
       res.status(500).json({ error: 'Fehler beim Laden der Produkte' });
     }
