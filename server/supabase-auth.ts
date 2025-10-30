@@ -3,11 +3,15 @@ import type { Request, Response, NextFunction } from 'express';
 import type { User } from '@shared/schema';
 
 export async function getSupabaseUser(accessToken: string): Promise<User | null> {
+  if (!supabaseAdmin) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+  }
+
   const { data: { user }, error } = await supabase.auth.getUser(accessToken);
   
   if (error || !user) return null;
 
-  const { data: userData } = await supabase
+  const { data: userData } = await supabaseAdmin
     .from('users')
     .select('*')
     .eq('id', user.id)

@@ -188,6 +188,10 @@ export class SupabaseStorage implements IStorage {
     currentPeriodEnd?: string;
     apiCallsLimit?: number;
   }): Promise<User | null> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     const updateData: any = {};
     if (data.stripeCustomerId) updateData.stripe_customer_id = data.stripeCustomerId;
     if (data.subscriptionStatus) updateData.subscription_status = data.subscriptionStatus;
@@ -196,7 +200,7 @@ export class SupabaseStorage implements IStorage {
     if (data.currentPeriodEnd) updateData.current_period_end = data.currentPeriodEnd;
     if (data.apiCallsLimit !== undefined) updateData.api_calls_limit = data.apiCallsLimit;
 
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .update(updateData)
       .eq('id', userId)
@@ -223,14 +227,18 @@ export class SupabaseStorage implements IStorage {
   }
 
   async incrementApiCalls(userId: string): Promise<void> {
-    const { data: user } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('api_calls_used')
       .eq('id', userId)
       .single();
 
     if (user) {
-      await supabase
+      await supabaseAdmin
         .from('users')
         .update({ api_calls_used: (user.api_calls_used || 0) + 1 })
         .eq('id', userId);
@@ -238,7 +246,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async resetApiCalls(userId: string): Promise<void> {
-    await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    await supabaseAdmin
       .from('users')
       .update({ api_calls_used: 0 })
       .eq('id', userId);
