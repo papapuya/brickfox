@@ -135,7 +135,7 @@ export const productInProjectSchema = z.object({
 
 export type ProductInProject = z.infer<typeof productInProjectSchema>;
 
-export const createProductInProjectSchema = productInProjectSchema.omit({ id: true, createdAt: true });
+export const createProductInProjectSchema = productInProjectSchema.omit({ id: true, createdAt: true, projectId: true });
 export type CreateProductInProject = z.infer<typeof createProductInProjectSchema>;
 
 export const updateProductInProjectSchema = productInProjectSchema.partial().omit({ id: true, projectId: true, createdAt: true });
