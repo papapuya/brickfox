@@ -908,6 +908,8 @@ export async function scrapeAllPages(
   const allProductUrls: string[] = [];
   let currentUrl: string | null = startUrl;
   let pageNumber = 1;
+  let consecutiveEmptyPages = 0;
+  const MAX_CONSECUTIVE_EMPTY_PAGES = 3; // Stop after 3 empty pages
 
   while (currentUrl && pageNumber <= maxPages && allProductUrls.length < maxProductsTotal) {
     console.log(`\n📄 Scraping Seite ${pageNumber}/${maxPages}: ${currentUrl}`);
@@ -922,6 +924,20 @@ export async function scrapeAllPages(
       );
 
       console.log(`✓ Found ${pageProducts.length} products on page ${pageNumber}`);
+      
+      // Track consecutive empty pages
+      if (pageProducts.length === 0) {
+        consecutiveEmptyPages++;
+        console.log(`⚠️ Empty page detected (${consecutiveEmptyPages}/${MAX_CONSECUTIVE_EMPTY_PAGES})`);
+        
+        if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
+          console.log(`🛑 Stopping: ${MAX_CONSECUTIVE_EMPTY_PAGES} consecutive empty pages found`);
+          break;
+        }
+      } else {
+        consecutiveEmptyPages = 0; // Reset counter when products are found
+      }
+      
       allProductUrls.push(...pageProducts);
 
       // Report progress

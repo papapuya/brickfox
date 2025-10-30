@@ -1227,7 +1227,12 @@ export default function URLScraper() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>{batchProgress.status}</span>
-                    <span>{batchProgress.current} / {batchProgress.total}</span>
+                    <span className="font-semibold">
+                      {batchProgress.current} / {batchProgress.total}
+                      <span className="text-muted-foreground ml-2">
+                        ({Math.round((batchProgress.current / batchProgress.total) * 100)}%)
+                      </span>
+                    </span>
                   </div>
                   <Progress value={(batchProgress.current / batchProgress.total) * 100} />
                 </div>
