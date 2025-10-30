@@ -354,7 +354,7 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   product.rawHtml = html.substring(0, 1000); // First 1000 chars
 
   // SMART AUTO-EXTRACTION: Description + Technical Data Table + PDF + Safety Warnings
-  const smartExtraction = autoExtractProductDetails($, html);
+  const smartExtraction = autoExtractProductDetails($, html, url);
   if (smartExtraction.description) {
     product.autoExtractedDescription = smartExtraction.description;
   }
@@ -411,7 +411,7 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
  * SMART AUTO-EXTRACTION: Automatically find and extract description + technical data table + PDF + safety warnings
  * Searches for common tab patterns like "Beschreibung", "Technische Daten", "Bedienungsanleitungen", "Produktsicherheit"
  */
-function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
+function autoExtractProductDetails($: cheerio.CheerioAPI, html: string, url: string): {
   description?: string;
   technicalDataTable?: string;
   pdfManualUrl?: string;
@@ -539,8 +539,12 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
     if (pdfLinks.length > 0) {
       const href = pdfLinks.first().attr('href');
       if (href) {
-        result.pdfManualUrl = href.startsWith('http') ? href : `https://${new URL(html).hostname}${href}`;
-        console.log(`Auto-extracted PDF manual URL (fallback): ${result.pdfManualUrl}`);
+        try {
+          result.pdfManualUrl = href.startsWith('http') ? href : `https://${new URL(url).hostname}${href}`;
+          console.log(`Auto-extracted PDF manual URL (fallback): ${result.pdfManualUrl}`);
+        } catch (error) {
+          console.error(`Failed to parse PDF URL: ${href}`, error);
+        }
       }
     }
   }

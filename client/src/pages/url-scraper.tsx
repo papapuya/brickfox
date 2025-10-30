@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +53,9 @@ export default function URLScraper() {
   const [generatedDescriptions, setGeneratedDescriptions] = useState<Map<string, string>>(new Map());
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [aiGenerationProgress, setAiGenerationProgress] = useState({ current: 0, total: 0 });
+  
+  // Abort scraping control
+  const abortScrapingRef = React.useRef(false);
   
   // Pagination options for multi-page scraping
   const [enablePagination, setEnablePagination] = useState(false);
@@ -358,6 +361,12 @@ export default function URLScraper() {
 
       let failedCount = 0;
       for (let i = 0; i < productUrls.length; i++) {
+        // Check if user aborted
+        if (abortScrapingRef.current) {
+          console.log('Scraping aborted by user');
+          break;
+        }
+
         const productUrl = productUrls[i];
         setBatchProgress({ 
           current: i + 1, 
@@ -417,12 +426,21 @@ export default function URLScraper() {
       }
 
       setScrapedProducts(products);
-      setBatchProgress({ current: products.length, total: productUrls.length, status: "Fertig!" });
-
-      toast({
-        title: "Scraping abgeschlossen",
-        description: `${products.length} von ${productUrls.length} Produkten erfolgreich gescraped`,
-      });
+      
+      if (abortScrapingRef.current) {
+        setBatchProgress({ current: products.length, total: productUrls.length, status: "Abgebrochen" });
+        toast({
+          title: "Scraping abgebrochen",
+          description: `${products.length} von ${productUrls.length} Produkten gescraped`,
+          variant: "destructive",
+        });
+      } else {
+        setBatchProgress({ current: products.length, total: productUrls.length, status: "Fertig!" });
+        toast({
+          title: "Scraping abgeschlossen",
+          description: `${products.length} von ${productUrls.length} Produkten erfolgreich gescraped`,
+        });
+      }
 
     } catch (error) {
       console.error('Product list scraping error:', error);
@@ -433,6 +451,7 @@ export default function URLScraper() {
       });
     } finally {
       setIsLoading(false);
+      abortScrapingRef.current = false; // Reset abort flag
     }
   };
 
@@ -559,6 +578,7 @@ export default function URLScraper() {
       });
     } finally {
       setIsLoading(false);
+      abortScrapingRef.current = false; // Reset abort flag
     }
   };
 
@@ -1144,19 +1164,36 @@ export default function URLScraper() {
                 )}
               </div>
 
-              <Button onClick={handleScrapeProductList} disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {batchProgress.status}
-                  </>
-                ) : (
-                  <>
-                    <List className="w-4 h-4 mr-2" />
-                    Produktliste scrapen
-                  </>
+              <div className="flex gap-2">
+                <Button onClick={handleScrapeProductList} disabled={isLoading} className="flex-1">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {batchProgress.status}
+                    </>
+                  ) : (
+                    <>
+                      <List className="w-4 h-4 mr-2" />
+                      Produktliste scrapen
+                    </>
+                  )}
+                </Button>
+
+                {isLoading && batchProgress.total > 0 && (
+                  <Button
+                    onClick={() => {
+                      abortScrapingRef.current = true;
+                      toast({
+                        title: "Wird abgebrochen...",
+                        description: "Das Scraping wird nach dem aktuellen Produkt gestoppt",
+                      });
+                    }}
+                    variant="destructive"
+                  >
+                    Abbrechen
+                  </Button>
                 )}
-              </Button>
+              </div>
 
               {isLoading && batchProgress.total > 0 && (
                 <div className="space-y-2">
