@@ -1156,9 +1156,18 @@ export default function URLScraper() {
 
           {/* Advanced Selectors */}
           <div className="mt-4 space-y-4">
-            <div>
-              {selectedSupplierId === "__none__" && (
-                <>
+            {selectedSupplierId !== "__none__" ? (
+              <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                <p className="text-sm font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
+                  ✅ Lieferanten-Selektoren geladen
+                </p>
+                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                  {suppliersData?.suppliers?.find(s => s.id === selectedSupplierId)?.name} Selektoren werden automatisch beim Scraping verwendet
+                </p>
+              </div>
+            ) : (
+              <>
+                <div>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="advanced"
@@ -1173,11 +1182,9 @@ export default function URLScraper() {
                   <p className="text-xs text-muted-foreground mt-1">
                     Standard-Selektoren funktionieren für die meisten Websites. Nur bei Bedarf anpassen.
                   </p>
-                </>
-              )}
-            </div>
+                </div>
 
-            {showAdvanced && (
+                {showAdvanced && (
               <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
                 <div>
                   <Label className="text-xs">Artikelnummer Selector</Label>
@@ -1261,6 +1268,8 @@ export default function URLScraper() {
                   />
                 </div>
               </div>
+                )}
+              </>
             )}
           </div>
         </Card>
