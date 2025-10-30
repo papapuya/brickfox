@@ -60,7 +60,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    const { data: user, error } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', id)
@@ -86,7 +90,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User & { passwordHash: string } | null> {
-    const { data: user, error } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('email', email)
@@ -113,7 +121,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User & { passwordHash: string } | null> {
-    const { data: user, error } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('username', username)
@@ -140,7 +152,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    const { data: users, error } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: users, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .order('created_at');

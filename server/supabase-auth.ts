@@ -45,10 +45,26 @@ export async function createAdminUser(email: string, password: string): Promise<
 
   if (error) throw error;
 
-  await supabase
+  const { error: insertError } = await supabaseAdmin
     .from('users')
-    .update({ is_admin: true, username: 'Admin' })
-    .eq('id', data.user.id);
+    .upsert({
+      id: data.user.id,
+      email: email,
+      username: 'Admin',
+      is_admin: true,
+      subscription_status: 'trial',
+      plan_id: 'trial',
+      api_calls_limit: 100,
+      api_calls_used: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'id'
+    });
+
+  if (insertError) {
+    throw new Error(`Failed to create user record: ${insertError.message}`);
+  }
 
   console.log(`✅ Admin user created: ${email}`);
 }

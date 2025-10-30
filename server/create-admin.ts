@@ -1,7 +1,13 @@
 import { createAdminUser } from './supabase-auth';
 
-const email = process.env.ADMIN_EMAIL || 'saranzerrer@icloud.com';
-const password = process.env.ADMIN_PASSWORD || 'Schnee1978#';
+const email = process.env.ADMIN_EMAIL;
+const password = process.env.ADMIN_PASSWORD;
+
+if (!email || !password) {
+  console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set');
+  console.error('Usage: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=securepass npm run create-admin');
+  process.exit(1);
+}
 
 createAdminUser(email, password)
   .then(() => {
