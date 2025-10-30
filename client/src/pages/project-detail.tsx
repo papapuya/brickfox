@@ -238,7 +238,7 @@ export default function ProjectDetail() {
                 Projekt exportieren
               </Button>
               <Button
-                onClick={() => setLocation(`/product-creator?project=${id}`)}
+                onClick={() => setLocation('/url-scraper')}
                 data-testid="button-add-product"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -287,11 +287,11 @@ export default function ProjectDetail() {
                     Fügen Sie Ihr erstes Produkt hinzu, um mit der Beschreibung zu beginnen
                   </p>
                   <Button
-                    onClick={() => setLocation(`/product-creator?project=${id}`)}
+                    onClick={() => setLocation('/url-scraper')}
                     data-testid="button-add-first-product"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Erstes Produkt erstellen
+                    Produkt erstellen
                   </Button>
                 </CardContent>
               </Card>
@@ -300,8 +300,7 @@ export default function ProjectDetail() {
                 {products.map((product) => (
                   <Card
                     key={product.id}
-                    className="hover-elevate active-elevate-2 cursor-pointer transition-all"
-                    onClick={() => setLocation(`/product-creator?project=${id}&product=${product.id}`)}
+                    className="hover-elevate transition-all"
                     data-testid={`card-product-${product.id}`}
                   >
                     <CardHeader className="space-y-0 pb-3">

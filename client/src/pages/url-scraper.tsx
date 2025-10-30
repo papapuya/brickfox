@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import type { Project } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface ScrapedProduct {
   articleNumber: string;
@@ -955,6 +955,11 @@ export default function URLScraper() {
           description: `Produkt wurde erfolgreich zu "${project?.name}" hinzugefügt`,
         });
       }
+
+      // Invalidate queries to refresh product counts
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects/product-counts'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProjectId}/products`] });
 
       setShowSaveDialog(false);
       setProjectName("");
