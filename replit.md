@@ -62,7 +62,14 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
   - `POST /api/pixi/compare` - CSV upload & comparison
   - `POST /api/pixi/compare-json` - JSON-based comparison
   - `DELETE /api/pixi/cache` - Manual cache clearing
-- **Frontend**: New page `/pixi-compare` with upload UI, statistics, and CSV export
+- **Frontend**: 
+  - Standalone page `/pixi-compare` with CSV upload UI
+  - **Integrated project comparison** - Direct Pixi comparison from project detail page (30. Okt 2025)
+    - Button "Mit Pixi vergleichen" in project header
+    - Supplier number dialog
+    - Dedicated Pixi tab with statistics (NEU/VORHANDEN counts)
+    - Results table with status badges
+    - CSV export functionality
 - **Matching Logic**: Article number (primary) + EAN validation (secondary)
 - **Security**: Full multi-tenant isolation with requireAuth middleware
 - **Documentation**: See `PIXI_INTEGRATION.md` for details
