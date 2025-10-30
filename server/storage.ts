@@ -26,6 +26,7 @@ export interface IStorage {
   createUser(data: RegisterUser): Promise<User>;
   getUserById(id: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User & { passwordHash: string } | null>;
+  getAllUsers(): Promise<User[]>;
   updateUserSubscription(userId: string, data: {
     stripeCustomerId?: string;
     subscriptionStatus?: string;
@@ -38,8 +39,9 @@ export interface IStorage {
   resetApiCalls(userId: string): Promise<void>;
   
   // Project operations
-  createProject(data: CreateProject): Promise<Project>;
+  createProject(userId: string, data: CreateProject): Promise<Project>;
   getProjects(): Promise<Project[]>;
+  getProjectsByUserId(userId: string): Promise<Project[]>;
   getProject(id: string): Promise<Project | null>;
   deleteProject(id: string): Promise<boolean>;
   
@@ -211,13 +213,37 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(users.id, userId));
   }
+
+  async getAllUsers(): Promise<User[]> {
+    const result = await db
+      .select()
+      .from(users)
+      .orderBy(users.createdAt);
+    
+    return result.map((user: any) => ({
+      id: user.id,
+      email: user.email,
+      username: user.username || undefined,
+      isAdmin: user.isAdmin || false,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 500,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : user.updatedAt.toISOString(),
+    }));
+  }
   
   // Project operations
-  async createProject(data: CreateProject): Promise<Project> {
+  async createProject(userId: string, data: CreateProject): Promise<Project> {
     const [project] = await db
       .insert(projects)
       .values({
         id: nanoid(),
+        userId,
         name: data.name,
       })
       .returning();
@@ -233,6 +259,20 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select()
       .from(projects)
+      .orderBy(projects.createdAt);
+    
+    return result.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      createdAt: typeof p.createdAt === 'string' ? p.createdAt : p.createdAt.toISOString(),
+    }));
+  }
+
+  async getProjectsByUserId(userId: string): Promise<Project[]> {
+    const result = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId))
       .orderBy(projects.createdAt);
     
     return result.map((p: any) => ({

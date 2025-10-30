@@ -720,14 +720,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Project Management: Create new project
-  app.post('/api/projects', async (req, res) => {
+  app.post('/api/projects', requireAuth, async (req, res) => {
     try {
+      const user = req.user as any;
       const validation = createProjectSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: 'Invalid project data', details: validation.error });
       }
 
-      const project = await storage.createProject(validation.data);
+      const project = await storage.createProject(user.id, validation.data);
       res.json({ success: true, project });
     } catch (error) {
       console.error('Create project error:', error);
@@ -776,8 +777,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk save CSV products to project
-  app.post('/api/bulk-save-to-project', async (req, res) => {
+  app.post('/api/bulk-save-to-project', requireAuth, async (req, res) => {
     try {
+      const user = req.user as any;
       const { projectName, products } = req.body;
 
       if (!projectName || !Array.isArray(products) || products.length === 0) {
@@ -785,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create new project
-      const project = await storage.createProject({ name: projectName });
+      const project = await storage.createProject(user.id, { name: projectName });
 
       // Save all products to the project
       const savedProducts = [];
