@@ -222,6 +222,7 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
+      role: user.role || 'member',
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
       subscriptionId: user.subscription_id || undefined,
