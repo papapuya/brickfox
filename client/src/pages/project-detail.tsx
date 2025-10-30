@@ -176,12 +176,13 @@ export default function ProjectDetail() {
         Hersteller: p.customAttributes?.find(a => a.key === 'hersteller')?.value || '',
       }));
 
+      const token = localStorage.getItem('supabase_token');
       const response = await fetch('/api/pixi/compare-json', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           products: csvProducts,
           supplNr: pixiSupplNr,
