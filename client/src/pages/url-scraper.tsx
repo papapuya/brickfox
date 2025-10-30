@@ -1278,61 +1278,66 @@ export default function URLScraper() {
         {scrapedProduct && (
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Extrahierte Produktdaten</h3>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Artikelnummer</Label>
-                  <p className="font-mono text-sm">{scrapedProduct.articleNumber || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Produktname</Label>
-                  <p className="font-semibold">{scrapedProduct.productName || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">EAN</Label>
-                  <p className="font-mono text-sm">{scrapedProduct.ean || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Hersteller</Label>
-                  <p>{scrapedProduct.manufacturer || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Preis</Label>
-                  <p className="font-semibold">{scrapedProduct.price || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Gewicht</Label>
-                  <p>{scrapedProduct.weight || '-'}</p>
-                </div>
-              </div>
-              
-              {scrapedProduct.description && (
-                <div className="mt-4">
-                  <Label className="text-xs text-muted-foreground">Beschreibung</Label>
-                  <div className="mt-2 p-3 bg-muted rounded-lg text-sm max-h-60 overflow-y-auto">
-                    <div dangerouslySetInnerHTML={{ __html: scrapedProduct.description }} />
-                  </div>
-                </div>
-              )}
-
-              {scrapedProduct.images && scrapedProduct.images.length > 0 && (
-                <div className="mt-4">
-                  <Label className="text-xs text-muted-foreground">Bilder ({scrapedProduct.images.length})</Label>
-                  <div className="grid grid-cols-4 gap-2 mt-2">
-                    {scrapedProduct.images.slice(0, 8).map((img, idx) => (
-                      <img 
-                        key={idx} 
-                        src={img} 
-                        alt={`Produkt ${idx + 1}`}
-                        className="w-full h-24 object-cover rounded border"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+            
+            {/* Tabelle mit allen Feldern */}
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Feld</TableHead>
+                    <TableHead>Wert</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(scrapedProduct).map(([key, value]) => {
+                    // Skip images array, we'll show it separately
+                    if (key === 'images') return null;
+                    
+                    // Skip empty values
+                    if (!value) return null;
+                    
+                    // Skip description if it's an HTML object or auto-extracted flag
+                    if (key === 'autoExtractedDescription' || key === 'technicalDataTable' || key === 'pdfManualUrl' || key === 'safetyWarnings' || key === 'rawHtml') return null;
+                    
+                    // Format field name (camelCase to readable)
+                    const fieldName = key
+                      .replace(/([A-Z])/g, ' $1')
+                      .replace(/^./, str => str.toUpperCase())
+                      .trim();
+                    
+                    return (
+                      <TableRow key={key}>
+                        <TableCell className="font-medium text-muted-foreground">{fieldName}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  
+                  {/* Show image count */}
+                  {scrapedProduct.images && scrapedProduct.images.length > 0 && (
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground">Bilder</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{scrapedProduct.images.length} gefunden</span>
+                          {scrapedProduct.images[0] && (
+                            <img 
+                              src={scrapedProduct.images[0]} 
+                              alt="Thumbnail"
+                              className="w-16 h-16 object-cover rounded border"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
 
             <div className="mt-6 flex gap-2">
