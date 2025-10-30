@@ -56,6 +56,7 @@ export default function Login() {
       window.location.href = '/';
     },
     onError: (error: Error) => {
+      setIsLoading(false);
       toast({
         title: 'Login fehlgeschlagen',
         description: error.message,
