@@ -427,7 +427,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/scrape-product', requireAuth, checkApiLimit, async (req, res) => {
+  // Single product scraping is also FREE
+  app.post('/api/scrape-product', requireAuth, async (req, res) => {
     try {
       const { url, selectors, userAgent, cookies } = req.body;
       
