@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Settings2, FolderPlus } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle2, Loader2, AlertTriangle, Settings2, FolderPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -162,13 +162,33 @@ export default function CSVBulkDescription() {
 
       setRawData(parseResult.data);
       setParseWarnings(parseResult.warnings);
+      setSuccessMessage(`${parseResult.data.length} Zeilen erfolgreich eingelesen`);
+      setProcessing(false);
 
-      // Generiere Produktbeschreibungen
-      await generateDescriptions(parseResult.data);
+      // AI-Generierung wird NICHT automatisch gestartet - User muss Button klicken
       
     } catch (err) {
       console.error('Verarbeitungsfehler:', err);
       setError(err instanceof Error ? err.message : 'Fehler beim Verarbeiten der Datei');
+      setProcessing(false);
+    }
+  };
+
+  const startAIGeneration = async () => {
+    if (rawData.length === 0) {
+      setError('Keine Daten zum Verarbeiten vorhanden');
+      return;
+    }
+
+    setProcessing(true);
+    setError("");
+    setProgress(0);
+    
+    try {
+      await generateDescriptions(rawData);
+    } catch (err) {
+      console.error('Generierungsfehler:', err);
+      setError(err instanceof Error ? err.message : 'Fehler bei der AI-Generierung');
       setProcessing(false);
     }
   };
@@ -557,7 +577,36 @@ export default function CSVBulkDescription() {
           </Card>
         )}
 
-        {processing && (
+        {/* Schritt 1: CSV eingelesen - zeige Rohdaten + Button */}
+        {!processing && rawData.length > 0 && bulkProducts.length === 0 && (
+          <Card className="p-8">
+            <div className="flex flex-col items-center justify-center gap-6">
+              <CheckCircle2 className="w-16 h-16 text-chart-2" />
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold text-foreground">
+                  CSV erfolgreich eingelesen
+                </h2>
+                <p className="text-lg text-muted-foreground">
+                  {rawData.length} Produkte bereit zur Verarbeitung
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={startAIGeneration}
+                className="px-8 py-6 text-lg"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                AI Beschreibungen generieren ({rawData.length} Produkte)
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                Die AI-Generierung benötigt ca. {Math.round(rawData.length * 8 / 60)} Minuten
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Schritt 2: AI-Generierung läuft */}
+        {processing && rawData.length > 0 && (
           <Card className="p-12">
             <div className="flex flex-col items-center justify-center gap-6">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
