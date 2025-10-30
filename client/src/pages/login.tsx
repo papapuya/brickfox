@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Crown } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Ungültige E-Mail-Adresse'),
@@ -113,12 +114,30 @@ export default function Login() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
+        <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-gray-600 text-center">
             Noch kein Account?{' '}
             <a href="/register" className="text-indigo-600 hover:underline font-medium">
               Jetzt registrieren
             </a>
+          </div>
+          
+          {/* Admin Info */}
+          <div className="border-t pt-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Crown className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-amber-800">
+                  <p className="font-semibold mb-1">Admin-Zugang aktivieren:</p>
+                  <p className="text-amber-700">
+                    Nach der Registrierung öffnen Sie die Developer Console und führen Sie aus:<br/>
+                    <code className="bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-mono text-[10px] block mt-1">
+                      UPDATE users SET "isAdmin" = true WHERE email = 'ihre@email.de';
+                    </code>
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </CardFooter>
       </Card>
