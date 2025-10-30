@@ -376,9 +376,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/suppliers', requireAuth, async (req: any, res) => {
     try {
       const suppliers = await supabaseStorage.getSuppliers(req.user.id);
-      res.json(suppliers);
+      res.json({ success: true, suppliers });
     } catch (error) {
-      res.status(500).json({ error: 'Fehler beim Laden der Lieferanten' });
+      res.status(500).json({ success: false, error: 'Fehler beim Laden der Lieferanten' });
+    }
+  });
+
+  app.post('/api/suppliers', requireAuth, async (req: any, res) => {
+    try {
+      const supplier = await supabaseStorage.createSupplier(req.user.id, req.body);
+      res.json({ success: true, supplier });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || 'Fehler beim Erstellen des Lieferanten' });
+    }
+  });
+
+  app.put('/api/suppliers/:id', requireAuth, async (req: any, res) => {
+    try {
+      const supplier = await supabaseStorage.updateSupplier(req.params.id, req.user.id, req.body);
+      res.json({ success: true, supplier });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || 'Fehler beim Aktualisieren des Lieferanten' });
+    }
+  });
+
+  app.delete('/api/suppliers/:id', requireAuth, async (req: any, res) => {
+    try {
+      await supabaseStorage.deleteSupplier(req.params.id, req.user.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || 'Fehler beim Löschen des Lieferanten' });
     }
   });
 
