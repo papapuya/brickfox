@@ -32,24 +32,26 @@ export default function Landing() {
                 onMouseEnter={() => setProductMenuOpen(true)}
                 onMouseLeave={() => setProductMenuOpen(false)}
               >
-                <button className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                <button className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 font-medium transition-colors py-2">
                   Produkt
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 {productMenuOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
-                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                      Tool Funktionen
-                    </a>
-                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                      CSV Bulk Import
-                    </a>
-                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                      URL Scraper
-                    </a>
-                    <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                      AI-Generierung
-                    </a>
+                  <div className="absolute top-full left-0 pt-1 w-56">
+                    <div className="bg-white rounded-lg shadow-xl border border-gray-200 py-2">
+                      <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        Tool Funktionen
+                      </a>
+                      <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        CSV Bulk Import
+                      </a>
+                      <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        URL Scraper
+                      </a>
+                      <a href="#features" className="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        AI-Generierung
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
