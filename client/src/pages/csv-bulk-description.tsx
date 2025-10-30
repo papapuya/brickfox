@@ -574,30 +574,77 @@ export default function CSVBulkDescription() {
 
         {/* Schritt 1: CSV eingelesen - zeige Rohdaten + Button */}
         {!processing && rawData.length > 0 && bulkProducts.length === 0 && (
-          <Card className="p-8">
-            <div className="flex flex-col items-center justify-center gap-6">
-              <CheckCircle2 className="w-16 h-16 text-chart-2" />
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-foreground">
-                  CSV erfolgreich eingelesen
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  {rawData.length} Produkte bereit zur Verarbeitung
+          <div className="space-y-6">
+            <Card className="p-8">
+              <div className="flex flex-col items-center justify-center gap-6">
+                <CheckCircle2 className="w-16 h-16 text-chart-2" />
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold text-foreground">
+                    CSV erfolgreich eingelesen
+                  </h2>
+                  <p className="text-lg text-muted-foreground">
+                    {rawData.length} Produkte bereit zur Verarbeitung
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  onClick={startAIGeneration}
+                  className="px-8 py-6 text-lg"
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  AI Beschreibungen generieren ({rawData.length} Produkte)
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Die AI-Generierung benötigt ca. {Math.round(rawData.length * 8 / 60)} Minuten
                 </p>
               </div>
-              <Button
-                size="lg"
-                onClick={startAIGeneration}
-                className="px-8 py-6 text-lg"
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                AI Beschreibungen generieren ({rawData.length} Produkte)
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                Die AI-Generierung benötigt ca. {Math.round(rawData.length * 8 / 60)} Minuten
-              </p>
-            </div>
-          </Card>
+            </Card>
+
+            {/* CSV Rohdaten Vorschau */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                CSV Vorschau ({rawData.length} Zeilen)
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-muted">
+                      {Object.keys(rawData[0] || {}).map((header) => (
+                        <th
+                          key={header}
+                          className="px-4 py-3 text-left text-sm font-semibold text-foreground border-b border-border"
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rawData.slice(0, 10).map((row, index) => (
+                      <tr
+                        key={index}
+                        className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
+                      >
+                        {Object.values(row).map((value, cellIndex) => (
+                          <td
+                            key={cellIndex}
+                            className="px-4 py-3 text-sm text-foreground border-b border-border"
+                          >
+                            {value || '-'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {rawData.length > 10 && (
+                <p className="text-sm text-muted-foreground mt-4 text-center">
+                  Zeige erste 10 von {rawData.length} Zeilen
+                </p>
+              )}
+            </Card>
+          </div>
         )}
 
         {/* Schritt 2: AI-Generierung läuft */}
