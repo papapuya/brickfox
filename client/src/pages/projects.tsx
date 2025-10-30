@@ -106,64 +106,56 @@ export default function Projects() {
     <div className="h-full overflow-auto">
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Meine Projekte</h1>
-            <p className="text-muted-foreground mt-1">
-              Verwalten Sie Ihre Produktbeschreibungs-Projekte
-            </p>
-          </div>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-create-project">
-                <Plus className="w-4 h-4 mr-2" />
-                Neues Projekt
-              </Button>
-            </DialogTrigger>
-            <DialogContent data-testid="dialog-create-project">
-              <DialogHeader>
-                <DialogTitle>Neues Projekt erstellen</DialogTitle>
-                <DialogDescription>
-                  Geben Sie einen Namen für Ihr neues Projekt ein
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="project-name">Projektname</Label>
-                  <Input
-                    id="project-name"
-                    placeholder="z.B. MediaMarkt Batterien März 2025"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreateProject();
-                      }
-                    }}
-                    data-testid="input-project-name"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  data-testid="button-cancel-create"
-                >
-                  Abbrechen
-                </Button>
-                <Button
-                  onClick={handleCreateProject}
-                  disabled={!projectName.trim() || createProjectMutation.isPending}
-                  data-testid="button-confirm-create"
-                >
-                  {createProjectMutation.isPending ? "Wird erstellt..." : "Erstellen"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Meine Projekte</h1>
+          <p className="text-muted-foreground mt-1">
+            Verwalten Sie Ihre Produktbeschreibungs-Projekte
+          </p>
         </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent data-testid="dialog-create-project">
+            <DialogHeader>
+              <DialogTitle>Neues Projekt erstellen</DialogTitle>
+              <DialogDescription>
+                Geben Sie einen Namen für Ihr neues Projekt ein
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-name">Projektname</Label>
+                <Input
+                  id="project-name"
+                  placeholder="z.B. MediaMarkt Batterien März 2025"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateProject();
+                    }
+                  }}
+                  data-testid="input-project-name"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                data-testid="button-cancel-create"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleCreateProject}
+                disabled={!projectName.trim() || createProjectMutation.isPending}
+                data-testid="button-confirm-create"
+              >
+                {createProjectMutation.isPending ? "Wird erstellt..." : "Erstellen"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Projects Grid */}
         {isLoading ? (

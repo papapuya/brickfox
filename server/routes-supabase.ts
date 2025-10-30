@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/projects', requireAuth, async (req: any, res) => {
     try {
       const projects = await supabaseStorage.getProjectsByUserId(req.user.id);
-      res.json(projects);
+      res.json({ success: true, projects });
     } catch (error) {
       res.status(500).json({ error: 'Fehler beim Laden der Projekte' });
     }
