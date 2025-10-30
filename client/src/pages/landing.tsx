@@ -252,12 +252,12 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="text-4xl md:text-5xl font-bold text-white">
             Sprechen wir über Ihren individuellen Anwendungsfall
           </h2>
-          <p className="text-xl text-blue-100">
+          <p className="text-xl text-white">
             Vereinbaren Sie jetzt einen unverbindlichen 30-Minuten-Termin
           </p>
           <Link href="/pricing">
