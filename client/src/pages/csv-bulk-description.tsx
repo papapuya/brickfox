@@ -247,12 +247,12 @@ export default function CSVBulkDescription() {
           const shortDesc =
             sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
 
-          // MediaMarkt V1: Vollständiger Produktname aus CSV (Bezeichnung)
-          const bezeichnung = productData.bezeichnung || row['Bezeichnung'] || produktname;
-          const mmNameV1 = bezeichnung;
+          // MediaMarkt V1: Kategorie + Modell (z.B. "Werkzeugakku 2607336705")
+          const kategorie = productData.kategorie || row['Kategorie'] || '';
+          const artikelnummer = productData.artikelnummer || row['Artikelnummer'] || '';
+          const mmNameV1 = `${kategorie} ${artikelnummer}`.trim();
 
           // MediaMarkt V2: Nur Artikelnummer/Modell
-          const artikelnummer = productData.artikelnummer || row['Artikelnummer'] || '';
           const mmNameV2 = artikelnummer;
 
           return {
