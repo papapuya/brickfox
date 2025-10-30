@@ -15,6 +15,8 @@ import {
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
 import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors } from "./scraper-service";
+import { pixiService } from "./services/pixi-service";
+import Papa from "papaparse";
 import { nanoid } from "nanoid";
 import { createProjectSchema, createProductInProjectSchema, updateProductInProjectSchema } from "@shared/schema";
 
@@ -698,6 +700,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Description generation error:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Description generation failed' 
+      });
+    }
+  });
+
+  app.post('/api/pixi/compare', requireAuth, upload.single('csvFile'), async (req: any, res) => {
+    try {
+      const { supplNr } = req.body;
+      const file = req.file;
+
+      if (!supplNr) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Supplier number (supplNr) is required' 
+        });
+      }
+
+      if (!file) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'CSV file is required' 
+        });
+      }
+
+      console.log(`[Pixi Compare] Processing CSV for supplier ${supplNr}, file size: ${file.size} bytes`);
+
+      const csvContent = file.buffer.toString('utf-8');
+
+      const parseResult = await new Promise<any>((resolve, reject) => {
+        Papa.parse(csvContent, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => resolve(results),
+          error: (error) => reject(error),
+        });
+      });
+
+      if (!parseResult.data || parseResult.data.length === 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'CSV file is empty or invalid' 
+        });
+      }
+
+      console.log(`[Pixi Compare] Parsed ${parseResult.data.length} products from CSV`);
+
+      const comparisonResult = await pixiService.compareProducts(parseResult.data, supplNr);
+
+      console.log(
+        `[Pixi Compare] Comparison complete: ${comparisonResult.summary.total} total, ` +
+        `${comparisonResult.summary.neu} new, ${comparisonResult.summary.vorhanden} existing`
+      );
+
+      res.json(comparisonResult);
+    } catch (error: any) {
+      console.error('[Pixi Compare] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to compare products with Pixi API' 
+      });
+    }
+  });
+
+  app.post('/api/pixi/compare-json', requireAuth, async (req: any, res) => {
+    try {
+      const { products, supplNr } = req.body;
+
+      if (!supplNr) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Supplier number (supplNr) is required' 
+        });
+      }
+
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Products array is required and must not be empty' 
+        });
+      }
+
+      console.log(`[Pixi Compare JSON] Processing ${products.length} products for supplier ${supplNr}`);
+
+      const comparisonResult = await pixiService.compareProducts(products, supplNr);
+
+      console.log(
+        `[Pixi Compare JSON] Comparison complete: ${comparisonResult.summary.total} total, ` +
+        `${comparisonResult.summary.neu} new, ${comparisonResult.summary.vorhanden} existing`
+      );
+
+      res.json(comparisonResult);
+    } catch (error: any) {
+      console.error('[Pixi Compare JSON] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to compare products with Pixi API' 
+      });
+    }
+  });
+
+  app.delete('/api/pixi/cache', requireAuth, async (req: any, res) => {
+    try {
+      pixiService.clearCache();
+      res.json({ success: true, message: 'Pixi cache cleared' });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to clear cache' 
       });
     }
   });
