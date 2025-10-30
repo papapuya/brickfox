@@ -20,24 +20,24 @@ export const PLANS = {
     name: 'Starter',
     price: 29,
     currency: 'eur',
-    apiCallsLimit: 500,
-    features: ['100 Produkte/Monat', '500 AI-Generierungen', 'CSV-Import', 'URL-Scraping'],
+    apiCallsLimit: 15000, // GPT-4o-mini: 30× günstiger (500 → 15k)
+    features: ['3000 Produkte/Monat', '15.000 AI-Generierungen (GPT-4o-mini)', 'CSV-Import', 'URL-Scraping'],
   },
   pro: {
     id: 'pro',
     name: 'Pro',
     price: 79,
     currency: 'eur',
-    apiCallsLimit: 5000,
-    features: ['1000 Produkte/Monat', '5000 AI-Generierungen', 'Alle Starter-Features', 'Bulk-Processing', 'Vorrang-Support'],
+    apiCallsLimit: 150000, // GPT-4o-mini: 30× günstiger (5k → 150k)
+    features: ['30.000 Produkte/Monat', '150.000 AI-Generierungen (GPT-4o-mini)', 'Alle Starter-Features', 'Bulk-Processing', 'Vorrang-Support'],
   },
   enterprise: {
     id: 'enterprise',
     name: 'Enterprise',
     price: 199,
     currency: 'eur',
-    apiCallsLimit: 20000,
-    features: ['Unbegrenzte Produkte', '20000 AI-Generierungen', 'Alle Pro-Features', 'Custom Templates', 'Dedizierter Support'],
+    apiCallsLimit: 600000, // GPT-4o-mini: 30× günstiger (20k → 600k)
+    features: ['Unbegrenzte Produkte', '600.000 AI-Generierungen (GPT-4o-mini)', 'Alle Pro-Features', 'Custom Templates', 'Dedizierter Support'],
   },
 };
 
@@ -298,7 +298,7 @@ export async function getSubscriptionStatus(userId: string) {
         currency: 'eur',
         apiCallsLimit: 3000, // GPT-4o-mini: 30× cheaper than GPT-4o
         features: [
-          '100 AI-Generierungen (Trial)',
+          '3.000 AI-Generierungen (Trial mit GPT-4o-mini)',
           'Alle Features zum Testen',
           'Upgrade jederzeit möglich'
         ]
