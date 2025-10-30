@@ -187,7 +187,7 @@ export default function URLScraper() {
         // Use SSE for multi-page scraping with live progress
         productUrls = await new Promise((resolve, reject) => {
           const requestBody = {
-            url: url.trim(),
+            listUrl: url.trim(),
             productLinkSelector: productLinkSelector.trim() || null,
             paginationSelector: paginationSelector.trim() || null,
             maxPages,
@@ -288,7 +288,7 @@ export default function URLScraper() {
       } else {
         // Single page scraping (no SSE needed)
         const requestBody = {
-          url: url.trim(),
+          listUrl: url.trim(),
           productLinkSelector: productLinkSelector.trim() || null,
           maxProducts,
           userAgent: userAgent || undefined,
