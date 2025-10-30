@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Save } from "lucide-react";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 
 interface Supplier {
   id: string;
@@ -69,8 +70,7 @@ export default function Suppliers() {
 
   const loadSuppliers = async () => {
     try {
-      const response = await fetch('/api/suppliers');
-      const data = await response.json();
+      const data = await apiGet<{ success: boolean; suppliers: Supplier[] }>('/api/suppliers');
       if (data.success) {
         setSuppliers(data.suppliers);
       }
@@ -150,19 +150,9 @@ export default function Suppliers() {
         selectors: activeSelectors
       };
 
-      const url = editingSupplier 
-        ? `/api/suppliers/${editingSupplier.id}`
-        : '/api/suppliers';
-      
-      const method = editingSupplier ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
+      const data = editingSupplier 
+        ? await apiPut<{ success: boolean; error?: string }>(`/api/suppliers/${editingSupplier.id}`, payload)
+        : await apiPost<{ success: boolean; error?: string }>('/api/suppliers', payload);
 
       if (data.success) {
         toast({
@@ -194,11 +184,7 @@ export default function Suppliers() {
     }
 
     try {
-      const response = await fetch(`/api/suppliers/${id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
+      const data = await apiDelete<{ success: boolean; error?: string }>(`/api/suppliers/${id}`);
 
       if (data.success) {
         toast({

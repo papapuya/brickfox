@@ -45,8 +45,11 @@ export default function AdminDashboard() {
   const { data, isLoading } = useQuery<CustomersData>({
     queryKey: ['admin-customers'],
     queryFn: async () => {
+      const token = localStorage.getItem('supabase_token');
       const res = await fetch('/api/admin/customers', {
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
       if (!res.ok) {
         if (res.status === 403) {
