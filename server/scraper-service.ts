@@ -428,8 +428,9 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
   // STRATEGY: Extract the entire tab pane content, not just a single table
   const technicalDataPaneSelectors = [
     '#technical-data-516d15ca626445a38719925615405a64-pane', // Nitecore specific tab pane (FULL CONTENT)
-    '[id*="technical-data"]', // Generic technical data pane
-    '[id*="technische-daten"]', // German technical data pane
+    '[id$="-pane"][id*="technical"]', // Match IDs ending with -pane (NOT tab buttons)
+    '.tab-pane[id*="technical"]', // Tab pane with class
+    '.tab-pane[id*="technische-daten"]', // German technical data pane
   ];
 
   // Try to get the COMPLETE tab pane first (all DIVs and tables)
@@ -438,9 +439,9 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string): {
       const pane = $(selector).first();
       if (pane.length > 0) {
         const content = pane.html();
-        if (content && content.length > 100) {
-          // Build a complete HTML table structure from the pane content
-          result.technicalDataTable = `<div class="technical-data-section">${content}</div>`;
+        // Make sure we got actual content, not just a tab button (should have table or multiple divs)
+        if (content && content.length > 200 && (content.includes('<table') || content.includes('properties-row'))) {
+          result.technicalDataTable = content; // Use raw HTML without wrapper div
           console.log(`Auto-extracted FULL technical data pane using: ${selector} (${content.length} chars)`);
           break;
         }
