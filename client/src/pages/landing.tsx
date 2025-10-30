@@ -4,29 +4,28 @@ import { Sparkles, CheckCircle2, Zap, TrendingUp, Shield } from "lucide-react";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section - ConversionMaker Style */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 py-20 md:py-32">
-          <div className="text-center space-y-8">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
-              Ihr AI-Tool für <span className="text-blue-600">automatische</span><br/>
-              PIM-Daten Generierung
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white">
+      {/* Hero Section - PromptPop Style */}
+      <section className="relative">
+        <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+          <div className="text-center space-y-8 max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              Produktdaten-Management neu gedacht – <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Automatisiert, intelligent, zeitsparend</span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              Mit PIMPilot generieren Sie in Sekunden hochwertige Produktbeschreibungen und PIM-Daten in über 40 Sprachen, die Ihre Zielgruppe überzeugen. Steigern Sie Ihre Conversion um bis zu 28% mit besseren Texten!
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Schluss mit manuellen Excel-Marathons und endlosen Copy-Paste-Aufgaben. Unser Produktdaten-Manager automatisiert deine Produkttexte, Mappings und Exporte – in Sekunden statt Stunden.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Link href="/pricing">
-                <Button size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg">
-                  Jetzt Demo anfragen
+                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl shadow-lg">
+                  Kostenlos starten
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 border-gray-300 hover:border-blue-600 rounded-lg">
-                  Anmelden
+              <Link href="#features">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded-xl">
+                  Mehr erfahren
                 </Button>
               </Link>
             </div>
@@ -34,93 +33,68 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Customer Logos Section */}
-      <section className="py-12 bg-gray-50 border-b border-gray-200">
+      {/* Stats Section - PromptPop Style */}
+      <section className="py-16 bg-white" id="features">
         <div className="max-w-6xl mx-auto px-6">
-          <p className="text-center text-sm uppercase tracking-wide text-gray-500 font-semibold mb-8">
-            Führende Unternehmen vertrauen bereits auf uns
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-            <div className="flex items-center justify-center">
-              <div className="text-2xl font-bold text-gray-400">MediaMarkt</div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Produktdaten-Management in Zahlen</h2>
+            <p className="text-lg text-gray-600">Erlebe echte Zeitersparnis und Effizienz bei deiner täglichen Arbeit</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl p-6 text-center border border-indigo-100">
+              <div className="text-4xl font-bold text-indigo-600 mb-2">10.000+</div>
+              <div className="text-sm text-gray-600">Produkte in Minuten verarbeitet</div>
             </div>
-            <div className="flex items-center justify-center">
-              <div className="text-2xl font-bold text-gray-400">Saturn</div>
+            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl p-6 text-center border border-indigo-100">
+              <div className="text-4xl font-bold text-indigo-600 mb-2">95%</div>
+              <div className="text-sm text-gray-600">Weniger manuelle Arbeit</div>
             </div>
-            <div className="flex items-center justify-center">
-              <div className="text-2xl font-bold text-gray-400">E-Commerce</div>
+            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl p-6 text-center border border-indigo-100">
+              <div className="text-4xl font-bold text-indigo-600 mb-2">Alle</div>
+              <div className="text-sm text-gray-600">MediaMarkt, Brickfox & mehr</div>
             </div>
-            <div className="flex items-center justify-center">
-              <div className="text-2xl font-bold text-gray-400">Retail Pro</div>
+            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl p-6 text-center border border-indigo-100">
+              <div className="text-4xl font-bold text-indigo-600 mb-2">2-5 Min</div>
+              <div className="text-sm text-gray-600">Statt 4-8 Stunden pro Produkt</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Feature 1: Automation */}
-      <section className="py-20 bg-white">
+      {/* Pain Points Section */}
+      <section className="py-20 bg-gradient-to-b from-white to-indigo-50">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-block bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold">
-                Automatisierung
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Kennst du diese Probleme?</h2>
+            <p className="text-lg text-gray-600">Typische Herausforderungen im Produktdaten-Management</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+                <Sparkles className="w-6 h-6 text-indigo-600" />
               </div>
-              <h2 className="text-4xl font-bold text-gray-900">
-                Automatisieren Sie die Content-Erstellung Ihrer Shop-Seiten
-              </h2>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Erstellen Sie tausende Inhalte vollautomatisch in kürzester Zeit</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Nahtlose Integration in bestehende Systeme (PIM, Brickfox, Channel-Engine)</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Automatische Generierung in über 40 Sprachen - in Muttersprachler-Qualität!</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-700">Kostenreduktion auf unter 1€ pro Text</p>
-                  </div>
-                </li>
-              </ul>
-              <Link href="/pricing">
-                <Button size="lg" className="mt-4 bg-blue-600 hover:bg-blue-700">
-                  Mehr über Automatisierung
-                </Button>
-              </Link>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Endlose Excel-Arbeit</h3>
+              <p className="text-gray-600">
+                Stunden über Stunden mit Copy-Paste, Formatieren und manuellen Anpassungen. Deine wertvolle Zeit geht für repetitive Aufgaben drauf.
+              </p>
             </div>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8 shadow-xl">
-                <div className="bg-white rounded-lg p-6 shadow-md">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <div className="text-sm text-gray-500">AI-Generation</div>
-                        <div className="text-2xl font-bold text-gray-900">2.000+ Produkte/h</div>
-                      </div>
-                    </div>
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="text-sm text-gray-500 mb-2">Automatische Verarbeitung</div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div className="bg-blue-600 h-3 rounded-full" style={{ width: '97%' }}></div>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">97% schneller als manuell</div>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-violet-600" />
               </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Chaos bei Plattform-Mappings</h3>
+              <p className="text-gray-600">
+                Jede Plattform will andere Felder. MediaMarkt, Brickfox, Channel-Engine – alle haben ihre eigenen Anforderungen. Ein Alptraum ohne System.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Inkonsistente Produkttexte</h3>
+              <p className="text-gray-600">
+                Mal gut, mal schlecht. Keine einheitliche Qualität. SEO-Optimierung? Fehlanzeige. Deine Produkte verschwinden in der Masse.
+              </p>
             </div>
           </div>
         </div>
@@ -131,10 +105,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 md:order-1">
-              <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 shadow-xl">
+              <div className="bg-gradient-to-br from-indigo-100 to-violet-100 rounded-2xl p-8 shadow-xl">
                 <div className="bg-white rounded-lg p-6 shadow-md">
                   <div className="space-y-3">
-                    <div className="text-sm font-semibold text-purple-600">Produkt-Beschreibung</div>
+                    <div className="text-sm font-semibold text-indigo-600">Produkt-Beschreibung</div>
                     <div className="text-lg font-bold text-gray-900">Nitecore 18650 Li-Ion Akku</div>
                     <p className="text-gray-700 leading-relaxed">
                       ✅ Hochleistungs-Lithium-Ionen-Akku für maximale Power<br/>
@@ -149,7 +123,7 @@ export default function Landing() {
               </div>
             </div>
             <div className="space-y-6 order-1 md:order-2">
-              <div className="inline-block bg-purple-100 text-purple-600 px-4 py-2 rounded-full text-sm font-semibold">
+              <div className="inline-block bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full text-sm font-semibold">
                 Individualisierung
               </div>
               <h2 className="text-4xl font-bold text-gray-900">
@@ -182,7 +156,7 @@ export default function Landing() {
                 </li>
               </ul>
               <Link href="/pricing">
-                <Button size="lg" className="mt-4 bg-purple-600 hover:bg-purple-700">
+                <Button size="lg" className="mt-4 bg-indigo-600 hover:bg-indigo-700">
                   Mehr über Anpassungen
                 </Button>
               </Link>
@@ -237,11 +211,11 @@ export default function Landing() {
                     <div className="text-gray-600">mehr Conversions durch<br/>hervorragende Texte</div>
                   </div>
                   <div className="bg-white rounded-lg p-6 shadow-md text-center">
-                    <div className="text-5xl font-bold text-blue-600 mb-2">~1€</div>
+                    <div className="text-5xl font-bold text-indigo-600 mb-2">~1€</div>
                     <div className="text-gray-600">pro perfektem<br/>Text</div>
                   </div>
                   <div className="bg-white rounded-lg p-6 shadow-md text-center">
-                    <div className="text-5xl font-bold text-purple-600 mb-2">+80%</div>
+                    <div className="text-5xl font-bold text-violet-600 mb-2">+80%</div>
                     <div className="text-gray-600">mehr Traffic durch SEO-<br/>optimierte Inhalte</div>
                   </div>
                 </div>
@@ -252,7 +226,7 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
+      <section className="py-20 bg-gradient-to-br from-indigo-600 to-violet-700">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-bold text-white">
             Sprechen wir über Ihren individuellen Anwendungsfall
@@ -261,7 +235,7 @@ export default function Landing() {
             Vereinbaren Sie jetzt einen unverbindlichen 30-Minuten-Termin
           </p>
           <Link href="/pricing">
-            <Button size="lg" className="text-lg px-10 py-6 bg-white text-blue-600 hover:bg-gray-100 rounded-lg shadow-xl">
+            <Button size="lg" className="text-lg px-10 py-6 bg-white text-indigo-600 hover:bg-gray-100 rounded-lg shadow-xl">
               Jetzt 30-Minuten-Termin vereinbaren
             </Button>
           </Link>
