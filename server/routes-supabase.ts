@@ -167,8 +167,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       loginUserSchema.parse(req.body);
       
+      let emailToUse = req.body.email;
+      
+      if (!emailToUse.includes('@')) {
+        const userByUsername = await supabaseStorage.getUserByUsername(emailToUse);
+        if (userByUsername) {
+          emailToUse = userByUsername.email;
+        }
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: req.body.email,
+        email: emailToUse,
         password: req.body.password,
       });
 
