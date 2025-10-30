@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/generate-description', requireAuth, checkApiLimit, async (req, res) => {
     try {
-      const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable, model } = req.body;
+      const { extractedData, customAttributes, autoExtractedDescription, technicalDataTable, safetyWarnings, pdfManualUrl, model } = req.body;
 
       if (!extractedData || !Array.isArray(extractedData)) {
         return res.status(400).json({ error: 'Invalid extracted data' });
@@ -560,6 +560,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enhancedData.push(`Technische Daten (HTML-Tabelle):\n${technicalDataTable}`);
       }
 
+      if (safetyWarnings) {
+        enhancedData.push(`Sicherheitshinweise:\n${safetyWarnings}`);
+      }
+
+      if (pdfManualUrl) {
+        enhancedData.push(`Bedienungsanleitung verfügbar: ${pdfManualUrl}`);
+      }
+
       // COST OPTIMIZATION: Use GPT-4o-mini (30× cheaper) by default
       const aiModel = model || 'gpt-4o-mini';
       const description = await generateProductDescription(
@@ -567,7 +575,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         undefined, 
         {
           ...customAttributes,
-          technicalDataTable // Pass the original HTML table
+          technicalDataTable, // Pass the original HTML table
+          safetyWarnings, // Pass safety warnings for 1:1 rendering
+          pdfManualUrl // Pass PDF URL for reference
         }, 
         aiModel
       );

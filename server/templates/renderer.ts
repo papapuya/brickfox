@@ -7,6 +7,8 @@ export interface RenderOptions {
   copy: ProductCopyPayload;
   layoutStyle?: 'mediamarkt' | 'minimal' | 'detailed';
   technicalDataTable?: string; // Original HTML table from supplier website
+  safetyWarnings?: string; // 1:1 safety warnings from supplier (without icons)
+  pdfManualUrl?: string; // PDF manual URL for reference
 }
 
 function cleanMarkdown(text: string): string {
@@ -30,11 +32,12 @@ function cleanMarkdown(text: string): string {
 }
 
 export function renderProductHtml(options: RenderOptions): string {
-  const { productName, categoryConfig, copy, layoutStyle = 'mediamarkt', technicalDataTable } = options;
+  const { productName, categoryConfig, copy, layoutStyle = 'mediamarkt', technicalDataTable, safetyWarnings, pdfManualUrl } = options;
   
   const cleanProductName = cleanMarkdown(productName);
 
-  const safetyNotice = cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
+  // USE 1:1 SAFETY WARNINGS from supplier if available, otherwise use AI-generated
+  const safetyNotice = safetyWarnings || cleanMarkdown(copy.safetyNotice || categoryConfig.safetyNotice);
   const packageContents = cleanMarkdown(copy.packageContents || 'Produkt wie beschrieben');
 
   // Use original HTML table if available, otherwise build from specs
@@ -65,6 +68,7 @@ export function renderProductHtml(options: RenderOptions): string {
       safetyNotice,
       packageContents,
       technicalDataTable, // Pass original HTML table
+      pdfManualUrl, // Pass PDF URL for reference
     });
   }
 
@@ -76,6 +80,7 @@ export function renderProductHtml(options: RenderOptions): string {
     safetyNotice,
     packageContents,
     technicalDataTable, // Pass original HTML table
+    pdfManualUrl, // Pass PDF URL for reference
   });
 }
 
@@ -119,6 +124,7 @@ function renderMediaMarktLayout(data: {
   safetyNotice: string;
   packageContents: string;
   technicalDataTable?: string; // Original HTML table from supplier
+  pdfManualUrl?: string; // PDF manual URL for reference
 }): string {
   const uspHtml = data.uspBullets
     .map(usp => `✅ ${usp}`)
@@ -141,10 +147,17 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
 `
     : '';
 
-  // SICHERHEITSHINWEISE: Ohne Icons vom Lieferanten übernehmen
+  // 1:1 SICHERHEITSHINWEISE: Entferne nur Icons, übernehme Text unverändert
   const safetyHtml = data.safetyNotice 
     ? `<h3>Sicherheitshinweise</h3>
 <p>${data.safetyNotice.replace(/⚠️/g, '').replace(/[🔥⚡☢️]/g, '').trim()}</p>
+
+`
+    : '';
+
+  // PDF-Hinweis (optional, falls vorhanden)
+  const pdfHtml = data.pdfManualUrl
+    ? `<p><strong>📄 Bedienungsanleitung:</strong> <a href="${data.pdfManualUrl}" target="_blank">Download PDF</a></p>
 
 `
     : '';
@@ -154,6 +167,6 @@ ${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}<
 
 <p>${uspHtml}</p>
 
-${techTableHtml}${safetyHtml}<h3>Lieferumfang</h3>
+${techTableHtml}${safetyHtml}${pdfHtml}<h3>Lieferumfang</h3>
 <p>${data.packageContents}</p>`;
 }

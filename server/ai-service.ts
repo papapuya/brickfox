@@ -189,6 +189,8 @@ export async function generateProductDescription(
     articleNumber?: string;
     customAttributes?: Array<{key: string, value: string, type: string}>;
     technicalDataTable?: string; // Original HTML table from supplier
+    safetyWarnings?: string; // 1:1 safety warnings from supplier
+    pdfManualUrl?: string; // PDF manual URL
   },
   model: string = 'gpt-4o-mini', // COST OPTIMIZATION: 30× günstiger!
   onProgress?: (step: number, message: string) => void
@@ -227,7 +229,9 @@ export async function generateProductDescription(
     categoryConfig,
     copy,
     layoutStyle: 'mediamarkt',
-    technicalDataTable: customAttributes?.technicalDataTable // Pass original HTML table
+    technicalDataTable: customAttributes?.technicalDataTable, // Pass original HTML table
+    safetyWarnings: customAttributes?.safetyWarnings, // Pass 1:1 safety warnings
+    pdfManualUrl: customAttributes?.pdfManualUrl // Pass PDF URL
   });
 
   return html;
