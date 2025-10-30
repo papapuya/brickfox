@@ -1340,7 +1340,27 @@ export default function URLScraper() {
                       <TableRow key={key}>
                         <TableCell className="font-medium text-muted-foreground">{fieldName}</TableCell>
                         <TableCell className="font-mono text-sm">
-                          {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 break-words">
+                              {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                            </div>
+                            {key === 'description' && value && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="shrink-0 h-8 px-2"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(String(value));
+                                  toast({
+                                    title: "Kopiert!",
+                                    description: "Beschreibung wurde in die Zwischenablage kopiert",
+                                  });
+                                }}
+                              >
+                                📋
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
