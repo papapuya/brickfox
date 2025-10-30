@@ -86,7 +86,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="text"
-                placeholder="Admin oder admin@pimpilot.de"
+                placeholder=""
                 {...register('email')}
                 disabled={isLoading}
               />
