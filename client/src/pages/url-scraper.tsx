@@ -1311,11 +1311,8 @@ export default function URLScraper() {
                     // Skip description if it's an HTML object or auto-extracted flag
                     if (key === 'autoExtractedDescription' || key === 'technicalDataTable' || key === 'pdfManualUrl' || key === 'safetyWarnings' || key === 'rawHtml') return null;
                     
-                    // Format field name (camelCase to readable)
-                    const fieldName = key
-                      .replace(/([A-Z])/g, ' $1')
-                      .replace(/^./, str => str.toUpperCase())
-                      .trim();
+                    // Use original selector name (keep camelCase)
+                    const fieldName = key;
                     
                     return (
                       <TableRow key={key}>
@@ -1330,7 +1327,7 @@ export default function URLScraper() {
                   {/* Show image count */}
                   {scrapedProduct.images && scrapedProduct.images.length > 0 && (
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground">Bilder</TableCell>
+                      <TableCell className="font-medium text-muted-foreground">images</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">{scrapedProduct.images.length} gefunden</span>
@@ -1555,17 +1552,26 @@ export default function URLScraper() {
             <div className="space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">HTML-Vorschau</Label>
-                <div className="p-4 bg-white dark:bg-gray-900 border rounded-lg max-h-96 overflow-y-auto">
+                <div className="p-6 bg-white dark:bg-gray-900 border rounded-lg max-h-96 overflow-y-auto">
+                  <style dangerouslySetInnerHTML={{ __html: `
+                    .product-preview h2 { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; }
+                    .product-preview h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+                    .product-preview h4 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+                    .product-preview p { margin: 0.75rem 0; line-height: 1.6; }
+                    .product-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+                    .product-preview table th,
+                    .product-preview table td { border: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; }
+                    .product-preview table th { background-color: #f3f4f6; font-weight: 600; }
+                    .product-preview table tr:nth-child(even) { background-color: #f9fafb; }
+                    .product-preview .properties-label { font-weight: 600; width: 40%; }
+                    .product-preview .properties-value { width: 60%; }
+                    .dark .product-preview table th,
+                    .dark .product-preview table td { border-color: #374151; }
+                    .dark .product-preview table th { background-color: #1f2937; }
+                    .dark .product-preview table tr:nth-child(even) { background-color: #111827; }
+                  ` }} />
                   <div 
-                    className="prose prose-sm max-w-none dark:prose-invert
-                      prose-h2:text-xl prose-h2:font-bold prose-h2:mb-2
-                      prose-h3:text-lg prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-2
-                      prose-h4:text-base prose-h4:font-semibold prose-h4:mt-3 prose-h4:mb-2
-                      prose-p:my-2 prose-p:leading-relaxed
-                      prose-ul:my-2 prose-li:my-1
-                      prose-table:border-collapse prose-table:w-full prose-table:my-3
-                      prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:p-2
-                      prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:p-2 prose-th:bg-gray-100 dark:prose-th:bg-gray-800"
+                    className="product-preview"
                     dangerouslySetInnerHTML={{ __html: generatedDescription }} 
                   />
                 </div>
