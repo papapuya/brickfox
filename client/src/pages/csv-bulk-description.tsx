@@ -238,7 +238,10 @@ export default function CSVBulkDescription() {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              extractedData: [{ extractedText: JSON.stringify(productData) }],
+              extractedData: [{ 
+                extractedText: JSON.stringify(productData),
+                structuredData: productData  // Pass parsed CSV data for dynamic tech table
+              }],
               customAttributes: { exactProductName: produktname },
             }),
           });
