@@ -24,6 +24,7 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
     email: userData.email,
     username: userData.username || undefined,
     isAdmin: userData.is_admin || false,
+    role: userData.role || 'member',
     organizationId: userData.organization_id || undefined,
     stripeCustomerId: userData.stripe_customer_id || undefined,
     subscriptionStatus: userData.subscription_status || undefined,
@@ -50,6 +51,16 @@ export async function createAdminUser(email: string, password: string): Promise<
 
   if (error) throw error;
 
+  const { data: akkushopOrg } = await supabaseAdmin
+    .from('organizations')
+    .select('id')
+    .eq('slug', 'akkushop')
+    .single();
+
+  if (!akkushopOrg) {
+    console.error('AkkuShop organization not found for admin user');
+  }
+
   const { error: insertError } = await supabaseAdmin
     .from('users')
     .upsert({
@@ -57,6 +68,8 @@ export async function createAdminUser(email: string, password: string): Promise<
       email: email,
       username: 'Admin',
       is_admin: true,
+      role: 'admin',
+      organization_id: akkushopOrg?.id,
       subscription_status: 'trial',
       plan_id: 'trial',
       api_calls_limit: 3000, // 3000 GPT-4o-mini = same cost as 100 GPT-4o
