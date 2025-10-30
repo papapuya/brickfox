@@ -478,14 +478,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Listen-URL ist erforderlich' });
       }
 
-      const result = await scrapeProductList({ 
+      const result = await scrapeProductList(
         listUrl,
-        productLinkSelector: productLinkSelector || 'a.product-link',
-        maxProducts: maxProducts || 50,
-        selectors: selectors || defaultSelectors,
-        userAgent,
-        cookies
-      });
+        productLinkSelector || 'a.product-link',
+        maxProducts || 50,
+        { selectors: selectors || defaultSelectors, userAgent, cookies }
+      );
       
       await trackApiUsage(req, res, () => {});
       res.json(result);
@@ -507,14 +505,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const result = await scrapeProductList({ 
+      const result = await scrapeProductList(
         listUrl,
-        productLinkSelector: productLinkSelector || 'a.product-link',
-        maxProducts: maxProducts || 50,
-        selectors: selectors || defaultSelectors,
-        userAgent,
-        cookies
-      });
+        productLinkSelector || 'a.product-link',
+        maxProducts || 50,
+        { selectors: selectors || defaultSelectors, userAgent, cookies }
+      );
       
       await trackApiUsage(req, res, () => {});
       res.write(`data: ${JSON.stringify(result)}\n\n`);

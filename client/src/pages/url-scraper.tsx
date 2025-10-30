@@ -458,7 +458,7 @@ export default function URLScraper() {
       }
 
       const data = await response.json();
-      setTestResults(data);
+      setTestResults(data.product);
       setShowTestPreview(true);
       
       toast({
