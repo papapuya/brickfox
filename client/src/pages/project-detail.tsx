@@ -497,8 +497,15 @@ export default function ProjectDetail() {
                         {products.map((product) => {
                           const extractedData = product.extractedData || [];
                           const getExtractedValue = (key: string) => {
-                            const item = extractedData.find((d: any) => d.key === key);
-                            return item?.value || '-';
+                            // Handle both array format [{key, value, type}] and old object format {ean: '...', hersteller: '...'}
+                            if (Array.isArray(extractedData)) {
+                              const item = extractedData.find((d: any) => d.key === key);
+                              return item?.value || '-';
+                            } else if (typeof extractedData === 'object') {
+                              // Old format: direct object access
+                              return (extractedData as any)[key] || '-';
+                            }
+                            return '-';
                           };
                           
                           return (
