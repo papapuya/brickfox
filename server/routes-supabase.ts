@@ -569,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'URL ist erforderlich' });
       }
 
-      const parsedSelectors: ScraperSelectors = selectors ? JSON.parse(selectors) : defaultSelectors;
+      const parsedSelectors: ScraperSelectors = selectors ? JSON.parse(selectors) : defaultSelectors.generic;
       const result = await scrapeProduct({ url, selectors: parsedSelectors });
       
       await trackApiUsage(req, res, () => {});
@@ -593,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const product = await scrapeProduct({ 
         url, 
-        selectors: selectors || defaultSelectors,
+        selectors: selectors || defaultSelectors.generic,
         userAgent,
         cookies: effectiveCookies
       });
@@ -618,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const product = await scrapeProduct({ 
         url, 
-        selectors: selectors || defaultSelectors,
+        selectors: selectors || defaultSelectors.generic,
         userAgent,
         cookies: effectiveCookies
       });
@@ -645,7 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         listUrl,
         productLinkSelector || 'a.product-link',
         maxProducts || 50,
-        { selectors: selectors || defaultSelectors, userAgent, cookies: effectiveCookies }
+        { selectors: selectors || defaultSelectors.generic, userAgent, cookies: effectiveCookies }
       );
       
       // No usage tracking for scraping (it's free)
