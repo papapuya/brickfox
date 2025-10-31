@@ -534,7 +534,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/suppliers', requireAuth, async (req: any, res) => {
     try {
+      console.log('[POST /api/suppliers] Headers:', req.headers);
+      console.log('[POST /api/suppliers] Content-Type:', req.get('Content-Type'));
       console.log('[POST /api/suppliers] Request body:', JSON.stringify(req.body, null, 2));
+      console.log('[POST /api/suppliers] Raw body:', req.rawBody);
+      
       const supplier = await supabaseStorage.createSupplier(req.user.id, req.body);
       res.json({ success: true, supplier });
     } catch (error: any) {
