@@ -332,10 +332,14 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     const user = await this.getUserById(userId);
     if (!user) return [];
 
-    const query = supabase
+    const query = supabaseAdmin
       .from('projects')
       .select('*')
       .eq('user_id', userId)
@@ -357,7 +361,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProject(id: string, userId?: string): Promise<Project | null> {
-    const { data: project, error } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: project, error } = await supabaseAdmin
       .from('projects')
       .select('*')
       .eq('id', id)
@@ -396,6 +404,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteProject(id: string, userId?: string): Promise<boolean> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     if (userId) {
       const project = await this.getProject(id, userId);
       if (!project) {
@@ -404,7 +416,7 @@ export class SupabaseStorage implements IStorage {
       }
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('projects')
       .delete()
       .eq('id', id);
