@@ -1093,3 +1093,20 @@ export const defaultSelectors: Record<string, ScraperSelectors> = {
     category: '.breadcrumb-item'
   }
 };
+
+/**
+ * Brickfox-optimized selectors
+ * Only the 9 essential fields needed for Brickfox CSV export
+ * This minimizes scraping overhead and database storage
+ */
+export const brickfoxSelectors: ScraperSelectors = {
+  articleNumber: '[itemprop="sku"], .product-code, .article-number',
+  productName: 'h1, [itemprop="name"], .product-title',
+  ean: '[itemprop="gtin13"], .ean, .barcode',
+  manufacturer: '[itemprop="brand"], .manufacturer, .brand',
+  category: '.breadcrumb, [itemprop="category"]',
+  price: '[itemprop="price"], .price, .product-price',
+  weight: '.weight, [itemprop="weight"]',
+  description: '[itemprop="description"], .product-description, .description',
+  images: '[itemprop="image"], .product-image img, .gallery img'
+};
