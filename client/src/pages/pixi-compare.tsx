@@ -249,7 +249,6 @@ export default function PixiComparePage() {
         },
         body: JSON.stringify({
           name: projectName.trim(),
-          description: `Pixi Vergleich vom ${new Date().toLocaleDateString('de-DE')}`,
         }),
       });
 
