@@ -130,15 +130,6 @@ export const BRICKFOX_FIELDS: BrickfoxFieldMeta[] = [
     sourceType: 'ai_generated',
     description: '6 KI-generierte SEO Keywords (komma-separiert)'
   },
-  {
-    key: 'p_seo_description[de]',
-    label: 'SEO Produktbeschreibung (deutsch)',
-    scope: 'product',
-    type: 'string',
-    locale: 'de',
-    sourceType: 'ai_generated',
-    description: 'KI-optimierte SEO Produktbeschreibung'
-  },
 
   // Variant-level fields
   {
@@ -325,7 +316,6 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   'p_description[de]': { source: 'scraped', field: 'htmlCode' },  // Use scraped HTML description
   'p_attributes[OTTOMARKET_GEFAHRGUT][de]': { source: 'ai' },
   'p_keywords[de]': { source: 'ai' },
-  'p_seo_description[de]': { source: 'ai' },
   
   // Variant fields - scraped
   'v_item_number': { source: 'scraped', field: 'articleNumber' },
