@@ -552,19 +552,31 @@ export default function ProjectDetail() {
                       <tbody className="divide-y">
                         {products.map((product) => {
                           const extractedData = product.extractedData || [];
+                          const customAttrs = product.customAttributes || [];
+                          
                           const getExtractedValue = (key: string) => {
-                            // Handle both array format [{key, value, type}] and old object format {ean: '...', hersteller: '...'}
+                            // Try extractedData first
                             if (Array.isArray(extractedData)) {
-                              const item = extractedData.find((d: any) => d.key === key);
-                              return item?.value || '-';
+                              const item = extractedData.find((d: any) => d.key === key) as any;
+                              if (item?.value) return item.value;
                             } else if (typeof extractedData === 'object') {
-                              // Old format: direct object access
-                              return (extractedData as any)[key] || '-';
+                              const value = (extractedData as any)[key];
+                              if (value) return value;
                             }
+                            
+                            // Then try customAttributes
+                            if (Array.isArray(customAttrs)) {
+                              const item = customAttrs.find((d: any) => d.key === key) as any;
+                              if (item?.value) return item.value;
+                            } else if (typeof customAttrs === 'object') {
+                              const value = (customAttrs as any)[key];
+                              if (value) return value;
+                            }
+                            
                             return '-';
                           };
 
-                          // Get all unique keys from all products
+                          // Get all unique keys from all products (including customAttributes)
                           const allKeys = new Set<string>();
                           products.forEach(p => {
                             const data = p.extractedData || [];
@@ -572,6 +584,13 @@ export default function ProjectDetail() {
                               data.forEach((item: any) => allKeys.add(item.key));
                             } else if (typeof data === 'object') {
                               Object.keys(data).forEach(key => allKeys.add(key));
+                            }
+                            
+                            const attrs = p.customAttributes || [];
+                            if (Array.isArray(attrs)) {
+                              attrs.forEach((item: any) => allKeys.add(item.key));
+                            } else if (typeof attrs === 'object') {
+                              Object.keys(attrs).forEach(key => allKeys.add(key));
                             }
                           });
                           
