@@ -287,6 +287,9 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
           }
           priceText = parts.join('.');
         }
+        
+        // Step 4: Convert to German format (comma instead of dot)
+        priceText = priceText.replace('.', ',');
       }
     }
     

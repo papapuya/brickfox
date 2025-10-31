@@ -1327,7 +1327,6 @@ export default function URLScraper() {
                       <TableHead className="min-w-[140px]">Leuchtleistung max.</TableHead>
                       <TableHead className="min-w-[150px]">Leuchtweite max. (m)</TableHead>
                       <TableHead className="min-w-[200px]">PDF Bedienungsanleitung</TableHead>
-                      <TableHead className="min-w-[250px]">Sicherheitshinweise</TableHead>
                       
                       {/* KI-generierte Spalten (blau markiert) */}
                       <TableHead className="min-w-[180px] bg-primary/10 text-primary font-semibold">
@@ -1401,15 +1400,6 @@ export default function URLScraper() {
                               <FileText className="w-4 h-4" />
                               PDF
                             </a>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {(product as any).safetyWarnings ? (
-                            <div className="max-w-xs">
-                              <div className="line-clamp-2" title={(product as any).safetyWarnings}>
-                                {(product as any).safetyWarnings}
-                              </div>
-                            </div>
                           ) : '-'}
                         </TableCell>
                         
