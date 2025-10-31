@@ -527,6 +527,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/bulk-save-to-project', requireAuth, checkApiLimit, async (req: any, res) => {
+    try {
+      const { projectName, products } = req.body;
+
+      if (!projectName || !Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ error: 'Projektname und Produkte sind erforderlich' });
+      }
+
+      console.log(`[BULK-SAVE] Saving ${products.length} products to project "${projectName}"`);
+
+      const project = await supabaseStorage.createProject(req.user.id, { name: projectName });
+
+      const savedProducts = [];
+      for (const product of products) {
+        const productData = {
+          projectId: project.id,
+          name: product.produktname || 'Unbekanntes Produkt',
+          articleNumber: product.artikelnummer || '',
+          htmlCode: product.produktbeschreibung || '',
+          previewText: product.seo_beschreibung || product.kurzbeschreibung || '',
+          exactProductName: product.mediamarktname_v1 || product.mediamarktname_v2 || product.produktname || '',
+          extractedData: {
+            ean: product.ean || '',
+            hersteller: product.hersteller || '',
+            preis: product.preis || '',
+            gewicht: product.gewicht || '',
+            kategorie: product.kategorie || '',
+            source_url: product.source_url || '',
+          },
+          customAttributes: [
+            { key: 'mediamarktname_v1', value: product.mediamarktname_v1 || '', type: 'text' },
+            { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },
+            { key: 'seo_titel', value: product.seo_titel || '', type: 'text' },
+            { key: 'seo_beschreibung', value: product.seo_beschreibung || '', type: 'text' },
+            { key: 'kurzbeschreibung', value: product.kurzbeschreibung || '', type: 'text' },
+          ].filter(attr => attr.value),
+        };
+
+        const savedProduct = await supabaseStorage.createProduct(project.id, productData, req.user.id);
+        savedProducts.push(savedProduct);
+      }
+
+      await trackApiUsage(req, res, () => {});
+
+      console.log(`[BULK-SAVE] Successfully saved ${savedProducts.length} products`);
+      
+      res.json({ 
+        success: true, 
+        project,
+        productCount: savedProducts.length 
+      });
+    } catch (error: any) {
+      console.error('[BULK-SAVE] Error:', error);
+      res.status(500).json({ 
+        error: error.message || 'Fehler beim Speichern der Produkte' 
+      });
+    }
+  });
+
   app.get('/api/suppliers', requireAuth, async (req: any, res) => {
     try {
       const suppliers = await supabaseStorage.getSuppliers(req.user.id);

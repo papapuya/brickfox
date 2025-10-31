@@ -425,19 +425,23 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createProduct(projectId: string, data: CreateProductInProject, userId?: string): Promise<ProductInProject> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     const project = await this.getProject(projectId, userId);
     if (!project) {
       if (userId) console.warn(`[SECURITY] User ${userId} tried to create product in non-existent/unauthorized project ${projectId}`);
       throw new Error('Project not found or access denied');
     }
 
-    const projectData = await supabase
+    const projectData = await supabaseAdmin
       .from('projects')
       .select('organization_id')
       .eq('id', projectId)
       .single();
 
-    const { data: product, error} = await supabase
+    const { data: product, error} = await supabaseAdmin
       .from('products_in_projects')
       .insert({
         project_id: projectId,
@@ -461,10 +465,14 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProducts(projectId: string, userId?: string): Promise<ProductInProject[]> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     const project = await this.getProject(projectId, userId);
     if (!project) return [];
 
-    const { data: products, error } = await supabase
+    const { data: products, error } = await supabaseAdmin
       .from('products_in_projects')
       .select('*')
       .eq('project_id', projectId)
@@ -476,7 +484,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProduct(id: string, userId?: string): Promise<ProductInProject | null> {
-    const { data: product, error } = await supabase
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
+    const { data: product, error } = await supabaseAdmin
       .from('products_in_projects')
       .select('*')
       .eq('id', id)
@@ -511,6 +523,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async updateProduct(id: string, data: UpdateProductInProject, userId?: string): Promise<ProductInProject | null> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     if (userId) {
       const existingProduct = await this.getProduct(id, userId);
       if (!existingProduct) {
@@ -533,7 +549,7 @@ export class SupabaseStorage implements IStorage {
     if (data.pixi_ean !== undefined) updateData.pixi_ean = data.pixi_ean;
     if (data.pixi_checked_at !== undefined) updateData.pixi_checked_at = data.pixi_checked_at;
 
-    const { data: product, error } = await supabase
+    const { data: product, error } = await supabaseAdmin
       .from('products_in_projects')
       .update(updateData)
       .eq('id', id)
@@ -546,6 +562,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteProduct(id: string, userId?: string): Promise<boolean> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     if (userId) {
       const product = await this.getProduct(id, userId);
       if (!product) {
@@ -554,7 +574,7 @@ export class SupabaseStorage implements IStorage {
       }
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('products_in_projects')
       .delete()
       .eq('id', id);
