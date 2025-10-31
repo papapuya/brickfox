@@ -1069,6 +1069,100 @@ export async function scrapeAllPages(
 }
 
 /**
+ * Test a single CSS selector on a URL
+ * Returns the extracted value for verification
+ */
+export async function testSelector(options: {
+  url: string;
+  selector: string;
+  userAgent?: string;
+  cookies?: string;
+  timeout?: number;
+}): Promise<{
+  success: boolean;
+  value?: string;
+  html?: string;
+  count?: number;
+  error?: string;
+}> {
+  const { url, selector, userAgent, cookies, timeout = 30000 } = options;
+
+  try {
+    console.log(`[Test Selector] Testing selector "${selector}" on ${url}`);
+
+    // Fetch the HTML
+    const headers: Record<string, string> = {
+      'User-Agent': userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+    };
+
+    if (cookies) {
+      headers['Cookie'] = cookies;
+    }
+
+    let html = '';
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        headers,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${response.statusText}`
+        };
+      }
+
+      html = await response.text();
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    // Parse with Cheerio
+    const $ = cheerio.load(html);
+
+    // Test the selector
+    const elements = $(selector);
+    const count = elements.length;
+
+    if (count === 0) {
+      return {
+        success: false,
+        count: 0,
+        error: 'Kein Element gefunden - Selektor matched nichts auf der Seite'
+      };
+    }
+
+    // Get the first element's value
+    const firstElement = elements.first();
+    const textValue = firstElement.text().trim();
+    const contentAttr = firstElement.attr('content')?.trim();
+    const htmlValue = firstElement.html()?.trim();
+
+    const value = textValue || contentAttr || htmlValue || '';
+
+    return {
+      success: true,
+      value: value.substring(0, 500), // Limit to 500 chars for preview
+      html: htmlValue?.substring(0, 500),
+      count
+    };
+
+  } catch (error: any) {
+    console.error('[Test Selector] Error:', error);
+    return {
+      success: false,
+      error: error.message || 'Unbekannter Fehler beim Testen des Selektors'
+    };
+  }
+}
+
+/**
  * Default selectors for common e-commerce platforms
  */
 export const defaultSelectors: Record<string, ScraperSelectors> = {

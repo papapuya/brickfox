@@ -14,7 +14,7 @@ import {
 } from './stripe-service';
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
-import { scrapeProduct, scrapeProductList, defaultSelectors, brickfoxSelectors, type ScraperSelectors, performLogin } from "./scraper-service";
+import { scrapeProduct, scrapeProductList, defaultSelectors, brickfoxSelectors, type ScraperSelectors, performLogin, testSelector } from "./scraper-service";
 import { pixiService } from "./services/pixi-service";
 import { mapProductsToBrickfox, brickfoxRowsToCSV } from "./services/brickfox-mapper";
 import { enhanceProductsWithAI } from "./services/brickfox-ai-enhancer";
@@ -629,6 +629,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ product });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Test a single CSS selector (for supplier configuration verification)
+  app.post('/api/scraper/test-selector', requireAuth, async (req, res) => {
+    try {
+      const { url, selector, userAgent, cookies, supplierId } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL ist erforderlich' });
+      }
+
+      if (!selector) {
+        return res.status(400).json({ error: 'CSS-Selektor ist erforderlich' });
+      }
+
+      // Get cookies from login if supplier has credentials configured
+      const effectiveCookies = await getScrapingCookies(supplierId, cookies);
+
+      const result = await testSelector({ 
+        url, 
+        selector,
+        userAgent,
+        cookies: effectiveCookies
+      });
+      
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

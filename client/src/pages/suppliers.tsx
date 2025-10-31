@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Save } from "lucide-react";
+import { Plus, Edit, Trash2, Save, TestTube, CheckCircle, AlertCircle } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 
 interface Supplier {
@@ -39,6 +39,8 @@ interface Supplier {
   loginPasswordField?: string;
   loginUsername?: string;
   loginPassword?: string;
+  verifiedFields?: string[];
+  lastVerifiedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +50,9 @@ export default function Suppliers() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [verifiedFields, setVerifiedFields] = useState<Set<string>>(new Set());
+  const [testingField, setTestingField] = useState<string | null>(null);
+  const [testUrl, setTestUrl] = useState<string>("");
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -143,6 +148,70 @@ export default function Suppliers() {
       });
     }
     setIsDialogOpen(true);
+    setVerifiedFields(new Set(supplier?.verifiedFields || []));
+    setTestUrl(supplier?.urlPattern || "");
+  };
+
+  const handleTestSelector = async (fieldName: string, selector: string) => {
+    if (!testUrl || !selector) {
+      toast({
+        title: "Fehlende Angaben",
+        description: "Bitte geben Sie eine Test-URL und einen Selektor ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestingField(fieldName);
+    try {
+      const response = await fetch('/api/scraper/test-selector', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('supabase_token')}`,
+        },
+        body: JSON.stringify({
+          url: testUrl,
+          selector,
+          supplierId: editingSupplier?.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Mark field as verified
+        setVerifiedFields(prev => new Set([...Array.from(prev), fieldName]));
+        
+        toast({
+          title: "✅ Selektor funktioniert!",
+          description: (
+            <div>
+              <div className="font-mono text-xs bg-muted p-2 rounded mt-1 max-h-32 overflow-auto">
+                {result.value || '(leer)'}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {result.count} Element(e) gefunden
+              </div>
+            </div>
+          ),
+        });
+      } else {
+        toast({
+          title: "❌ Selektor fehlgeschlagen",
+          description: result.error || 'Kein Element gefunden',
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Fehler beim Testen",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setTestingField(null);
+    }
   };
 
   const handleSave = async () => {
@@ -177,7 +246,9 @@ export default function Suppliers() {
         loginPasswordField: formData.loginPasswordField || undefined,
         loginUsername: formData.loginUsername || undefined,
         loginPassword: formData.loginPassword || undefined,
-        selectors: activeSelectors
+        selectors: activeSelectors,
+        verifiedFields: Array.from(verifiedFields),
+        lastVerifiedAt: verifiedFields.size > 0 ? new Date().toISOString() : undefined,
       };
 
       const data = editingSupplier 
@@ -517,6 +588,12 @@ export default function Suppliers() {
                       const data = await response.json();
                       if (data.success && data.selectors) {
                         setFormData({ ...formData, selectors: data.selectors });
+                        setVerifiedFields(new Set());
+                        toast({
+                          title: "⚠️ Starter-Template geladen",
+                          description: "Diese Selektoren müssen für Ihre Website angepasst werden. Bitte testen und verifizieren Sie jeden Selektor.",
+                          variant: "default",
+                        });
                       }
                     } catch (error) {
                       console.error('Fehler beim Laden der Brickfox-Selektoren:', error);
@@ -524,11 +601,33 @@ export default function Suppliers() {
                   }}
                   className="text-xs"
                 >
-                  ✨ Brickfox-Felder übernehmen
+                  📋 Starter-Template laden
                 </Button>
               </div>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
+                <p className="text-xs text-amber-800">
+                  <strong>⚠️ Wichtig:</strong> Jede Website hat unterschiedliche CSS-Strukturen. 
+                  Passen Sie die Selektoren an Ihre spezifische Website an und testen Sie sie.
+                </p>
+              </div>
+
+              <div className="mb-3">
+                <Label htmlFor="testUrl" className="text-sm">Test-URL (für Selektor-Validierung)</Label>
+                <Input
+                  id="testUrl"
+                  value={testUrl}
+                  onChange={(e) => setTestUrl(e.target.value)}
+                  placeholder="https://shop.example.com/produkt/beispiel-123"
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  URL zu einem Beispielprodukt, um Selektoren zu testen
+                </p>
+              </div>
+
               <p className="text-xs text-muted-foreground mb-4">
-                {Object.keys(formData.selectors).length} Selektoren konfiguriert
+                {Object.keys(formData.selectors).length} Selektoren konfiguriert · {verifiedFields.size} verifiziert
               </p>
               <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
                 {Object.entries(formData.selectors).map(([key, value]) => {
@@ -558,22 +657,47 @@ export default function Suppliers() {
                   };
 
                   const label = labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                  const isVerified = verifiedFields.has(key);
+                  const isTesting = testingField === key;
+                  const hasValue = value && value.trim().length > 0;
 
                   return (
-                    <div key={key}>
-                      <Label htmlFor={`selector-${key}`} className="text-sm">
+                    <div key={key} className="space-y-1">
+                      <Label htmlFor={`selector-${key}`} className="text-sm flex items-center gap-1">
                         {label}
+                        {isVerified && <CheckCircle className="w-3 h-3 text-green-600" />}
+                        {!isVerified && hasValue && <AlertCircle className="w-3 h-3 text-amber-500" />}
                       </Label>
-                      <Input
-                        id={`selector-${key}`}
-                        value={value || ""}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          selectors: { ...formData.selectors, [key]: e.target.value }
-                        })}
-                        placeholder={`CSS-Selektor für ${label}`}
-                        className="text-sm"
-                      />
+                      <div className="flex gap-1">
+                        <Input
+                          id={`selector-${key}`}
+                          value={value || ""}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              selectors: { ...formData.selectors, [key]: e.target.value }
+                            });
+                            setVerifiedFields(prev => {
+                              const newSet = new Set(prev);
+                              newSet.delete(key);
+                              return newSet;
+                            });
+                          }}
+                          placeholder={`CSS-Selektor für ${label}`}
+                          className={`text-sm ${!isVerified && hasValue ? 'border-amber-300 bg-amber-50' : ''} ${isVerified ? 'border-green-300 bg-green-50' : ''}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleTestSelector(key, value)}
+                          disabled={!value || !testUrl || isTesting}
+                          title="Selektor testen"
+                          className="shrink-0"
+                        >
+                          <TestTube className={`w-4 h-4 ${isTesting ? 'animate-pulse' : ''}`} />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}

@@ -618,6 +618,7 @@ export class SupabaseStorage implements IStorage {
       user_id: userId,
       organization_id: user.organizationId || null,
       name: data.name,
+      suppl_nr: data.supplNr || null,
       url_pattern: data.urlPattern || null,
       description: data.description || null,
       selectors: data.selectors || {},
@@ -628,6 +629,8 @@ export class SupabaseStorage implements IStorage {
       login_username_field: data.loginUsernameField || null,
       login_password_field: data.loginPasswordField || null,
       login_username: data.loginUsername || null,
+      verified_fields: data.verifiedFields ? JSON.stringify(data.verifiedFields) : null,
+      last_verified_at: data.lastVerifiedAt || null,
     };
 
     // SECURITY: Encrypt password before storing
@@ -727,6 +730,8 @@ export class SupabaseStorage implements IStorage {
     if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
     if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
     if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
+    if (data.verifiedFields !== undefined) updateData.verified_fields = data.verifiedFields ? JSON.stringify(data.verifiedFields) : null;
+    if (data.lastVerifiedAt !== undefined) updateData.last_verified_at = data.lastVerifiedAt;
     
     // SECURITY: Encrypt password before storing
     if (data.loginPassword !== undefined) {
@@ -842,6 +847,8 @@ export class SupabaseStorage implements IStorage {
       loginPasswordField: supplier.login_password_field || undefined,
       loginUsername: supplier.login_username || undefined,
       loginPassword: undefined, // SECURITY: Never expose password to clients
+      verifiedFields: supplier.verified_fields ? JSON.parse(supplier.verified_fields) : undefined,
+      lastVerifiedAt: supplier.last_verified_at || undefined,
       createdAt: supplier.created_at,
       updatedAt: supplier.updated_at,
     };

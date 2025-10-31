@@ -358,6 +358,8 @@ export const supplierSchema = z.object({
   loginPasswordField: z.string().optional(),
   loginUsername: z.string().optional(),
   loginPassword: z.string().optional(),
+  verifiedFields: z.array(z.string()).optional(),
+  lastVerifiedAt: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -378,6 +380,8 @@ export const createSupplierSchema = z.object({
   loginPasswordField: z.string().optional(),
   loginUsername: z.string().optional(),
   loginPassword: z.string().optional(),
+  verifiedFields: z.array(z.string()).optional(),
+  lastVerifiedAt: z.string().optional(),
 });
 
 export type CreateSupplier = z.infer<typeof createSupplierSchema>;
