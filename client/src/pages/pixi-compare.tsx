@@ -80,7 +80,7 @@ export default function PixiComparePage() {
 
       if (suppliersRes.ok) {
         const suppliersData = await suppliersRes.json();
-        setSuppliers(suppliersData || []);
+        setSuppliers(suppliersData.suppliers || []);
       }
     } catch (err: any) {
       console.error('Failed to load data:', err);
