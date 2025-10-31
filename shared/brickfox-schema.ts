@@ -112,25 +112,6 @@ export const BRICKFOX_FIELDS: BrickfoxFieldMeta[] = [
     sourceType: 'ai_generated',
     description: 'KI-optimierte Produktbeschreibung basierend auf Lieferantenbeschreibung'
   },
-  {
-    key: 'p_attributes[OTTOMARKET_GEFAHRGUT][de]',
-    label: 'Gefahrgut-Attribut (OTTO)',
-    scope: 'product',
-    type: 'string',
-    locale: 'de',
-    sourceType: 'ai_generated',
-    description: 'KI-generiertes Gefahrgut-Attribut für OTTO Market'
-  },
-  {
-    key: 'p_keywords[de]',
-    label: 'SEO Keywords (deutsch)',
-    scope: 'product',
-    type: 'string',
-    locale: 'de',
-    sourceType: 'ai_generated',
-    description: '6 KI-generierte SEO Keywords (komma-separiert)'
-  },
-
   // Variant-level fields
   {
     key: 'v_item_number',
@@ -252,15 +233,6 @@ export const BRICKFOX_FIELDS: BrickfoxFieldMeta[] = [
     sourceType: 'scraped',
     description: 'Beschreibung des Zolltarifs'
   },
-  {
-    key: 'v_attributes[OTTOMARKET_GEFAHRGUT][de]',
-    label: 'Gefahrgut-Attribut Variante (OTTO)',
-    scope: 'variant',
-    type: 'string',
-    locale: 'de',
-    sourceType: 'ai_generated',
-    description: 'KI-generiertes Gefahrgut-Attribut für OTTO Market'
-  },
 ];
 
 // Helper: Get all fields by scope
@@ -314,8 +286,6 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   
   // Product fields - AI
   'p_description[de]': { source: 'scraped', field: 'htmlCode' },  // Use scraped HTML description
-  'p_attributes[OTTOMARKET_GEFAHRGUT][de]': { source: 'ai' },
-  'p_keywords[de]': { source: 'ai' },
   
   // Variant fields - scraped
   'v_item_number': { source: 'scraped', field: 'articleNumber' },
@@ -338,5 +308,4 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   
   // Variant fields - AI
   'v_customs_tariff_number': { source: 'ai' },
-  'v_attributes[OTTOMARKET_GEFAHRGUT][de]': { source: 'ai' },
 };

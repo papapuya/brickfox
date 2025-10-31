@@ -1105,31 +1105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'string'
             });
           }
-          if (enhancement.hazard_classification_product) {
-            product.customAttributes.push({ 
-              key: 'ai_hazard_product', 
-              value: enhancement.hazard_classification_product,
-              type: 'string'
-            });
-          }
-          if (enhancement.hazard_classification_variant) {
-            product.customAttributes.push({ 
-              key: 'ai_hazard_variant', 
-              value: enhancement.hazard_classification_variant,
-              type: 'string'
-            });
-          }
           if (enhancement.optimized_description) {
             product.customAttributes.push({ 
               key: 'ai_description', 
               value: enhancement.optimized_description,
-              type: 'string'
-            });
-          }
-          if (enhancement.keywords) {
-            product.customAttributes.push({ 
-              key: 'ai_keywords', 
-              value: enhancement.keywords,
               type: 'string'
             });
           }

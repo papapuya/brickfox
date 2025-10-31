@@ -198,9 +198,6 @@ function getFieldValue(
       'p_description[de]': 'ai_description',
       'v_customs_tariff_number': 'ai_customs_tariff_number',
       'v_customs_tariff_text': 'ai_customs_tariff_text',
-      'p_attributes[OTTOMARKET_GEFAHRGUT][de]': 'ai_hazard_product',
-      'v_attributes[OTTOMARKET_GEFAHRGUT][de]': 'ai_hazard_variant',
-      'p_keywords[de]': 'ai_keywords',
     };
     
     const aiKey = aiFieldMap[brickfoxField];

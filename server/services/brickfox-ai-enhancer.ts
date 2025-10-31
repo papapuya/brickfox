@@ -14,10 +14,7 @@ const openai = new OpenAI({
 export interface AIEnhancementResult {
   customs_tariff_number?: string;
   customs_tariff_text?: string;
-  hazard_classification_product?: string;
-  hazard_classification_variant?: string;
   optimized_description?: string;
-  keywords?: string; // 6 comma-separated SEO keywords
 }
 
 /**
@@ -68,52 +65,6 @@ async function generateCustomsTariffNumber(product: ProductInProject): Promise<{
 }
 
 /**
- * Classify hazardous goods (Gefahrgut) for OTTO Market
- */
-async function classifyHazardousGoods(product: ProductInProject): Promise<string | null> {
-  try {
-    const extractedData = product.extractedData?.[0];
-    const description = product.previewText || extractedData?.extractedText || extractedData?.description || '';
-    
-    const productInfo = `
-      Produktname: ${product.name || product.exactProductName || 'Unbekannt'}
-      Kategorie: ${product.customAttributes?.find(a => a.key === 'kategorie')?.value || 'Unbekannt'}
-      Beschreibung: ${description.substring(0, 500)}
-    `.trim();
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'Du bist ein Experte für Gefahrgutklassifizierung. Bestimme, ob das Produkt Gefahrgut ist. Antworte NUR mit: "GEFAHRGUT" (wenn es gefährlich ist), "KEIN_GEFAHRGUT" (wenn sicher), oder "UNKLAR" (wenn unsicher). Typische Gefahrgüter: Lithium-Akkus, Spraydosen, entflammbare Flüssigkeiten, Chemikalien, Druckgasbehälter.'
-        },
-        {
-          role: 'user',
-          content: `Ist folgendes Produkt Gefahrgut?\n\n${productInfo}`
-        }
-      ],
-      temperature: 0.2,
-      max_tokens: 50,
-    });
-
-    const result = response.choices[0]?.message?.content?.trim().toUpperCase();
-    if (!result) return null;
-
-    if (result.includes('GEFAHRGUT') && !result.includes('KEIN')) {
-      return 'Ja';
-    } else if (result.includes('KEIN_GEFAHRGUT')) {
-      return 'Nein';
-    }
-
-    return 'Unbekannt';
-  } catch (error) {
-    console.error('[AI Enhancer] Failed to classify hazardous goods:', error);
-    return null;
-  }
-}
-
-/**
  * Optimize product description for Brickfox/OTTO Market
  */
 async function optimizeDescription(product: ProductInProject): Promise<string | null> {
@@ -158,48 +109,6 @@ async function optimizeDescription(product: ProductInProject): Promise<string | 
 }
 
 /**
- * Generate 6 SEO keywords for the product
- */
-async function generateKeywords(product: ProductInProject): Promise<string | null> {
-  try {
-    const extractedData = product.extractedData?.[0];
-    const customAttrs = product.customAttributes || [];
-    
-    // Get product details
-    const scrapedDesc = customAttrs.find(a => a.key === 'description')?.value;
-    const originalDescription = scrapedDesc || product.previewText || extractedData?.extractedText || extractedData?.description || '';
-    
-    const productInfo = `
-      Produktname: ${product.name || product.exactProductName}
-      Hersteller: ${customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
-      Kategorie: ${customAttrs.find(a => a.key === 'category')?.value || ''}
-      Beschreibung: ${originalDescription}
-    `.trim();
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'Du bist ein SEO-Experte. Generiere GENAU 6 relevante SEO-Keywords für das Produkt. Die Keywords sollen die wichtigsten Suchbegriffe abdecken, die Kunden verwenden würden. Antworte NUR mit den 6 Keywords, durch Komma getrennt, ohne Nummerierung.'
-        },
-        {
-          role: 'user',
-          content: `Generiere 6 SEO-Keywords für folgendes Produkt:\n\n${productInfo}`
-        }
-      ],
-      temperature: 0.5,
-      max_tokens: 100,
-    });
-
-    return response.choices[0]?.message?.content?.trim() || null;
-  } catch (error) {
-    console.error('[AI Enhancer] Failed to generate keywords:', error);
-    return null;
-  }
-}
-
-/**
  * Enhance product data with AI-generated fields
  */
 export async function enhanceProductWithAI(product: ProductInProject): Promise<AIEnhancementResult> {
@@ -207,11 +116,9 @@ export async function enhanceProductWithAI(product: ProductInProject): Promise<A
 
   try {
     // Generate all AI fields in parallel for speed
-    const [tariff, hazard, description, keywords] = await Promise.all([
+    const [tariff, description] = await Promise.all([
       generateCustomsTariffNumber(product),
-      classifyHazardousGoods(product),
       optimizeDescription(product),
-      generateKeywords(product),
     ]);
 
     if (tariff) {
@@ -219,17 +126,8 @@ export async function enhanceProductWithAI(product: ProductInProject): Promise<A
       result.customs_tariff_text = tariff.text;
     }
 
-    if (hazard) {
-      result.hazard_classification_product = hazard;
-      result.hazard_classification_variant = hazard;
-    }
-
     if (description) {
       result.optimized_description = description;
-    }
-
-    if (keywords) {
-      result.keywords = keywords;
     }
 
     return result;
