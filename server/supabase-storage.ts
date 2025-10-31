@@ -290,6 +290,12 @@ export class SupabaseStorage implements IStorage {
       throw new Error('User must belong to an organization to create projects');
     }
 
+    console.log('[createProject] Attempting to insert:', {
+      user_id: userId,
+      organization_id: user.organizationId,
+      name: data.name,
+    });
+
     const { data: project, error } = await supabase
       .from('projects')
       .insert({
@@ -300,7 +306,15 @@ export class SupabaseStorage implements IStorage {
       .select()
       .single();
 
-    if (error || !project) throw new Error('Failed to create project');
+    if (error) {
+      console.error('[createProject] Supabase error:', JSON.stringify(error, null, 2));
+      throw new Error(`Failed to create project: ${error.message}`);
+    }
+    
+    if (!project) {
+      console.error('[createProject] No project returned but no error');
+      throw new Error('Failed to create project: No data returned');
+    }
 
     return {
       id: project.id,
