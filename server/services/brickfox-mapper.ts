@@ -138,6 +138,11 @@ function getFieldValue(
   const fieldMeta = getBrickfoxField(brickfoxField);
   if (!fieldMeta) return null;
   
+  // Special handling for v_supplier[Eur] - always use supplierName if available
+  if (brickfoxField === 'v_supplier[Eur]') {
+    return supplierName || config.value || fieldMeta.defaultValue || 'Unbekannt';
+  }
+  
   // Constant value
   if (config.source === 'constant') {
     return config.value ?? fieldMeta.defaultValue ?? null;
@@ -182,11 +187,6 @@ function getFieldValue(
       }
     }
     return null;
-  }
-  
-  // Supplier-specific values
-  if (brickfoxField === 'v_supplier[Eur]' && supplierName) {
-    return supplierName;
   }
   
   // AI-generated values from customAttributes

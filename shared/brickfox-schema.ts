@@ -304,7 +304,7 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   'p_country': { source: 'constant', value: 'China' },
   
   // Product fields - AI
-  'p_description[de]': { source: 'ai', field: 'description' },
+  'p_description[de]': { source: 'scraped', field: 'htmlCode' },  // Use scraped HTML description
   'p_attributes[OTTOMARKET_GEFAHRGUT][de]': { source: 'ai' },
   
   // Variant fields - scraped
@@ -320,7 +320,8 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   'v_status': { source: 'constant', value: 'aktiv' },
   'v_classification': { source: 'constant', value: 'X' },
   'v_delivery_time[de]': { source: 'constant', value: '3-5 Tage' },
-  'v_never_out_of_stock[standard]': { source: 'constant', value: false },
+  'v_supplier[Eur]': { source: 'constant', value: 'Unbekannt' },  // Will be replaced with actual supplier name
+  'v_never_out_of_stock[standard]': { source: 'constant', value: true },  // Always available
   
   // Variant fields - calculated
   'v_price[Eur]': { source: 'calculated' }, // Will be calculated from v_purchase_price
