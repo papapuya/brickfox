@@ -786,18 +786,22 @@ export default function URLScraper() {
         });
       } else {
         // Add to existing project
+        const extractedDataArray = [
+          scrapedProduct.ean ? { key: 'ean', value: scrapedProduct.ean, type: 'text' as const } : null,
+          scrapedProduct.manufacturer ? { key: 'hersteller', value: scrapedProduct.manufacturer, type: 'text' as const } : null,
+          scrapedProduct.price ? { key: 'preis', value: scrapedProduct.price, type: 'text' as const } : null,
+          scrapedProduct.weight ? { key: 'gewicht', value: scrapedProduct.weight, type: 'text' as const } : null,
+          scrapedProduct.category ? { key: 'kategorie', value: scrapedProduct.category, type: 'text' as const } : null,
+        ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
+
         await apiRequest('POST', `/api/projects/${selectedProjectId}/products`, {
           name: scrapedProduct.productName,
           articleNumber: scrapedProduct.articleNumber || '',
           htmlCode: generatedDescription || '',
           previewText: scrapedProduct.description?.substring(0, 200) || '',
           exactProductName: scrapedProduct.productName,
+          extractedData: extractedDataArray.length > 0 ? extractedDataArray : undefined,
           customAttributes: [
-            { key: 'ean', value: scrapedProduct.ean || '', type: 'text' },
-            { key: 'hersteller', value: scrapedProduct.manufacturer || '', type: 'text' },
-            { key: 'preis', value: scrapedProduct.price || '', type: 'text' },
-            { key: 'gewicht', value: scrapedProduct.weight || '', type: 'text' },
-            { key: 'kategorie', value: scrapedProduct.category || '', type: 'text' },
             { key: 'source_url', value: url, type: 'text' },
           ].filter(attr => attr.value),
         });

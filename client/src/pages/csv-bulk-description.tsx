@@ -42,8 +42,14 @@ interface BulkProduct {
   produktbeschreibung_html: string;
   mediamarktname_v1: string;
   mediamarktname_v2: string;
+  seo_titel?: string;
   seo_beschreibung: string;
   kurzbeschreibung: string;
+  ean?: string;
+  hersteller?: string;
+  preis?: string;
+  gewicht?: string;
+  kategorie?: string;
 }
 
 interface ExportColumn {
@@ -500,19 +506,21 @@ export default function CSVBulkDescription() {
   const addProductsToExistingProject = async (projectId: string, products: BulkProduct[]): Promise<number> => {
     let savedCount = 0;
     for (const product of products) {
+      const extractedDataArray = [
+        product.ean ? { key: 'ean', value: product.ean, type: 'text' as const } : null,
+        product.hersteller ? { key: 'hersteller', value: product.hersteller, type: 'text' as const } : null,
+        product.preis ? { key: 'preis', value: product.preis, type: 'text' as const } : null,
+        product.gewicht ? { key: 'gewicht', value: product.gewicht, type: 'text' as const } : null,
+        product.kategorie ? { key: 'kategorie', value: product.kategorie, type: 'text' as const } : null,
+      ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
+
       const productData = {
         name: product.produktname || 'Unbekanntes Produkt',
         articleNumber: product.artikelnummer || '',
         htmlCode: product.produktbeschreibung || '',
         previewText: product.seo_beschreibung || product.kurzbeschreibung || '',
         exactProductName: product.mediamarktname_v1 || product.mediamarktname_v2 || product.produktname || '',
-        extractedData: {
-          ean: product.ean || '',
-          hersteller: product.hersteller || '',
-          preis: product.preis || '',
-          gewicht: product.gewicht || '',
-          kategorie: product.kategorie || '',
-        },
+        extractedData: extractedDataArray.length > 0 ? extractedDataArray : undefined,
         customAttributes: [
           { key: 'mediamarktname_v1', value: product.mediamarktname_v1 || '', type: 'text' },
           { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },
