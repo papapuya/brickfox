@@ -120,16 +120,16 @@ async function optimizeDescription(product: ProductInProject): Promise<string | 
     const extractedData = product.extractedData?.[0];
     const customAttrs = product.customAttributes || [];
     
-    // Prefer sourceDescription from customAttributes (scraped from supplier)
-    const sourceDesc = customAttrs.find(a => a.key === 'sourceDescription')?.value;
-    const originalDescription = sourceDesc || product.previewText || extractedData?.extractedText || extractedData?.description || '';
+    // Use description from customAttributes (scraped from supplier)
+    const scrapedDesc = customAttrs.find(a => a.key === 'description')?.value;
+    const originalDescription = scrapedDesc || product.previewText || extractedData?.extractedText || extractedData?.description || '';
     
     if (!originalDescription) return null;
 
     const productInfo = `
       Produktname: ${product.name || product.exactProductName}
-      Hersteller: ${customAttrs.find(a => a.key === 'hersteller')?.value || customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
-      Kategorie: ${customAttrs.find(a => a.key === 'kategorie')?.value || customAttrs.find(a => a.key === 'category')?.value || ''}
+      Hersteller: ${customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
+      Kategorie: ${customAttrs.find(a => a.key === 'category')?.value || ''}
       Original-Beschreibung: ${originalDescription}
     `.trim();
 

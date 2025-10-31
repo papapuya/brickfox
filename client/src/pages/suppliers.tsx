@@ -642,7 +642,6 @@ export default function Suppliers() {
                     description: "Beschreibung",
                     images: "Bilder",
                     category: "Kategorie",
-                    sourceDescription: "Produktbeschreibung (Original)",
                     technicalTable: "Technische Tabelle",
                     length: "Länge (mm)",
                     bodyDiameter: "Gehäusedurchmesser (mm)",
