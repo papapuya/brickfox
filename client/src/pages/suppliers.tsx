@@ -142,7 +142,10 @@ export default function Suppliers() {
   };
 
   const handleSave = async () => {
-    if (!formData.name.trim()) {
+    console.log('[handleSave] formData:', formData);
+    console.log('[handleSave] formData.name:', formData.name);
+    
+    if (!formData.name || !formData.name.trim()) {
       toast({
         title: "Fehler",
         description: "Bitte geben Sie einen Namen ein",
@@ -161,7 +164,7 @@ export default function Suppliers() {
       });
 
       const payload = {
-        name: formData.name,
+        name: formData.name.trim(),
         urlPattern: formData.urlPattern || undefined,
         description: formData.description || undefined,
         productLinkSelector: formData.productLinkSelector || undefined,

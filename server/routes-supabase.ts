@@ -534,9 +534,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/suppliers', requireAuth, async (req: any, res) => {
     try {
+      console.log('[POST /api/suppliers] Request body:', JSON.stringify(req.body, null, 2));
       const supplier = await supabaseStorage.createSupplier(req.user.id, req.body);
       res.json({ success: true, supplier });
     } catch (error: any) {
+      console.error('[POST /api/suppliers] Error:', error);
       res.status(500).json({ success: false, error: error.message || 'Fehler beim Erstellen des Lieferanten' });
     }
   });
