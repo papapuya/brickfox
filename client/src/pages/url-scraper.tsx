@@ -1132,11 +1132,13 @@ export default function URLScraper() {
                   id="max-products"
                   type="number"
                   min="1"
-                  max="200"
                   value={maxProducts}
                   onChange={(e) => setMaxProducts(parseInt(e.target.value) || 50)}
                   className="mt-2"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Sie können beliebig viele Produkte scrapen
+                </p>
               </div>
 
               {/* Pagination Options */}
