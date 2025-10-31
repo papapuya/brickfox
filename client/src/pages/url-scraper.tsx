@@ -14,7 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import type { Project } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { apiPost } from "@/lib/api";
 
 interface ScrapedProduct {
   articleNumber: string;
@@ -763,7 +764,7 @@ export default function URLScraper() {
     try {
       if (selectedProjectId === "new") {
         // Create new project with single product
-        await apiRequest('POST', '/api/bulk-save-to-project', {
+        await apiPost('/api/bulk-save-to-project', {
           projectName: projectName.trim(),
           products: [{
             produktname: scrapedProduct.productName,
@@ -794,7 +795,7 @@ export default function URLScraper() {
           scrapedProduct.category ? { key: 'kategorie', value: scrapedProduct.category, type: 'text' as const } : null,
         ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
 
-        await apiRequest('POST', `/api/projects/${selectedProjectId}/products`, {
+        await apiPost(`/api/projects/${selectedProjectId}/products`, {
           name: scrapedProduct.productName,
           articleNumber: scrapedProduct.articleNumber || '',
           htmlCode: generatedDescription || '',
