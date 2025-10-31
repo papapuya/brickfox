@@ -51,11 +51,22 @@ function parseWeight(weight: string | number | null): number | null {
     // "1.234,5 kg" → "1234.5", "39,75" → "39.75"
     normalized = str.replace(/\./g, '').replace(',', '.');
   } else if (str.includes('.')) {
-    // Has dot but no comma → treat as decimal separator (English format fallback)
-    // Real supplier data uses commas for decimals (1,5 kg, 9,92 €)
-    // Dots without commas are rare and treated as decimals for safety
-    // Examples: "1.5 kg" → "1.5", "0.75 kg" → "0.75"
-    // (German thousand separators are always written WITH comma: "2.500,00")
+    // Has dot but no comma → Could be German thousand separator OR English decimal
+    // Most data has commas, but some numbers use dots as thousand separators
+    
+    // Extract just the number part
+    const numPart = str.match(/[\d.]+/)?.[0] || str;
+    
+    // Heuristic: Dot followed by exactly 3 digits → German thousand separator
+    // "2.500 g" → 2500g (thousand)
+    // "2.5 kg" → 2.5kg (decimal)
+    // "1.234 €" → 1234€ (thousand)
+    const dotMatch = numPart.match(/\.(\d+)$/);
+    if (dotMatch && dotMatch[1].length === 3) {
+      // Exactly 3 digits after last dot → German thousand separator
+      normalized = str.replace(/\./g, '');
+    }
+    // Otherwise keep dot as decimal: "1.5 kg", "0.75 kg", "10.99 €"
   }
   // No dot or comma: "101 g" → "101", "250 g" → "250"
   
@@ -92,9 +103,21 @@ function parsePrice(price: string | number | null): number | null {
     // Remove all dots (thousand separators), replace comma with dot
     // "1.234,56" → "1234.56", "39,75" → "39.75"
     normalized = str.replace(/\./g, '').replace(',', '.');
+  } else if (str.includes('.')) {
+    // Has dot but no comma → Could be German thousand separator OR English decimal
+    // Most data has commas, but some numbers use dots as thousand separators
+    
+    // Heuristic: Dot followed by exactly 3 digits → German thousand separator
+    // "1.234 €" → 1234€ (thousand)
+    // "2.500 €" → 2500€ (thousand)
+    // "15.99 €" → 15.99€ (decimal, only 2 digits)
+    const dotMatch = str.match(/\.(\d+)$/);
+    if (dotMatch && dotMatch[1].length === 3) {
+      // Exactly 3 digits after last dot → German thousand separator
+      normalized = str.replace(/\./g, '');
+    }
+    // Otherwise keep dot as decimal: "15.99", "9.95"
   }
-  // If no comma, treat dots as decimal separators (English format fallback)
-  // Examples: "15.99" → "15.99", "9.92" → "9.92"
   
   const value = parseFloat(normalized);
   return isNaN(value) ? null : value;
