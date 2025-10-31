@@ -457,11 +457,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/projects', requireAuth, async (req: any, res) => {
     try {
+      console.log('[POST /api/projects] Request body:', JSON.stringify(req.body, null, 2));
       const data = createProjectSchema.parse(req.body);
       const project = await supabaseStorage.createProject(req.user.id, data);
       res.json(project);
-    } catch (error) {
-      res.status(400).json({ error: 'Ungültige Projektdaten' });
+    } catch (error: any) {
+      console.error('[POST /api/projects] Error:', error);
+      res.status(400).json({ error: 'Ungültige Projektdaten', details: error.message });
     }
   });
 
