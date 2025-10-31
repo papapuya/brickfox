@@ -506,26 +506,27 @@ export default function CSVBulkDescription() {
         htmlCode: product.produktbeschreibung || '',
         previewText: product.seo_beschreibung || product.kurzbeschreibung || '',
         exactProductName: product.mediamarktname_v1 || product.mediamarktname_v2 || product.produktname || '',
+        extractedData: {
+          ean: product.ean || '',
+          hersteller: product.hersteller || '',
+          preis: product.preis || '',
+          gewicht: product.gewicht || '',
+          kategorie: product.kategorie || '',
+        },
         customAttributes: [
           { key: 'mediamarktname_v1', value: product.mediamarktname_v1 || '', type: 'text' },
           { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },
+          { key: 'seo_titel', value: product.seo_titel || '', type: 'text' },
           { key: 'seo_beschreibung', value: product.seo_beschreibung || '', type: 'text' },
           { key: 'kurzbeschreibung', value: product.kurzbeschreibung || '', type: 'text' },
-        ],
+        ].filter(attr => attr.value),
       };
 
-      const response = await fetch(`/api/projects/${projectId}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(productData),
-      });
-
-      if (response.ok) {
+      try {
+        await apiRequest('POST', `/api/projects/${projectId}/products`, productData);
         savedCount++;
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to save product:', errorText);
+      } catch (error) {
+        console.error('Failed to save product:', error);
       }
     }
     return savedCount;
