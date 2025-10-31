@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { apiDownload } from "@/lib/api";
+import { apiDownload, apiPost } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -191,14 +191,10 @@ export default function ProjectDetail() {
     try {
       setBrickfoxLoading(true);
       
-      const response = await fetch('/api/brickfox/preview', {
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify({ projectId: id }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const data = await response.json();
+      const data = await apiPost<{ success: boolean; rows: any[]; error?: string }>(
+        '/api/brickfox/preview',
+        { projectId: id }
+      );
 
       if (data.success && data.rows) {
         setBrickfoxPreviewData(data.rows);
