@@ -45,6 +45,7 @@ export default function PixiComparePage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('');
+  const [manualSupplNr, setManualSupplNr] = useState<string>('');
   const [loadingData, setLoadingData] = useState(false);
   
   // Shared State
@@ -108,8 +109,8 @@ export default function PixiComparePage() {
       return;
     }
 
-    if (!selectedSupplier) {
-      setError('Bitte wählen Sie einen Lieferanten aus');
+    if (!selectedSupplier && !manualSupplNr) {
+      setError('Bitte wählen Sie einen Lieferanten aus oder geben Sie eine Lieferantennummer ein');
       return;
     }
 
@@ -120,16 +121,24 @@ export default function PixiComparePage() {
     try {
       const token = localStorage.getItem('supabase_token');
 
+      const requestBody: any = {
+        projectId: selectedProject,
+      };
+
+      // Use supplier ID if selected, otherwise use manual supplNr
+      if (selectedSupplier) {
+        requestBody.supplierId = selectedSupplier;
+      } else if (manualSupplNr) {
+        requestBody.supplNr = manualSupplNr;
+      }
+
       const response = await fetch('/api/pixi/compare-project', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          projectId: selectedProject,
-          supplierId: selectedSupplier,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -244,46 +253,83 @@ export default function PixiComparePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="project">Projekt</Label>
-                    <Select
-                      value={selectedProject}
-                      onValueChange={setSelectedProject}
-                      disabled={loading || loadingData}
-                    >
-                      <SelectTrigger id="project">
-                        <SelectValue placeholder="Projekt auswählen..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="project">Projekt</Label>
+                  <Select
+                    value={selectedProject}
+                    onValueChange={setSelectedProject}
+                    disabled={loading || loadingData}
+                  >
+                    <SelectTrigger id="project">
+                      <SelectValue placeholder="Projekt auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="supplier">Lieferant</Label>
+                    <Label htmlFor="supplier">Lieferant (optional)</Label>
                     <Select
                       value={selectedSupplier}
-                      onValueChange={setSelectedSupplier}
-                      disabled={loading || loadingData}
+                      onValueChange={(value) => {
+                        setSelectedSupplier(value);
+                        if (value) setManualSupplNr('');
+                      }}
+                      disabled={loading || loadingData || !!manualSupplNr}
                     >
                       <SelectTrigger id="supplier">
                         <SelectValue placeholder="Lieferant auswählen..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                            {supplier.supplNr && ` (${supplier.supplNr})`}
-                          </SelectItem>
-                        ))}
+                        {suppliers.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            Keine Lieferanten vorhanden
+                          </div>
+                        ) : (
+                          suppliers.map((supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                              {supplier.supplNr && ` (${supplier.supplNr})`}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Oder
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="manualSupplNr">Lieferantennummer manuell eingeben</Label>
+                    <Input
+                      id="manualSupplNr"
+                      value={manualSupplNr}
+                      onChange={(e) => {
+                        setManualSupplNr(e.target.value);
+                        if (e.target.value) setSelectedSupplier('');
+                      }}
+                      placeholder="z.B. 7077 für Nitecore"
+                      disabled={loading || loadingData || !!selectedSupplier}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pixi-Lieferantennummer (z.B. 7077 = Nitecore/KTL, 7001 = andere)
+                    </p>
                   </div>
                 </div>
 
@@ -295,7 +341,7 @@ export default function PixiComparePage() {
 
                 <Button
                   onClick={handleProjectCompare}
-                  disabled={!selectedProject || !selectedSupplier || loading || loadingData}
+                  disabled={!selectedProject || (!selectedSupplier && !manualSupplNr) || loading || loadingData}
                   className="w-full"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
