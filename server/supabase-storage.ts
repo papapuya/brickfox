@@ -743,14 +743,15 @@ export class SupabaseStorage implements IStorage {
     if (data.productLinkSelector !== undefined) updateData.product_link_selector = data.productLinkSelector;
     if (data.sessionCookies !== undefined) updateData.session_cookies = data.sessionCookies;
     if (data.userAgent !== undefined) updateData.user_agent = data.userAgent;
-    if (data.loginUrl !== undefined) updateData.login_url = data.loginUrl;
-    if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
-    if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
-    if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
+    // TEMPORARY: Login fields disabled until Supabase schema cache refreshes
+    // if (data.loginUrl !== undefined) updateData.login_url = data.loginUrl;
+    // if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
+    // if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
+    // if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
     // SECURITY: Encrypt password before storing
-    if (data.loginPassword !== undefined) {
-      updateData.login_password = data.loginPassword ? encrypt(data.loginPassword) : null;
-    }
+    // if (data.loginPassword !== undefined) {
+    //   updateData.login_password = data.loginPassword ? encrypt(data.loginPassword) : null;
+    // }
 
     const { data: supplier, error } = await db
       .from('suppliers')
