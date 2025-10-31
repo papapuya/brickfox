@@ -315,7 +315,8 @@ export default function URLScraper() {
           productLinkSelector: productLinkSelector.trim() || null,
           maxProducts,
           userAgent: userAgent || undefined,
-          cookies: sessionCookies || undefined
+          cookies: sessionCookies || undefined,
+          supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
         };
 
         const token = localStorage.getItem('supabase_token');
@@ -391,7 +392,8 @@ export default function URLScraper() {
               url: productUrl,
               selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
               userAgent: userAgent || undefined,
-              cookies: sessionCookies || undefined
+              cookies: sessionCookies || undefined,
+              supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
             }),
             signal: controller.signal
           });
@@ -487,7 +489,8 @@ export default function URLScraper() {
           url: url.trim(),
           selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
           userAgent: userAgent || undefined,
-          cookies: sessionCookies || undefined
+          cookies: sessionCookies || undefined,
+          supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
         }),
       });
 
@@ -549,7 +552,8 @@ export default function URLScraper() {
           url: url.trim(),
           selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
           userAgent: userAgent || undefined,
-          cookies: sessionCookies || undefined
+          cookies: sessionCookies || undefined,
+          supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
         }),
       });
 
