@@ -202,6 +202,7 @@ async function generateKeywords(product: ProductInProject): Promise<string | nul
 
 /**
  * Generate SEO-optimized product description
+ * Includes supplier's original description as a structured section
  */
 async function generateSeoDescription(product: ProductInProject): Promise<string | null> {
   try {
@@ -218,7 +219,7 @@ async function generateSeoDescription(product: ProductInProject): Promise<string
       Produktname: ${product.name || product.exactProductName}
       Hersteller: ${customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
       Kategorie: ${customAttrs.find(a => a.key === 'category')?.value || ''}
-      Original-Beschreibung: ${originalDescription}
+      Original-Beschreibung vom Lieferanten: ${originalDescription}
     `.trim();
 
     const response = await openai.chat.completions.create({
@@ -226,15 +227,15 @@ async function generateSeoDescription(product: ProductInProject): Promise<string
       messages: [
         {
           role: 'system',
-          content: 'Du bist ein SEO-Experte für E-Commerce. Erstelle eine SEO-optimierte Produktbeschreibung, die sowohl für Suchmaschinen als auch für Kunden optimiert ist. Nutze relevante Keywords natürlich, stelle die wichtigsten Features hervor, und mache die Beschreibung verkaufsfördernd. Verwende Absätze und Bullet-Points. Max. 800 Zeichen.'
+          content: 'Du bist ein SEO-Experte für E-Commerce. Erstelle eine strukturierte, SEO-optimierte Produktbeschreibung mit folgender Struktur:\n\n1. Kurze SEO-Einleitung (2-3 Sätze mit wichtigsten Keywords)\n2. Bullet-Points mit Hauptfeatures\n3. Abschnitt "Herstellerbeschreibung:" mit der Original-Lieferantenbeschreibung (unverändert übernehmen)\n\nDie Beschreibung soll verkaufsfördernd sein und sowohl für Suchmaschinen als auch Kunden optimiert. Max. 1200 Zeichen.'
         },
         {
           role: 'user',
-          content: `Erstelle eine SEO-optimierte Produktbeschreibung für:\n\n${productInfo}`
+          content: `Erstelle eine strukturierte SEO-Produktbeschreibung für:\n\n${productInfo}`
         }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 700,
     });
 
     return response.choices[0]?.message?.content?.trim() || null;
