@@ -27,6 +27,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 interface Supplier {
   id: string;
   name: string;
+  supplNr?: string;
   urlPattern?: string;
   description?: string;
   selectors: Record<string, string>;
@@ -51,6 +52,7 @@ export default function Suppliers() {
 
   const [formData, setFormData] = useState({
     name: "",
+    supplNr: "",
     urlPattern: "",
     description: "",
     productLinkSelector: "",
@@ -99,6 +101,7 @@ export default function Suppliers() {
       setEditingSupplier(supplier);
       setFormData({
         name: supplier.name,
+        supplNr: supplier.supplNr || "",
         urlPattern: supplier.urlPattern || "",
         description: supplier.description || "",
         productLinkSelector: supplier.productLinkSelector || "",
@@ -115,6 +118,7 @@ export default function Suppliers() {
       setEditingSupplier(null);
       setFormData({
         name: "",
+        supplNr: "",
         urlPattern: "",
         description: "",
         productLinkSelector: "",
@@ -327,6 +331,19 @@ export default function Suppliers() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="z.B. Conrad Electronic"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="supplNr">Pixi-Lieferantennummer (optional)</Label>
+              <Input
+                id="supplNr"
+                value={formData.supplNr}
+                onChange={(e) => setFormData({ ...formData, supplNr: e.target.value })}
+                placeholder="z.B. 1234 oder CONRAD-001"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Wird automatisch beim Pixi-Vergleich verwendet
+              </p>
             </div>
 
             <div>
