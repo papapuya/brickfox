@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +45,7 @@ export default function URLScraper() {
   const [generatedDescription, setGeneratedDescription] = useState<string>("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showBulkSaveDialog, setShowBulkSaveDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("new");
   const [projectName, setProjectName] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
@@ -365,7 +366,7 @@ export default function URLScraper() {
             userAgent: userAgent || undefined,
             cookies: sessionCookies || undefined,
             supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
-          });
+          }) as any;
 
           if (data && data.product) {
             products.push(data.product);
@@ -833,6 +834,122 @@ export default function URLScraper() {
     }
   };
 
+  // Bulk save all scraped products to project
+  const handleBulkSaveToProject = async () => {
+    if (scrapedProducts.length === 0) return;
+
+    if (selectedProjectId === "new" && !projectName.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen Projektnamen ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedProjectId !== "new" && !selectedProjectId) {
+      toast({
+        title: "Fehler",
+        description: "Bitte wählen Sie ein Projekt aus",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Convert all scraped products to the format expected by the API
+      const products = scrapedProducts.map((product) => {
+        const generatedContent = generatedDescriptions.get(product.articleNumber);
+        
+        return {
+          produktname: product.productName,
+          artikelnummer: product.articleNumber || '',
+          produktbeschreibung: generatedContent?.description || '',
+          ean: product.ean || '',
+          hersteller: product.manufacturer || '',
+          preis: product.price || '',
+          gewicht: product.weight || '',
+          kategorie: product.category || '',
+          mediamarktname_v1: product.productName,
+          seo_beschreibung: generatedContent?.seoDescription || product.description?.substring(0, 200) || '',
+          source_url: url,
+        };
+      });
+
+      if (selectedProjectId === "new") {
+        // Create new project with all products
+        await apiPost('/api/bulk-save-to-project', {
+          projectName: projectName.trim(),
+          products,
+        });
+
+        toast({
+          title: "Projekt erstellt",
+          description: `${scrapedProducts.length} Produkte wurden erfolgreich in "${projectName.trim()}" gespeichert`,
+        });
+      } else {
+        // Add all products to existing project
+        for (const product of scrapedProducts) {
+          const generatedContent = generatedDescriptions.get(product.articleNumber);
+          const extractedDataArray = [
+            product.ean ? { key: 'ean', value: product.ean, type: 'text' as const } : null,
+            product.manufacturer ? { key: 'hersteller', value: product.manufacturer, type: 'text' as const } : null,
+            product.price ? { key: 'preis', value: product.price, type: 'text' as const } : null,
+            product.weight ? { key: 'gewicht', value: product.weight, type: 'text' as const } : null,
+            product.category ? { key: 'kategorie', value: product.category, type: 'text' as const } : null,
+          ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
+
+          await apiPost(`/api/projects/${selectedProjectId}/products`, {
+            name: product.productName,
+            articleNumber: product.articleNumber || '',
+            htmlCode: generatedContent?.description || '',
+            previewText: generatedContent?.seoDescription || product.description?.substring(0, 200) || '',
+            exactProductName: product.productName,
+            extractedData: extractedDataArray.length > 0 ? extractedDataArray : undefined,
+            customAttributes: [
+              { key: 'source_url', value: url, type: 'text' },
+            ].filter(attr => attr.value),
+          });
+        }
+
+        const project = projectsData?.projects.find(p => p.id === selectedProjectId);
+        toast({
+          title: "Produkte hinzugefügt",
+          description: `${scrapedProducts.length} Produkte wurden erfolgreich zu "${project?.name}" hinzugefügt`,
+        });
+      }
+
+      // Invalidate queries to refresh product counts
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          Array.isArray(query.queryKey) && 
+          query.queryKey[0] === '/api/projects/product-counts'
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProjectId}/products`] });
+
+      setShowBulkSaveDialog(false);
+      setProjectName("");
+      setSelectedProjectId("new");
+
+      // Redirect to projects page
+      setTimeout(() => {
+        setLocation('/projects');
+      }, 1000);
+
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Fehler beim Speichern der Produkte",
+        variant: "destructive",
+      });
+      console.error('Error saving products:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -1281,6 +1398,13 @@ export default function URLScraper() {
                     </>
                   )}
                 </Button>
+                <Button 
+                  onClick={() => setShowBulkSaveDialog(true)} 
+                  variant="default"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Als Projekt speichern
+                </Button>
                 <Button onClick={downloadCSV} variant="outline">
                   <Download className="w-4 h-4 mr-2" />
                   Als CSV herunterladen
@@ -1633,6 +1757,105 @@ export default function URLScraper() {
                   Schließen
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Save Dialog */}
+        <Dialog open={showBulkSaveDialog} onOpenChange={(open) => {
+          setShowBulkSaveDialog(open);
+          if (!open) {
+            setProjectName("");
+            setSelectedProjectId("new");
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Alle Produkte als Projekt speichern</DialogTitle>
+              <DialogDescription>
+                Speichern Sie {scrapedProducts.length} gescrapte Produkte in "Meine Projekte"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <div>
+                <Label htmlFor="bulk-project-select" className="mb-2 block">
+                  Projekt wählen
+                </Label>
+                <Select
+                  value={selectedProjectId}
+                  onValueChange={setSelectedProjectId}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger id="bulk-project-select">
+                    <SelectValue placeholder="Projekt auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">
+                      <div className="flex items-center">
+                        <FolderPlus className="w-4 h-4 mr-2" />
+                        Neues Projekt erstellen
+                      </div>
+                    </SelectItem>
+                    {projectsData?.projects && projectsData.projects.length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                          Bestehende Projekte
+                        </div>
+                        {projectsData.projects.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedProjectId === "new" && (
+                <div>
+                  <Label htmlFor="bulk-project-name" className="mb-2 block">
+                    Name für neues Projekt
+                  </Label>
+                  <Input
+                    id="bulk-project-name"
+                    placeholder="z.B. Webscraping Dezember 2024"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isSaving) {
+                        handleBulkSaveToProject();
+                      }
+                    }}
+                    disabled={isSaving}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkSaveDialog(false)}
+                disabled={isSaving}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleBulkSaveToProject}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Speichere...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {scrapedProducts.length} Produkte speichern
+                  </>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
