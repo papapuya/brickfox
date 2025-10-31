@@ -156,6 +156,13 @@ function getFieldValue(
       }
     }
     
+    // DEBUG: Log what we found
+    if (config.field === 'hersteller' || config.field === 'preis' || config.field === 'gewicht' || config.field === 'kategorie' || config.field === 'ean') {
+      console.log(`[Brickfox Mapper] Field: ${config.field}, Found value:`, value);
+      console.log(`[Brickfox Mapper] Product extractedData:`, product.extractedData);
+      console.log(`[Brickfox Mapper] Product customAttributes:`, product.customAttributes);
+    }
+    
     // Parse based on field type
     if (fieldMeta.type === 'number' || fieldMeta.key === 'v_weight') {
       value = parseWeight(value);
