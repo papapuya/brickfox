@@ -51,3 +51,9 @@ externalPort = 3000
 deploymentTarget = "autoscale"
 run = ["npm", "start"]
 build = ["npm", "run", "build"]
+
+[userenv]
+
+[userenv.shared]
+PIXI_API_URL = "https://akkutools.laptopakku.eu/api/pixi/pixiItemSearch"
+PIXI_AUTH_TOKEN = "GKr7pTd-Fy6xJQb8r2nM4ks9tzdgvXNc2ZBLRw3qDPVhy_U8aaXr4LfNSweRKtqq"
