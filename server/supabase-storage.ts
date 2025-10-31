@@ -1,4 +1,7 @@
 import { supabase, supabaseAdmin } from './supabase';
+
+// Use admin client for backend operations to bypass RLS
+const db = supabaseAdmin || supabase;
 import type {
   Project,
   CreateProject,
@@ -76,7 +79,7 @@ export class SupabaseStorage implements IStorage {
       throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
     }
 
-    const { data: user, error } = await supabaseAdmin
+    const { data: user, error } = await db
       .from('users')
       .select('*')
       .eq('id', id)
@@ -610,7 +613,7 @@ export class SupabaseStorage implements IStorage {
     const user = await this.getUserById(userId);
     if (!user) throw new Error('User not found');
 
-    const { data: supplier, error } = await supabase
+    const { data: supplier, error } = await db
       .from('suppliers')
       .insert({
         user_id: userId,
@@ -638,7 +641,7 @@ export class SupabaseStorage implements IStorage {
       return [];
     }
 
-    let query = supabase
+    let query = db
       .from('suppliers')
       .select('*');
 
@@ -677,7 +680,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getSupplier(id: string): Promise<Supplier | null> {
-    const { data: supplier, error } = await supabase
+    const { data: supplier, error } = await db
       .from('suppliers')
       .select('*')
       .eq('id', id)
@@ -699,7 +702,7 @@ export class SupabaseStorage implements IStorage {
     if (data.sessionCookies !== undefined) updateData.session_cookies = data.sessionCookies;
     if (data.userAgent !== undefined) updateData.user_agent = data.userAgent;
 
-    const { data: supplier, error } = await supabase
+    const { data: supplier, error } = await db
       .from('suppliers')
       .update(updateData)
       .eq('id', id)
@@ -712,7 +715,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteSupplier(id: string): Promise<boolean> {
-    const { error } = await supabase
+    const { error } = await db
       .from('suppliers')
       .delete()
       .eq('id', id);
