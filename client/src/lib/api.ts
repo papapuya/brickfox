@@ -34,10 +34,18 @@ export async function apiGet<T>(url: string): Promise<T> {
 }
 
 export async function apiPost<T>(url: string, data?: any): Promise<T> {
+  console.log('[apiPost] URL:', url);
+  console.log('[apiPost] Data:', data);
+  console.log('[apiPost] Stringified:', JSON.stringify(data));
+  
   const response = await apiRequest(url, {
     method: 'POST',
     body: data instanceof FormData ? data : JSON.stringify(data),
   });
+  
+  console.log('[apiPost] Response status:', response.status);
+  console.log('[apiPost] Response ok:', response.ok);
+  
   if (!response.ok) throw new Error('Request failed');
   return response.json();
 }

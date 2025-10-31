@@ -179,6 +179,8 @@ export default function Suppliers() {
       };
 
       console.log('[handleSave] Sending payload:', JSON.stringify(payload, null, 2));
+      console.log('[handleSave] Payload type:', typeof payload);
+      console.log('[handleSave] Is editingSupplier?:', editingSupplier !== null);
 
       const data = editingSupplier 
         ? await apiPut<{ success: boolean; error?: string }>(`/api/suppliers/${editingSupplier.id}`, payload)
