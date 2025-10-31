@@ -14,7 +14,7 @@ import {
 } from './stripe-service';
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
-import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors, performLogin } from "./scraper-service";
+import { scrapeProduct, scrapeProductList, defaultSelectors, brickfoxSelectors, type ScraperSelectors, performLogin } from "./scraper-service";
 import { pixiService } from "./services/pixi-service";
 import { mapProductsToBrickfox, brickfoxRowsToCSV } from "./services/brickfox-mapper";
 import { enhanceProductsWithAI } from "./services/brickfox-ai-enhancer";
@@ -532,6 +532,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ success: false, error: 'Fehler beim Laden der Lieferanten' });
     }
+  });
+
+  // Get Brickfox-optimized selector template
+  app.get('/api/selectors/brickfox', requireAuth, (req: any, res) => {
+    res.json({ success: true, selectors: brickfoxSelectors });
   });
 
   app.post('/api/suppliers', requireAuth, async (req: any, res) => {

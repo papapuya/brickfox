@@ -485,7 +485,30 @@ export default function Suppliers() {
             </div>
 
             <div className="border-t pt-4">
-              <h3 className="font-semibold mb-3">Produkt-Selektoren (optional)</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Produkt-Selektoren (optional)</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/selectors/brickfox', {
+                        credentials: 'include'
+                      });
+                      const data = await response.json();
+                      if (data.success && data.selectors) {
+                        setFormData({ ...formData, selectors: data.selectors });
+                      }
+                    } catch (error) {
+                      console.error('Fehler beim Laden der Brickfox-Selektoren:', error);
+                    }
+                  }}
+                  className="text-xs"
+                >
+                  ✨ Brickfox-Felder übernehmen
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground mb-4">
                 {Object.keys(formData.selectors).length} Selektoren konfiguriert
               </p>
