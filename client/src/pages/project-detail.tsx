@@ -443,22 +443,17 @@ export default function ProjectDetail() {
           </TabsList>
           
           <TabsContent value="products" className="mt-6">
-            {/* Products Grid */}
+            {/* Products Table */}
             {isLoadingProducts ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardHeader className="space-y-3">
-                      <div className="h-5 bg-muted rounded w-3/4"></div>
-                      <div className="h-4 bg-muted rounded w-1/2"></div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-4 bg-muted rounded w-full mb-2"></div>
-                      <div className="h-4 bg-muted rounded w-2/3"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-10 bg-muted rounded"></div>
+                    <div className="h-10 bg-muted rounded"></div>
+                    <div className="h-10 bg-muted rounded"></div>
+                  </div>
+                </CardContent>
+              </Card>
             ) : products.length === 0 ? (
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-16">
@@ -477,55 +472,78 @@ export default function ProjectDetail() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {products.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="hover-elevate active-elevate-2 cursor-pointer transition-all"
-                    onClick={() => handleProductClick(product)}
-                    data-testid={`card-product-${product.id}`}
-                  >
-                    <CardHeader className="space-y-0 pb-3">
-                      <CardTitle className="text-lg flex items-start justify-between gap-2">
-                        <span className="line-clamp-2">
-                          {product.name || `Produkt ${product.id.slice(0, 8)}`}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="flex-shrink-0 h-8 w-8"
-                          onClick={(e) => handleDeleteProduct(e, product.id)}
-                          data-testid={`button-delete-product-${product.id}`}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-1 text-xs">
-                        <Calendar className="w-3 h-3" />
-                        {format(new Date(product.createdAt), "dd. MMM yyyy", { locale: de })}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        {product.files && product.files.length > 0 && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Upload className="w-4 h-4 flex-shrink-0" />
-                            <span className="truncate">
-                              {product.files.length} Datei{product.files.length !== 1 ? 'en' : ''}
-                            </span>
-                          </div>
-                        )}
-                        {product.htmlCode && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <FileText className="w-4 h-4 flex-shrink-0" />
-                            <span>Beschreibung vorhanden</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gescrapte Produktdaten</CardTitle>
+                  <CardDescription>{products.length} Produkte</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-md overflow-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left p-3 font-medium">Produktname</th>
+                          <th className="text-left p-3 font-medium">Artikelnr.</th>
+                          <th className="text-left p-3 font-medium">EAN</th>
+                          <th className="text-left p-3 font-medium">Hersteller</th>
+                          <th className="text-left p-3 font-medium">Preis</th>
+                          <th className="text-left p-3 font-medium">Gewicht</th>
+                          <th className="text-left p-3 font-medium">Kategorie</th>
+                          <th className="text-left p-3 font-medium">Erstellt</th>
+                          <th className="text-right p-3 font-medium">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {products.map((product) => {
+                          const extractedData = product.extractedData || [];
+                          const getExtractedValue = (key: string) => {
+                            const item = extractedData.find((d: any) => d.key === key);
+                            return item?.value || '-';
+                          };
+                          
+                          return (
+                            <tr key={product.id} className="hover:bg-muted/50">
+                              <td className="p-3 max-w-[200px] truncate">
+                                {product.name || product.exactProductName || '-'}
+                              </td>
+                              <td className="p-3">{product.articleNumber || '-'}</td>
+                              <td className="p-3">{getExtractedValue('ean')}</td>
+                              <td className="p-3">{getExtractedValue('hersteller')}</td>
+                              <td className="p-3">{getExtractedValue('preis')}</td>
+                              <td className="p-3">{getExtractedValue('gewicht')}</td>
+                              <td className="p-3 max-w-[150px] truncate">{getExtractedValue('kategorie')}</td>
+                              <td className="p-3 text-xs text-muted-foreground">
+                                {format(new Date(product.createdAt), "dd.MM.yyyy", { locale: de })}
+                              </td>
+                              <td className="p-3 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleProductClick(product)}
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteProduct(e, product.id);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
