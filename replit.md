@@ -108,3 +108,34 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
   - Falls back to empty string if no suppliers or no `supplNr` configured
 - **User Experience**: Eliminates manual entry of supplier number for repeat comparisons
 - **Error Handling**: Toast notification if suppliers cannot be loaded
+
+### CSS Selector Verification System (31. Okt 2025) ✅ COMPLETED
+- **Feature**: Comprehensive selector testing and verification workflow for supplier-specific CSS selectors
+- **Critical Issue**: Each supplier requires individualized CSS selectors due to different website structures
+- **Database Schema**: 2 new columns in `suppliers` table:
+  - `verified_fields` (TEXT) - JSON array of verified field names
+  - `last_verified_at` (TIMESTAMP) - Timestamp of last verification update
+- **Backend**:
+  - `POST /api/scraper/test-selector` - Real-time testing of individual CSS selectors with preview results
+  - Returns extracted text, HTML, and attribute values for validation
+  - Supports login-aware scraping with session cookies
+  - Integrated with encryption and automatic login flow
+- **Frontend UX**:
+  - **Test-URL Input**: Required input field for testing selectors
+  - **Per-Field Test Buttons**: "Testen" button next to each selector field
+  - **Visual Verification Status**: Green checkmark (✓) for verified fields, amber warning (⚠️) for unverified
+  - **Toast Previews**: Shows first 100 chars of extracted value for instant validation
+  - **Starter Template**: Button renamed to "Starter-Template laden (anpassen erforderlich)" with warning banner
+  - **Draft Mode**: Template loads selectors but marks them as unverified, requiring manual testing
+- **Verification Flow**:
+  1. User enters Test-URL for supplier's product page
+  2. Clicks test button for each selector
+  3. System fetches page (with login if configured), applies selector, shows extracted value
+  4. Visual feedback: Green checkmark appears, field added to verifiedFields Set
+  5. If selector value changes: Verification status resets (must re-test)
+  6. On save: verifiedFields array + lastVerifiedAt timestamp sent to backend
+  7. Backend stores in Supabase (JSON string for verified_fields)
+  8. On reload: Verification state persists and restores from database
+- **State Management**: verifiedFields Set tracks verification, automatically resets when selector value changes
+- **Persistence**: Verification metadata survives page reload, session restart, and dialog reopening
+- **Security**: Test endpoint respects multi-tenant isolation and uses encrypted login credentials
