@@ -282,6 +282,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createProject(userId: string, data: CreateProject): Promise<Project> {
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+
     const user = await this.getUserById(userId);
     if (!user) throw new Error('User not found');
     
@@ -296,7 +300,7 @@ export class SupabaseStorage implements IStorage {
       name: data.name,
     });
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await supabaseAdmin
       .from('projects')
       .insert({
         user_id: userId,
