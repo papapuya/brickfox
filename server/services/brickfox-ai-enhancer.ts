@@ -17,6 +17,8 @@ export interface AIEnhancementResult {
   hazard_classification_product?: string;
   hazard_classification_variant?: string;
   optimized_description?: string;
+  keywords?: string; // 6 comma-separated SEO keywords
+  seo_description?: string; // SEO-optimized product description
 }
 
 /**
@@ -157,17 +159,105 @@ async function optimizeDescription(product: ProductInProject): Promise<string | 
 }
 
 /**
+ * Generate 6 SEO keywords for the product
+ */
+async function generateKeywords(product: ProductInProject): Promise<string | null> {
+  try {
+    const extractedData = product.extractedData?.[0];
+    const customAttrs = product.customAttributes || [];
+    
+    // Get product details
+    const scrapedDesc = customAttrs.find(a => a.key === 'description')?.value;
+    const originalDescription = scrapedDesc || product.previewText || extractedData?.extractedText || extractedData?.description || '';
+    
+    const productInfo = `
+      Produktname: ${product.name || product.exactProductName}
+      Hersteller: ${customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
+      Kategorie: ${customAttrs.find(a => a.key === 'category')?.value || ''}
+      Beschreibung: ${originalDescription}
+    `.trim();
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Du bist ein SEO-Experte. Generiere GENAU 6 relevante SEO-Keywords für das Produkt. Die Keywords sollen die wichtigsten Suchbegriffe abdecken, die Kunden verwenden würden. Antworte NUR mit den 6 Keywords, durch Komma getrennt, ohne Nummerierung.'
+        },
+        {
+          role: 'user',
+          content: `Generiere 6 SEO-Keywords für folgendes Produkt:\n\n${productInfo}`
+        }
+      ],
+      temperature: 0.5,
+      max_tokens: 100,
+    });
+
+    return response.choices[0]?.message?.content?.trim() || null;
+  } catch (error) {
+    console.error('[AI Enhancer] Failed to generate keywords:', error);
+    return null;
+  }
+}
+
+/**
+ * Generate SEO-optimized product description
+ */
+async function generateSeoDescription(product: ProductInProject): Promise<string | null> {
+  try {
+    const extractedData = product.extractedData?.[0];
+    const customAttrs = product.customAttributes || [];
+    
+    // Get product details
+    const scrapedDesc = customAttrs.find(a => a.key === 'description')?.value;
+    const originalDescription = scrapedDesc || product.previewText || extractedData?.extractedText || extractedData?.description || '';
+    
+    if (!originalDescription) return null;
+
+    const productInfo = `
+      Produktname: ${product.name || product.exactProductName}
+      Hersteller: ${customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
+      Kategorie: ${customAttrs.find(a => a.key === 'category')?.value || ''}
+      Original-Beschreibung: ${originalDescription}
+    `.trim();
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Du bist ein SEO-Experte für E-Commerce. Erstelle eine SEO-optimierte Produktbeschreibung, die sowohl für Suchmaschinen als auch für Kunden optimiert ist. Nutze relevante Keywords natürlich, stelle die wichtigsten Features hervor, und mache die Beschreibung verkaufsfördernd. Verwende Absätze und Bullet-Points. Max. 800 Zeichen.'
+        },
+        {
+          role: 'user',
+          content: `Erstelle eine SEO-optimierte Produktbeschreibung für:\n\n${productInfo}`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    return response.choices[0]?.message?.content?.trim() || null;
+  } catch (error) {
+    console.error('[AI Enhancer] Failed to generate SEO description:', error);
+    return null;
+  }
+}
+
+/**
  * Enhance product data with AI-generated fields
  */
 export async function enhanceProductWithAI(product: ProductInProject): Promise<AIEnhancementResult> {
   const result: AIEnhancementResult = {};
 
   try {
-    // Generate customs tariff (parallel promises for speed)
-    const [tariff, hazard, description] = await Promise.all([
+    // Generate all AI fields in parallel for speed
+    const [tariff, hazard, description, keywords, seoDesc] = await Promise.all([
       generateCustomsTariffNumber(product),
       classifyHazardousGoods(product),
       optimizeDescription(product),
+      generateKeywords(product),
+      generateSeoDescription(product),
     ]);
 
     if (tariff) {
@@ -182,6 +272,14 @@ export async function enhanceProductWithAI(product: ProductInProject): Promise<A
 
     if (description) {
       result.optimized_description = description;
+    }
+
+    if (keywords) {
+      result.keywords = keywords;
+    }
+
+    if (seoDesc) {
+      result.seo_description = seoDesc;
     }
 
     return result;

@@ -1126,6 +1126,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'string'
             });
           }
+          if (enhancement.keywords) {
+            product.customAttributes.push({ 
+              key: 'ai_keywords', 
+              value: enhancement.keywords,
+              type: 'string'
+            });
+          }
+          if (enhancement.seo_description) {
+            product.customAttributes.push({ 
+              key: 'ai_seo_description', 
+              value: enhancement.seo_description,
+              type: 'string'
+            });
+          }
         }
       });
 
