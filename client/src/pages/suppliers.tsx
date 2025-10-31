@@ -166,6 +166,7 @@ export default function Suppliers() {
 
       const payload = {
         name: formData.name.trim(),
+        supplNr: formData.supplNr || undefined,
         urlPattern: formData.urlPattern || undefined,
         description: formData.description || undefined,
         productLinkSelector: formData.productLinkSelector || undefined,

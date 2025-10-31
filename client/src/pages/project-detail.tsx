@@ -30,7 +30,7 @@ export default function ProjectDetail() {
   
   // Pixi comparison state
   const [isPixiDialogOpen, setIsPixiDialogOpen] = useState(false);
-  const [pixiSupplNr, setPixiSupplNr] = useState('7077');
+  const [pixiSupplNr, setPixiSupplNr] = useState('');
   const [pixiLoading, setPixiLoading] = useState(false);
   const [pixiResults, setPixiResults] = useState<any>(null);
 
@@ -153,6 +153,34 @@ export default function ProjectDetail() {
   const handleProductClick = (product: ProductInProject) => {
     setSelectedProduct(product);
     setIsProductDialogOpen(true);
+  };
+
+  const handleOpenPixiDialog = async () => {
+    try {
+      const response = await apiRequest('GET', '/api/suppliers');
+      const data = await response.json() as { suppliers: Array<{ id: string; name: string; supplNr?: string }> };
+      
+      if (data.suppliers && data.suppliers.length > 0) {
+        const suppliersWithNr = data.suppliers.filter((s: { id: string; name: string; supplNr?: string }) => s.supplNr);
+        
+        if (suppliersWithNr.length >= 1) {
+          setPixiSupplNr(suppliersWithNr[0].supplNr || '');
+        } else {
+          setPixiSupplNr('');
+        }
+      } else {
+        setPixiSupplNr('');
+      }
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+      toast({
+        title: "Hinweis",
+        description: "Lieferanten konnten nicht geladen werden",
+        variant: "default",
+      });
+    }
+    
+    setIsPixiDialogOpen(true);
   };
 
   const handleBrickfoxExport = async () => {
@@ -365,7 +393,7 @@ export default function ProjectDetail() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setIsPixiDialogOpen(true)}
+                onClick={handleOpenPixiDialog}
                 disabled={products.length === 0}
                 data-testid="button-pixi-compare"
               >

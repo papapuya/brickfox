@@ -95,3 +95,16 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 - **UI**: Supplier dialog includes expandable "Login-Konfiguration" section
 - **Automatic Integration**: Scraping endpoints detect login config and perform authentication automatically
 - **Security Requirements**: `ENCRYPTION_KEY` environment variable must be configured in all environments
+
+### Pixi Supplier Number Auto-Fill (31. Okt 2025) ✅ COMPLETED
+- **Feature**: Automatic population of Pixi supplier number in comparison dialog
+- **Database**: Uses existing `supplNr` field in `suppliers` table (column: `suppl_nr`)
+- **UI Changes**:
+  - Added "Pixi-Lieferantennummer" input field to supplier profile dialog
+  - Auto-fills supplier number when opening Pixi comparison dialog
+- **Logic**: 
+  - When user clicks "Mit Pixi vergleichen", system fetches all suppliers
+  - If supplier(s) have `supplNr` configured, first one is auto-filled
+  - Falls back to empty string if no suppliers or no `supplNr` configured
+- **User Experience**: Eliminates manual entry of supplier number for repeat comparisons
+- **Error Handling**: Toast notification if suppliers cannot be loaded
