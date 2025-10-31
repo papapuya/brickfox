@@ -1176,13 +1176,12 @@ export default function URLScraper() {
                         id="max-pages"
                         type="number"
                         min="1"
-                        max="50"
                         value={maxPages}
                         onChange={(e) => setMaxPages(parseInt(e.target.value) || 10)}
                         className="mt-2 text-sm"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        ⚠️ Sicherheitslimit, um Endlos-Loops zu vermeiden
+                        💡 Sie können beliebig viele Seiten scrapen
                       </p>
                     </div>
                   </>
