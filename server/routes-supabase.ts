@@ -16,6 +16,8 @@ import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
 import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors, performLogin } from "./scraper-service";
 import { pixiService } from "./services/pixi-service";
+import { mapProductsToBrickfox, brickfoxRowsToCSV } from "./services/brickfox-mapper";
+import { enhanceProductsWithAI } from "./services/brickfox-ai-enhancer";
 import Papa from "papaparse";
 import { nanoid } from "nanoid";
 import { createProjectSchema, createProductInProjectSchema, updateProductInProjectSchema } from "@shared/schema";
@@ -889,6 +891,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         error: error.message || 'Failed to clear cache' 
+      });
+    }
+  });
+
+  // Brickfox CSV Export - Export project products as Brickfox-formatted CSV
+  app.post('/api/brickfox/export', requireAuth, async (req: any, res) => {
+    try {
+      const { projectId, supplierId } = req.body;
+
+      if (!projectId) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Project ID is required' 
+        });
+      }
+
+      console.log(`[Brickfox Export] Exporting project ${projectId}`);
+
+      // Get all products in project
+      const products = await supabaseStorage.getProducts(projectId, req.user.id);
+      
+      if (!products || products.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'No products found in project'
+        });
+      }
+
+      // Get supplier name if provided
+      let supplierName = undefined;
+      if (supplierId) {
+        const supplier = await supabaseStorage.getSupplier(supplierId);
+        supplierName = supplier?.name;
+      }
+
+      // AI Enhancement: Generate missing fields
+      console.log(`[Brickfox Export] Running AI enhancement for ${products.length} products...`);
+      const aiEnhancements = await enhanceProductsWithAI(products);
+      console.log(`[Brickfox Export] AI enhancement complete: ${aiEnhancements.size} products enhanced`);
+
+      // Merge AI enhancements into products
+      products.forEach(product => {
+        const enhancement = aiEnhancements.get(product.id);
+        if (enhancement) {
+          // Add AI data to customAttributes
+          if (!product.customAttributes) product.customAttributes = [];
+          
+          if (enhancement.customs_tariff_number) {
+            product.customAttributes.push({ 
+              key: 'ai_customs_tariff_number', 
+              value: enhancement.customs_tariff_number,
+              type: 'string'
+            });
+          }
+          if (enhancement.customs_tariff_text) {
+            product.customAttributes.push({ 
+              key: 'ai_customs_tariff_text', 
+              value: enhancement.customs_tariff_text,
+              type: 'string'
+            });
+          }
+          if (enhancement.hazard_classification_product) {
+            product.customAttributes.push({ 
+              key: 'ai_hazard_product', 
+              value: enhancement.hazard_classification_product,
+              type: 'string'
+            });
+          }
+          if (enhancement.hazard_classification_variant) {
+            product.customAttributes.push({ 
+              key: 'ai_hazard_variant', 
+              value: enhancement.hazard_classification_variant,
+              type: 'string'
+            });
+          }
+          if (enhancement.optimized_description) {
+            product.customAttributes.push({ 
+              key: 'ai_description', 
+              value: enhancement.optimized_description,
+              type: 'string'
+            });
+          }
+        }
+      });
+
+      // Transform to Brickfox format
+      const brickfoxRows = mapProductsToBrickfox(products, {
+        supplierName: supplierName || 'Unbekannt',
+        enableAI: true
+      });
+
+      // Convert to CSV
+      const csv = brickfoxRowsToCSV(brickfoxRows);
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="brickfox-export-${projectId}.csv"`);
+      
+      console.log(`[Brickfox Export] Generated CSV with ${brickfoxRows.length} rows`);
+      
+      res.send(csv);
+    } catch (error: any) {
+      console.error('[Brickfox Export] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to export Brickfox CSV' 
       });
     }
   });

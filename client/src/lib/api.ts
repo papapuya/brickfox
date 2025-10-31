@@ -59,3 +59,22 @@ export async function apiDelete<T>(url: string): Promise<T> {
   if (!response.ok) throw new Error('Request failed');
   return response.json();
 }
+
+export async function apiDownload(url: string, data: any, filename: string): Promise<void> {
+  const response = await apiRequest(url, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) throw new Error('Download failed');
+  
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(downloadUrl);
+}

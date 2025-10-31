@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { apiDownload } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, FileText, Trash2, Upload, Download, Calendar, FolderOpen, Table, TrendingUp, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Plus, FileText, Trash2, Upload, Download, Calendar, FolderOpen, Table, TrendingUp, CheckCircle, XCircle, FileSpreadsheet } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -152,6 +153,33 @@ export default function ProjectDetail() {
   const handleProductClick = (product: ProductInProject) => {
     setSelectedProduct(product);
     setIsProductDialogOpen(true);
+  };
+
+  const handleBrickfoxExport = async () => {
+    try {
+      toast({
+        title: "Export gestartet",
+        description: "Brickfox CSV wird generiert...",
+      });
+
+      await apiDownload(
+        '/api/brickfox/export',
+        { projectId: id },
+        `brickfox-export-${id}.csv`
+      );
+
+      toast({
+        title: "Export erfolgreich",
+        description: "Brickfox CSV wurde heruntergeladen",
+      });
+    } catch (error) {
+      console.error('[Brickfox Export] Error:', error);
+      toast({
+        title: "Export fehlgeschlagen",
+        description: "Fehler beim Exportieren der Brickfox CSV",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePixiCompare = async () => {
@@ -343,6 +371,16 @@ export default function ProjectDetail() {
               >
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Mit Pixi vergleichen
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleBrickfoxExport}
+                disabled={products.length === 0}
+                data-testid="button-brickfox-export"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Brickfox CSV exportieren
               </Button>
               <Button
                 variant="outline"
