@@ -39,7 +39,21 @@ function parseWeight(weight: string | number | null): number | null {
   if (typeof weight === 'number') return weight;
   
   const str = weight.toString().toLowerCase().trim();
-  const match = str.match(/(\d+\.?\d*)\s*(g|kg|gram|kilogram)?/);
+  
+  // Simple and pragmatic approach based on real product data:
+  // - If comma present → German format (dot=thousand, comma=decimal)
+  // - Otherwise → treat dot as decimal (English/international format)
+  // Real examples: "101 g", "39,75", "1,5 kg", "250 g", "1.5 kg"
+  let normalized = str;
+  if (str.includes(',')) {
+    // German format: Remove dots (thousand separators), replace comma with dot
+    // Examples: "1.234,5 kg" → "1234.5", "39,75" → "39.75"
+    normalized = str.replace(/\./g, '').replace(',', '.');
+  }
+  // Otherwise: treat dots as decimal separators
+  // Examples: "101 g" → "101", "1.5 kg" → "1.5", "250 g" → "250"
+  
+  const match = normalized.match(/(\d+\.?\d*)\s*(g|kg|gram|kilogram)?/);
   if (!match) return null;
   
   const value = parseFloat(match[1]);
