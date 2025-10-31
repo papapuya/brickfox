@@ -356,27 +356,18 @@ export default function URLScraper() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-          const token = localStorage.getItem('supabase_token');
-          const response = await fetch('/api/scrape-product', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              url: productUrl,
-              selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
-              userAgent: userAgent || undefined,
-              cookies: sessionCookies || undefined,
-              supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
-            }),
-            signal: controller.signal
+          const response = await apiRequest('POST', '/api/scrape-product', {
+            url: productUrl,
+            selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
+            userAgent: userAgent || undefined,
+            cookies: sessionCookies || undefined,
+            supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
           });
 
           clearTimeout(timeoutId);
 
-          if (response.ok) {
-            const data = await response.json();
+          const data = await response.json();
+          if (data && data.product) {
             products.push(data.product);
           } else {
             console.error(`Fehler beim Scrapen von ${productUrl}`);
