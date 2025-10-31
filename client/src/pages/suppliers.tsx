@@ -178,9 +178,13 @@ export default function Suppliers() {
         selectors: activeSelectors
       };
 
+      console.log('[handleSave] Sending payload:', JSON.stringify(payload, null, 2));
+
       const data = editingSupplier 
         ? await apiPut<{ success: boolean; error?: string }>(`/api/suppliers/${editingSupplier.id}`, payload)
         : await apiPost<{ success: boolean; error?: string }>('/api/suppliers', payload);
+      
+      console.log('[handleSave] API response:', data);
 
       if (data.success) {
         toast({
