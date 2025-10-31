@@ -17,14 +17,13 @@ import { de } from "date-fns/locale";
 import type { Project, ProductInProject, ExportColumn } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
-import BrickfoxDataPreview from "@/components/brickfox-data-preview";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"products" | "brickfox" | "pixi">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "pixi">("products");
   const [selectedProduct, setSelectedProduct] = useState<ProductInProject | null>(null);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   
@@ -431,15 +430,11 @@ export default function ProjectDetail() {
         </div>
 
         {/* Tabs für verschiedene Ansichten */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "products" | "brickfox" | "pixi")} className="mb-6">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "products" | "pixi")} className="mb-6">
           <TabsList>
             <TabsTrigger value="products" className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4" />
               Produkte ({products.length})
-            </TabsTrigger>
-            <TabsTrigger value="brickfox" className="flex items-center gap-2" disabled={products.length === 0}>
-              <Table className="w-4 h-4" />
-              Brickfox PIM
             </TabsTrigger>
             <TabsTrigger value="pixi" className="flex items-center gap-2" disabled={!pixiResults}>
               <TrendingUp className="w-4 h-4" />
@@ -532,10 +527,6 @@ export default function ProjectDetail() {
                 ))}
               </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="brickfox" className="mt-6">
-            <BrickfoxDataPreview products={products} projectName={project?.name} />
           </TabsContent>
 
           <TabsContent value="pixi" className="mt-6">

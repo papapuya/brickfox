@@ -148,9 +148,12 @@ function getFieldValue(
     // Try direct product fields first
     let value: any = (product as any)[config.field];
     
-    // If not found, try extractedData (first item)
+    // If not found, try extractedData array (new format: [{key, value, type}])
     if (!value && product.extractedData && product.extractedData.length > 0) {
-      value = (product.extractedData[0] as any)[config.field];
+      const extracted = product.extractedData.find((item: any) => item.key === config.field);
+      if (extracted) {
+        value = (extracted as any).value;
+      }
     }
     
     // Parse based on field type
