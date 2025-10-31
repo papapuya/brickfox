@@ -33,6 +33,11 @@ export default function ProjectDetail() {
   const [pixiLoading, setPixiLoading] = useState(false);
   const [pixiResults, setPixiResults] = useState<any>(null);
 
+  // Brickfox preview state
+  const [isBrickfoxPreviewOpen, setIsBrickfoxPreviewOpen] = useState(false);
+  const [brickfoxPreviewData, setBrickfoxPreviewData] = useState<any[]>([]);
+  const [brickfoxLoading, setBrickfoxLoading] = useState(false);
+
   const defaultColumns: ExportColumn[] = [
     { id: 'name', label: 'Produktname', field: 'name', enabled: true },
     { id: 'htmlCode', label: 'HTML-Beschreibung', field: 'htmlCode', enabled: true },
@@ -182,6 +187,37 @@ export default function ProjectDetail() {
     setIsPixiDialogOpen(true);
   };
 
+  const handleBrickfoxPreview = async () => {
+    try {
+      setBrickfoxLoading(true);
+      
+      const response = await fetch('/api/brickfox/preview', {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ projectId: id }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.rows) {
+        setBrickfoxPreviewData(data.rows);
+        setIsBrickfoxPreviewOpen(true);
+      } else {
+        throw new Error(data.error || 'Vorschau konnte nicht geladen werden');
+      }
+    } catch (error: any) {
+      console.error('[Brickfox Preview] Error:', error);
+      toast({
+        title: "Vorschau fehlgeschlagen",
+        description: error.message || "Fehler beim Laden der Brickfox-Vorschau",
+        variant: "destructive",
+      });
+    } finally {
+      setBrickfoxLoading(false);
+    }
+  };
+
   const handleBrickfoxExport = async () => {
     try {
       toast({
@@ -199,6 +235,8 @@ export default function ProjectDetail() {
         title: "Export erfolgreich",
         description: "Brickfox CSV wurde heruntergeladen",
       });
+      
+      setIsBrickfoxPreviewOpen(false);
     } catch (error) {
       console.error('[Brickfox Export] Error:', error);
       toast({
@@ -401,13 +439,13 @@ export default function ProjectDetail() {
               </Button>
               <Button
                 variant="default"
-                onClick={handleBrickfoxExport}
-                disabled={products.length === 0}
-                data-testid="button-brickfox-export"
+                onClick={handleBrickfoxPreview}
+                disabled={products.length === 0 || brickfoxLoading}
+                data-testid="button-brickfox-preview"
                 className="bg-green-600 hover:bg-green-700"
               >
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Brickfox CSV exportieren
+                {brickfoxLoading ? "Lade Vorschau..." : "Brickfox CSV Vorschau"}
               </Button>
               <Button
                 variant="outline"
@@ -934,6 +972,69 @@ export default function ProjectDetail() {
                 <Download className="w-4 h-4 mr-2" />
                 Exportieren
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Brickfox Preview Dialog */}
+        <Dialog open={isBrickfoxPreviewOpen} onOpenChange={setIsBrickfoxPreviewOpen}>
+          <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Brickfox CSV Vorschau</DialogTitle>
+              <DialogDescription>
+                Überprüfen Sie die Brickfox-Daten vor dem Export ({brickfoxPreviewData.length} Produkte)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto border rounded-md">
+              {brickfoxPreviewData.length > 0 && (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted sticky top-0">
+                    <tr>
+                      {Object.keys(brickfoxPreviewData[0]).map((key) => (
+                        <th key={key} className="px-3 py-2 text-left font-medium border-b whitespace-nowrap">
+                          {key}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {brickfoxPreviewData.slice(0, 50).map((row, idx) => (
+                      <tr key={idx} className="border-b hover:bg-muted/50">
+                        {Object.values(row).map((value: any, cellIdx) => (
+                          <td key={cellIdx} className="px-3 py-2 max-w-xs truncate" title={String(value || '')}>
+                            {String(value || '')}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {brickfoxPreviewData.length > 50 && (
+                <div className="p-3 text-sm text-muted-foreground border-t bg-muted/30">
+                  Zeige 50 von {brickfoxPreviewData.length} Produkten. Alle Daten werden beim Export eingeschlossen.
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                <strong>{brickfoxPreviewData.length}</strong> Produkte werden exportiert
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBrickfoxPreviewOpen(false)}
+                >
+                  Abbrechen
+                </Button>
+                <Button
+                  onClick={handleBrickfoxExport}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Jetzt exportieren
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

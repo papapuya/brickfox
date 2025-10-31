@@ -995,6 +995,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brickfox CSV Preview - Preview Brickfox data before export
+  app.post('/api/brickfox/preview', requireAuth, async (req: any, res) => {
+    try {
+      const { projectId, supplierId } = req.body;
+
+      if (!projectId) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Project ID is required' 
+        });
+      }
+
+      console.log(`[Brickfox Preview] Generating preview for project ${projectId}`);
+
+      // Get all products in project
+      const products = await supabaseStorage.getProducts(projectId, req.user.id);
+      
+      if (!products || products.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'No products found in project'
+        });
+      }
+
+      // Get supplier name if provided
+      let supplierName = undefined;
+      if (supplierId) {
+        const supplier = await supabaseStorage.getSupplier(supplierId);
+        supplierName = supplier?.name;
+      }
+
+      // Transform to Brickfox format (without AI enhancement for faster preview)
+      const brickfoxRows = mapProductsToBrickfox(products, {
+        supplierName: supplierName || 'Unbekannt',
+        enableAI: false // Disable AI for preview to speed up
+      });
+
+      console.log(`[Brickfox Preview] Generated preview with ${brickfoxRows.length} rows`);
+      
+      res.json({
+        success: true,
+        rows: brickfoxRows,
+        totalRows: brickfoxRows.length
+      });
+    } catch (error: any) {
+      console.error('[Brickfox Preview] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to generate Brickfox preview' 
+      });
+    }
+  });
+
   // Brickfox CSV Export - Export project products as Brickfox-formatted CSV
   app.post('/api/brickfox/export', requireAuth, async (req: any, res) => {
     try {
