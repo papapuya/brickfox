@@ -358,7 +358,12 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   // Category
   if (selectors.category) {
     const element = $(selectors.category).first();
-    product.category = element.text().trim() || '';
+    let categoryText = element.text().trim() || '';
+    // Remove common breadcrumb prefixes
+    categoryText = categoryText.replace(/^Sie sind hier:\s*/i, '').trim();
+    categoryText = categoryText.replace(/^Home\s*>\s*/i, '').trim();
+    categoryText = categoryText.replace(/^Startseite\s*>\s*/i, '').trim();
+    product.category = categoryText;
   }
 
   // Nitecore Technical Fields - extract text only
