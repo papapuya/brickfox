@@ -611,19 +611,26 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createSupplier(userId: string, data: CreateSupplier): Promise<Supplier> {
+    console.log('[createSupplier] Starting with data:', { userId, name: data.name });
+    
     const user = await this.getUserById(userId);
-    if (!user) throw new Error('User not found');
+    if (!user) {
+      console.error('[createSupplier] User not found:', userId);
+      throw new Error('User not found');
+    }
+    
+    console.log('[createSupplier] User found:', { id: user.id, organizationId: user.organizationId });
 
     const insertData: any = {
       user_id: userId,
       organization_id: user.organizationId || null,
       name: data.name,
-      url_pattern: data.urlPattern,
-      description: data.description,
+      url_pattern: data.urlPattern || null,
+      description: data.description || null,
       selectors: data.selectors || {},
-      product_link_selector: data.productLinkSelector,
-      session_cookies: data.sessionCookies,
-      user_agent: data.userAgent,
+      product_link_selector: data.productLinkSelector || null,
+      session_cookies: data.sessionCookies || null,
+      user_agent: data.userAgent || null,
       login_url: data.loginUrl || null,
       login_username_field: data.loginUsernameField || null,
       login_password_field: data.loginPasswordField || null,
@@ -635,14 +642,25 @@ export class SupabaseStorage implements IStorage {
       insertData.login_password = encrypt(data.loginPassword);
     }
 
+    console.log('[createSupplier] Inserting data:', JSON.stringify(insertData, null, 2));
+
     const { data: supplier, error } = await db
       .from('suppliers')
       .insert(insertData)
       .select()
       .single();
 
-    if (error || !supplier) throw new Error('Failed to create supplier');
+    if (error) {
+      console.error('[createSupplier] Database error:', error);
+      throw new Error(`Failed to create supplier: ${error.message}`);
+    }
+    
+    if (!supplier) {
+      console.error('[createSupplier] No supplier returned');
+      throw new Error('Failed to create supplier: No data returned');
+    }
 
+    console.log('[createSupplier] Supplier created successfully:', supplier.id);
     return this.mapSupplier(supplier);
   }
 
