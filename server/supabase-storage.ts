@@ -635,15 +635,18 @@ export class SupabaseStorage implements IStorage {
     const user = await this.getUserById(userId);
     if (!user) return [];
 
-    const query = supabase
+    let query = supabase
       .from('suppliers')
-      .select('*')
-      .eq('user_id', userId)
-      .order('name');
+      .select('*');
 
+    // Multi-tenant filtering: use organization_id if available, otherwise user_id
     if (user.organizationId) {
-      query.eq('organization_id', user.organizationId);
+      query = query.eq('organization_id', user.organizationId);
+    } else {
+      query = query.eq('user_id', userId);
     }
+
+    query = query.order('name');
 
     const { data: suppliers, error } = await query;
 
