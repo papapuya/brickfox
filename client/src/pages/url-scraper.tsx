@@ -28,6 +28,12 @@ interface ScrapedProduct {
   category?: string;
 }
 
+interface GeneratedContent {
+  description: string;
+  seoTitle: string;
+  seoDescription: string;
+}
+
 export default function URLScraper() {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -49,7 +55,7 @@ export default function URLScraper() {
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
   
   // Batch AI Generation
-  const [generatedDescriptions, setGeneratedDescriptions] = useState<Map<string, string>>(new Map());
+  const [generatedDescriptions, setGeneratedDescriptions] = useState<Map<string, GeneratedContent>>(new Map());
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [aiGenerationProgress, setAiGenerationProgress] = useState({ current: 0, total: 0 });
   
@@ -502,7 +508,7 @@ export default function URLScraper() {
     setIsGeneratingBatch(true);
     setAiGenerationProgress({ current: 0, total: scrapedProducts.length });
 
-    const newDescriptions = new Map<string, string>();
+    const newDescriptions = new Map<string, GeneratedContent>();
     let successCount = 0;
     let errorCount = 0;
 
@@ -572,7 +578,12 @@ export default function URLScraper() {
           const product = batch[batchIndex];
           if (result.status === 'fulfilled') {
             const data = result.value as any;
-            newDescriptions.set(product.articleNumber, data.description || '');
+            // Store complete response with description, seoTitle, seoDescription
+            newDescriptions.set(product.articleNumber, {
+              description: data.description || '',
+              seoTitle: data.seoTitle || '',
+              seoDescription: data.seoDescription || ''
+            });
             successCount++;
           } else {
             console.error(`Error generating description for ${product.productName}:`, result.reason);
@@ -675,7 +686,8 @@ export default function URLScraper() {
       orderedKeys.map(key => {
         // Special handling for AI-generated description
         if (key === 'aiDescription') {
-          const aiDesc = generatedDescriptions.get(product.articleNumber) || '';
+          const aiData = generatedDescriptions.get(product.articleNumber);
+          const aiDesc = aiData?.description || '';
           return aiDesc.replace(/"/g, '""');
         }
         
@@ -1418,18 +1430,22 @@ export default function URLScraper() {
                             'wird generiert...'
                           )}
                         </TableCell>
-                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                        <TableCell className="bg-primary/5 text-xs">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            product.productName || '-'
+                            <div className="max-w-md whitespace-normal">
+                              {generatedDescriptions.get(product.articleNumber)?.seoTitle || product.productName || '-'}
+                            </div>
                           ) : (
-                            'wird generiert...'
+                            <span className="italic text-muted-foreground">wird generiert...</span>
                           )}
                         </TableCell>
-                        <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
+                        <TableCell className="bg-primary/5 text-xs">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <span className="line-clamp-2">SEO-optimierte Beschreibung für {product.productName}</span>
+                            <div className="max-w-md whitespace-normal">
+                              {generatedDescriptions.get(product.articleNumber)?.seoDescription || '-'}
+                            </div>
                           ) : (
-                            'wird generiert...'
+                            <span className="italic text-muted-foreground">wird generiert...</span>
                           )}
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
@@ -1442,14 +1458,14 @@ export default function URLScraper() {
                         <TableCell className="bg-primary/5 text-xs font-mono">
                           {generatedDescriptions.has(product.articleNumber) ? (
                             <div className="flex items-center gap-2">
-                              <span className="max-w-xs truncate text-muted-foreground" title={generatedDescriptions.get(product.articleNumber)}>
-                                {generatedDescriptions.get(product.articleNumber)!.substring(0, 60) + '...'}
+                              <span className="max-w-xs truncate text-muted-foreground" title={generatedDescriptions.get(product.articleNumber)?.description}>
+                                {(generatedDescriptions.get(product.articleNumber)?.description || '').substring(0, 60) + '...'}
                               </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber) || '');
+                                  setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber)?.description || '');
                                   setShowHtmlPreview(true);
                                 }}
                                 title="HTML Vorschau anzeigen"
