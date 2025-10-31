@@ -478,19 +478,31 @@ export default function ProjectDetail() {
                   <CardDescription>{products.length} Produkte</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border rounded-md overflow-auto">
+                  <div className="border rounded-md overflow-auto max-h-[600px]">
                     <table className="w-full text-sm">
-                      <thead className="bg-muted">
+                      <thead className="bg-muted sticky top-0 z-10">
                         <tr>
-                          <th className="text-left p-3 font-medium">Produktname</th>
+                          <th className="text-left p-3 font-medium sticky left-0 bg-muted z-20">Produktname</th>
                           <th className="text-left p-3 font-medium">Artikelnr.</th>
-                          <th className="text-left p-3 font-medium">EAN</th>
-                          <th className="text-left p-3 font-medium">Hersteller</th>
-                          <th className="text-left p-3 font-medium">Preis</th>
-                          <th className="text-left p-3 font-medium">Gewicht</th>
-                          <th className="text-left p-3 font-medium">Kategorie</th>
+                          {/* Dynamic columns from extractedData */}
+                          {(() => {
+                            const allKeys = new Set<string>();
+                            products.forEach(product => {
+                              const extractedData = product.extractedData || [];
+                              if (Array.isArray(extractedData)) {
+                                extractedData.forEach((item: any) => allKeys.add(item.key));
+                              } else if (typeof extractedData === 'object') {
+                                Object.keys(extractedData).forEach(key => allKeys.add(key));
+                              }
+                            });
+                            return Array.from(allKeys).map(key => (
+                              <th key={key} className="text-left p-3 font-medium whitespace-nowrap">
+                                {key.charAt(0).toUpperCase() + key.slice(1)}
+                              </th>
+                            ));
+                          })()}
                           <th className="text-left p-3 font-medium">Erstellt</th>
-                          <th className="text-right p-3 font-medium">Aktionen</th>
+                          <th className="text-right p-3 font-medium sticky right-0 bg-muted z-20">Aktionen</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -507,22 +519,34 @@ export default function ProjectDetail() {
                             }
                             return '-';
                           };
+
+                          // Get all unique keys from all products
+                          const allKeys = new Set<string>();
+                          products.forEach(p => {
+                            const data = p.extractedData || [];
+                            if (Array.isArray(data)) {
+                              data.forEach((item: any) => allKeys.add(item.key));
+                            } else if (typeof data === 'object') {
+                              Object.keys(data).forEach(key => allKeys.add(key));
+                            }
+                          });
                           
                           return (
                             <tr key={product.id} className="hover:bg-muted/50">
-                              <td className="p-3 max-w-[200px] truncate">
+                              <td className="p-3 max-w-[250px] truncate sticky left-0 bg-background z-10">
                                 {product.name || product.exactProductName || '-'}
                               </td>
                               <td className="p-3">{product.articleNumber || '-'}</td>
-                              <td className="p-3">{getExtractedValue('ean')}</td>
-                              <td className="p-3">{getExtractedValue('hersteller')}</td>
-                              <td className="p-3">{getExtractedValue('preis')}</td>
-                              <td className="p-3">{getExtractedValue('gewicht')}</td>
-                              <td className="p-3 max-w-[150px] truncate">{getExtractedValue('kategorie')}</td>
-                              <td className="p-3 text-xs text-muted-foreground">
+                              {/* Dynamic columns */}
+                              {Array.from(allKeys).map(key => (
+                                <td key={key} className="p-3 max-w-[200px] truncate">
+                                  {getExtractedValue(key)}
+                                </td>
+                              ))}
+                              <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
                                 {format(new Date(product.createdAt), "dd.MM.yyyy", { locale: de })}
                               </td>
-                              <td className="p-3 text-right">
+                              <td className="p-3 text-right sticky right-0 bg-background z-10">
                                 <div className="flex justify-end gap-2">
                                   <Button
                                     variant="ghost"
