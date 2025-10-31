@@ -624,18 +624,16 @@ export class SupabaseStorage implements IStorage {
       product_link_selector: data.productLinkSelector || null,
       session_cookies: data.sessionCookies || null,
       user_agent: data.userAgent || null,
-      // TEMPORARY: Login fields disabled until Supabase schema cache refreshes
-      // login_url: data.loginUrl || null,
-      // login_username_field: data.loginUsernameField || null,
-      // login_password_field: data.loginPasswordField || null,
-      // login_username: data.loginUsername || null,
+      login_url: data.loginUrl || null,
+      login_username_field: data.loginUsernameField || null,
+      login_password_field: data.loginPasswordField || null,
+      login_username: data.loginUsername || null,
     };
 
     // SECURITY: Encrypt password before storing
-    // TEMPORARY: Disabled until schema cache refreshes
-    // if (data.loginPassword) {
-    //   insertData.login_password = encrypt(data.loginPassword);
-    // }
+    if (data.loginPassword) {
+      insertData.login_password = encrypt(data.loginPassword);
+    }
 
     const { data: supplier, error } = await db
       .from('suppliers')
@@ -725,15 +723,15 @@ export class SupabaseStorage implements IStorage {
     if (data.productLinkSelector !== undefined) updateData.product_link_selector = data.productLinkSelector;
     if (data.sessionCookies !== undefined) updateData.session_cookies = data.sessionCookies;
     if (data.userAgent !== undefined) updateData.user_agent = data.userAgent;
-    // TEMPORARY: Login fields disabled until Supabase schema cache refreshes
-    // if (data.loginUrl !== undefined) updateData.login_url = data.loginUrl;
-    // if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
-    // if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
-    // if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
+    if (data.loginUrl !== undefined) updateData.login_url = data.loginUrl;
+    if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
+    if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
+    if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
+    
     // SECURITY: Encrypt password before storing
-    // if (data.loginPassword !== undefined) {
-    //   updateData.login_password = data.loginPassword ? encrypt(data.loginPassword) : null;
-    // }
+    if (data.loginPassword !== undefined) {
+      updateData.login_password = data.loginPassword ? encrypt(data.loginPassword) : null;
+    }
 
     const { data: supplier, error } = await db
       .from('suppliers')
