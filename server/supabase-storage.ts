@@ -641,6 +641,16 @@ export class SupabaseStorage implements IStorage {
       return [];
     }
 
+    // DEBUG: First try without filter to see if ANY suppliers exist
+    const { data: allSuppliers, error: allError } = await db
+      .from('suppliers')
+      .select('*');
+    
+    console.log('[getSuppliers DEBUG] Total suppliers in DB:', allSuppliers?.length, 'Error:', allError?.message);
+    if (allSuppliers && allSuppliers.length > 0) {
+      console.log('[getSuppliers DEBUG] Sample supplier:', JSON.stringify(allSuppliers[0], null, 2));
+    }
+
     let query = db
       .from('suppliers')
       .select('*');
