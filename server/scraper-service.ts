@@ -19,6 +19,7 @@ export interface ScraperSelectors {
   images?: string;
   weight?: string;
   category?: string;
+  sourceDescription?: string;
   length?: string;
   bodyDiameter?: string;
   headDiameter?: string;
@@ -42,6 +43,7 @@ export interface ScrapedProduct {
   images: string[];
   weight?: string;
   category?: string;
+  sourceDescription?: string;
   length?: string;
   bodyDiameter?: string;
   headDiameter?: string;
@@ -1198,7 +1200,7 @@ export const defaultSelectors: Record<string, ScraperSelectors> = {
 
 /**
  * Brickfox-optimized selectors
- * Only the 9 essential fields needed for Brickfox CSV export
+ * Only the 10 essential fields needed for Brickfox CSV export
  * This minimizes scraping overhead and database storage
  */
 export const brickfoxSelectors: ScraperSelectors = {
@@ -1210,5 +1212,6 @@ export const brickfoxSelectors: ScraperSelectors = {
   price: '[itemprop="price"], .price, .product-price',
   weight: '.weight, [itemprop="weight"]',
   description: '[itemprop="description"], .product-description, .description',
-  images: '[itemprop="image"], .product-image img, .gallery img'
+  images: '[itemprop="image"], .product-image img, .gallery img',
+  sourceDescription: '[itemprop="description"], .product-description, .description, .product-details'
 };

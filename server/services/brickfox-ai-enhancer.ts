@@ -118,14 +118,18 @@ async function classifyHazardousGoods(product: ProductInProject): Promise<string
 async function optimizeDescription(product: ProductInProject): Promise<string | null> {
   try {
     const extractedData = product.extractedData?.[0];
-    const originalDescription = product.previewText || extractedData?.extractedText || extractedData?.description || '';
+    const customAttrs = product.customAttributes || [];
+    
+    // Prefer sourceDescription from customAttributes (scraped from supplier)
+    const sourceDesc = customAttrs.find(a => a.key === 'sourceDescription')?.value;
+    const originalDescription = sourceDesc || product.previewText || extractedData?.extractedText || extractedData?.description || '';
+    
     if (!originalDescription) return null;
 
-    const customAttrs = product.customAttributes || [];
     const productInfo = `
       Produktname: ${product.name || product.exactProductName}
-      Hersteller: ${customAttrs.find(a => a.key === 'hersteller')?.value || ''}
-      Kategorie: ${customAttrs.find(a => a.key === 'kategorie')?.value || ''}
+      Hersteller: ${customAttrs.find(a => a.key === 'hersteller')?.value || customAttrs.find(a => a.key === 'manufacturer')?.value || ''}
+      Kategorie: ${customAttrs.find(a => a.key === 'kategorie')?.value || customAttrs.find(a => a.key === 'category')?.value || ''}
       Original-Beschreibung: ${originalDescription}
     `.trim();
 
