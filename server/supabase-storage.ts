@@ -614,19 +614,30 @@ export class SupabaseStorage implements IStorage {
     const user = await this.getUserById(userId);
     if (!user) throw new Error('User not found');
 
+    const insertData: any = {
+      user_id: userId,
+      organization_id: user.organizationId || null,
+      name: data.name,
+      url_pattern: data.urlPattern,
+      description: data.description,
+      selectors: data.selectors || {},
+      product_link_selector: data.productLinkSelector,
+      session_cookies: data.sessionCookies,
+      user_agent: data.userAgent,
+      login_url: data.loginUrl || null,
+      login_username_field: data.loginUsernameField || null,
+      login_password_field: data.loginPasswordField || null,
+      login_username: data.loginUsername || null,
+    };
+
+    // SECURITY: Encrypt password before storing
+    if (data.loginPassword) {
+      insertData.login_password = encrypt(data.loginPassword);
+    }
+
     const { data: supplier, error } = await db
       .from('suppliers')
-      .insert({
-        user_id: userId,
-        organization_id: user.organizationId || null,
-        name: data.name,
-        url_pattern: data.urlPattern,
-        description: data.description,
-        selectors: data.selectors || {},
-        product_link_selector: data.productLinkSelector,
-        session_cookies: data.sessionCookies,
-        user_agent: data.userAgent,
-      })
+      .insert(insertData)
       .select()
       .single();
 
