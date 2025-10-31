@@ -633,7 +633,10 @@ export class SupabaseStorage implements IStorage {
 
   async getSuppliers(userId: string): Promise<Supplier[]> {
     const user = await this.getUserById(userId);
-    if (!user) return [];
+    if (!user) {
+      console.log('[getSuppliers] User not found:', userId);
+      return [];
+    }
 
     let query = supabase
       .from('suppliers')
@@ -641,8 +644,10 @@ export class SupabaseStorage implements IStorage {
 
     // Multi-tenant filtering: use organization_id if available, otherwise user_id
     if (user.organizationId) {
+      console.log('[getSuppliers] Filtering by organization_id:', user.organizationId);
       query = query.eq('organization_id', user.organizationId);
     } else {
+      console.log('[getSuppliers] Filtering by user_id:', userId);
       query = query.eq('user_id', userId);
     }
 
@@ -650,9 +655,25 @@ export class SupabaseStorage implements IStorage {
 
     const { data: suppliers, error } = await query;
 
-    if (error || !suppliers) return [];
+    console.log('[getSuppliers] Query result:', { 
+      error: error?.message, 
+      count: suppliers?.length,
+      suppliers: suppliers?.map(s => ({ id: s.id, name: s.name }))
+    });
 
-    return suppliers.map(s => this.mapSupplier(s));
+    if (error) {
+      console.error('[getSuppliers] Error:', error);
+      return [];
+    }
+    
+    if (!suppliers) {
+      console.log('[getSuppliers] No suppliers returned');
+      return [];
+    }
+
+    const mapped = suppliers.map(s => this.mapSupplier(s));
+    console.log('[getSuppliers] Mapped suppliers:', mapped.length);
+    return mapped;
   }
 
   async getSupplier(id: string): Promise<Supplier | null> {
