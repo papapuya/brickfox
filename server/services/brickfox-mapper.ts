@@ -40,18 +40,62 @@ function parseWeight(weight: string | number | null): number | null {
   
   const str = weight.toString().toLowerCase().trim();
   
-  // Simple and pragmatic approach based on real product data:
-  // - If comma present → German format (dot=thousand, comma=decimal)
-  // - Otherwise → treat dot as decimal (English/international format)
-  // Real examples: "101 g", "39,75", "1,5 kg", "250 g", "1.5 kg"
+  // German decimal format handling:
+  // - Comma = decimal separator
+  // - Dot = thousand separator
+  // Examples: "1.234,5 kg", "2.500 g", "1,5 kg", "101 g"
   let normalized = str;
   if (str.includes(',')) {
-    // German format: Remove dots (thousand separators), replace comma with dot
-    // Examples: "1.234,5 kg" → "1234.5", "39,75" → "39.75"
+    // Has comma → German format with decimal
+    // Remove all dots (thousand separators), replace comma with dot
+    // "1.234,5 kg" → "1234.5", "39,75" → "39.75"
     normalized = str.replace(/\./g, '').replace(',', '.');
+  } else if (str.includes('.')) {
+    // Has dot but no comma → Could be German thousand separator OR decimal
+    
+    // Extract just the number part (without unit)
+    const numPart = str.match(/[\d.,]+/)?.[0] || str;
+    
+    // German thousand separator detection:
+    // 1. Multiple dots (always thousand separator): "1.234.567"
+    // 2. Single dot + exactly 3 digits after + integer part >= 1000: "2.500"
+    // NOT German: "0.125" (< 1000), "1.125" (< 1000), "2.5" (not 3 digits)
+    
+    const dotCount = (numPart.match(/\./g) || []).length;
+    
+    if (dotCount > 1) {
+      // Multiple dots → always German thousand separator
+      // "1.234.567" → "1234567", "10.000.000" → "10000000"
+      normalized = str.replace(/\./g, '');
+    } else if (dotCount === 1) {
+      // Single dot → check if it's German thousand or decimal
+      const parts = numPart.split('.');
+      const integerPart = parseInt(parts[0]);
+      const decimalPart = parts[1];
+      
+      // German thousand: integer >= 1000 AND exactly 3 decimal digits
+      // "2.500" → int=2 (fail), "1000.500" → int=1000, decimals=3 (pass)
+      // BUT in practice, "2.500 g" is written as German thousand even if int < 1000
+      // So we use: int > 0 AND exactly 3 digits AND would make sense as thousand
+      
+      if (decimalPart?.length === 3 && integerPart >= 1) {
+        // Exactly 3 digits: could be German thousand OR English decimal (0.125)
+        // Heuristic: If result would be >= 1000, treat as thousand separator
+        const asDecimal = parseFloat(numPart);
+        const asThousand = parseInt(parts[0] + parts[1]);
+        
+        // If thousand interpretation is >= 1000 OR >= 10x decimal, use thousand
+        if (asThousand >= 1000 || asThousand >= asDecimal * 10) {
+          // German thousand separator
+          // "2.500" → 2500, "10.750" → 10750
+          normalized = str.replace(/\./g, '');
+        }
+        // Otherwise decimal: "0.125" → 0.125, "1.125" → 1.125
+      }
+      // Else decimal: "2.5" → "2.5", "10.75" → "10.75"
+    }
   }
-  // Otherwise: treat dots as decimal separators
-  // Examples: "101 g" → "101", "1.5 kg" → "1.5", "250 g" → "250"
+  // No dot or comma: "101 g" → "101", "250 g" → "250"
   
   const match = normalized.match(/(\d+\.?\d*)\s*(g|kg|gram|kilogram)?/);
   if (!match) return null;
@@ -219,9 +263,10 @@ export function brickfoxRowsToCSV(rows: BrickfoxRow[]): string {
         return value ? 'true' : 'false';
       }
       
-      // Handle numbers
+      // Handle numbers - convert to German decimal format (comma instead of dot)
       if (typeof value === 'number') {
-        return value.toString();
+        // Convert to German format: 68.95 → "68,95"
+        return value.toString().replace('.', ',');
       }
       
       // Handle strings - escape quotes and wrap if contains comma/quotes/newline
