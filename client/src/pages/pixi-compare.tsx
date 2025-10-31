@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileText, CheckCircle, XCircle, Download, Database } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Upload, FileText, CheckCircle, XCircle, Download, Database, Save } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useLocation } from 'wouter';
 import type { Project, Supplier } from '@shared/schema';
 
 interface ComparisonResult {
@@ -34,6 +36,7 @@ interface ComparisonResponse {
 
 export default function PixiComparePage() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   // CSV Mode State
   const [file, setFile] = useState<File | null>(null);
@@ -53,6 +56,11 @@ export default function PixiComparePage() {
   const [result, setResult] = useState<ComparisonResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'csv' | 'project'>('project');
+  
+  // Save Project Dialog State
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'project') {
@@ -220,6 +228,70 @@ export default function PixiComparePage() {
     link.href = URL.createObjectURL(blob);
     link.download = `pixi-vergleich-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+  };
+
+  const handleSaveAsProject = async () => {
+    if (!projectName.trim()) {
+      setError('Bitte geben Sie einen Projektnamen ein');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('supabase_token');
+
+      // Create new project
+      const projectResponse = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: projectName.trim(),
+          description: `Pixi Vergleich vom ${new Date().toLocaleDateString('de-DE')}`,
+        }),
+      });
+
+      if (!projectResponse.ok) {
+        throw new Error('Projekt konnte nicht erstellt werden');
+      }
+
+      const projectData = await projectResponse.json();
+      const newProjectId = projectData.project.id;
+
+      // Convert comparison results to products and save them
+      const productsToSave = result!.products.map((p) => ({
+        name: p.produktname,
+        articleNumber: p.artikelnummer,
+        ean: p.ean,
+        manufacturer: p.hersteller,
+        pixi_status: p.pixi_status,
+      }));
+
+      for (const product of productsToSave) {
+        await fetch('/api/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...product,
+            projectId: newProjectId,
+          }),
+        });
+      }
+
+      // Navigate to the new project
+      setShowSaveDialog(false);
+      setProjectName('');
+      setLocation(`/projects/${newProjectId}`);
+    } catch (err: any) {
+      setError(err.message || 'Fehler beim Speichern des Projekts');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -455,14 +527,25 @@ export default function PixiComparePage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={downloadResults}
-                  variant="outline"
-                  className="w-full mt-4"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Ergebnisse als CSV herunterladen
-                </Button>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <Button
+                    onClick={downloadResults}
+                    variant="outline"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    CSV Download
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setProjectName(`Pixi Vergleich ${new Date().toLocaleDateString('de-DE')}`);
+                      setShowSaveDialog(true);
+                    }}
+                    variant="default"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Projekt speichern
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -523,6 +606,53 @@ export default function PixiComparePage() {
             </Card>
           </>
         )}
+
+        <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Als Projekt speichern</DialogTitle>
+              <DialogDescription>
+                Speichern Sie die Vergleichsergebnisse als neues Projekt in Ihrer Datenbank
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-name">Projektname</Label>
+                <Input
+                  id="project-name"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="z.B. Nitecore Katalog 2025"
+                  autoFocus
+                />
+              </div>
+              {result && (
+                <div className="text-sm text-muted-foreground">
+                  Es werden {result.summary.total} Produkte gespeichert 
+                  ({result.summary.neu} neu, {result.summary.vorhanden} vorhanden)
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSaveDialog(false);
+                  setProjectName('');
+                }}
+                disabled={saving}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleSaveAsProject}
+                disabled={!projectName.trim() || saving}
+              >
+                {saving ? 'Speichere...' : 'Projekt speichern'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
