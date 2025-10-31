@@ -541,6 +541,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const savedProducts = [];
       for (const product of products) {
+        // Use extractedData from request if provided, otherwise build from individual fields
+        const extractedData = product.extractedData && Array.isArray(product.extractedData) 
+          ? product.extractedData 
+          : [
+              product.ean ? { key: 'ean', value: product.ean, type: 'text' } : null,
+              product.hersteller ? { key: 'hersteller', value: product.hersteller, type: 'text' } : null,
+              product.preis ? { key: 'preis', value: product.preis, type: 'text' } : null,
+              product.gewicht ? { key: 'gewicht', value: product.gewicht, type: 'text' } : null,
+              product.kategorie ? { key: 'kategorie', value: product.kategorie, type: 'text' } : null,
+              product.source_url ? { key: 'source_url', value: product.source_url, type: 'text' } : null,
+            ].filter((item): item is { key: string; value: string; type: string } => item !== null);
+
         const productData = {
           projectId: project.id,
           name: product.produktname || 'Unbekanntes Produkt',
@@ -548,14 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           htmlCode: product.produktbeschreibung || '',
           previewText: product.seo_beschreibung || product.kurzbeschreibung || '',
           exactProductName: product.mediamarktname_v1 || product.mediamarktname_v2 || product.produktname || '',
-          extractedData: [
-            product.ean ? { key: 'ean', value: product.ean, type: 'text' } : null,
-            product.hersteller ? { key: 'hersteller', value: product.hersteller, type: 'text' } : null,
-            product.preis ? { key: 'preis', value: product.preis, type: 'text' } : null,
-            product.gewicht ? { key: 'gewicht', value: product.gewicht, type: 'text' } : null,
-            product.kategorie ? { key: 'kategorie', value: product.kategorie, type: 'text' } : null,
-            product.source_url ? { key: 'source_url', value: product.source_url, type: 'text' } : null,
-          ].filter((item): item is { key: string; value: string; type: string } => item !== null),
+          extractedData: extractedData,
           customAttributes: [
             { key: 'mediamarktname_v1', value: product.mediamarktname_v1 || '', type: 'text' },
             { key: 'mediamarktname_v2', value: product.mediamarktname_v2 || '', type: 'text' },

@@ -862,15 +862,29 @@ export default function URLScraper() {
       const products = scrapedProducts.map((product) => {
         const generatedContent = generatedDescriptions.get(product.articleNumber);
         
+        // Extract ALL fields dynamically (exclude metadata fields)
+        const excludeFields = ['articleNumber', 'productName', 'description', 'images'];
+        const extractedDataArray: any[] = [];
+        
+        Object.entries(product).forEach(([key, value]) => {
+          if (!excludeFields.includes(key) && value !== undefined && value !== null && value !== '') {
+            // Convert camelCase to lowercase (e.g., manufacturer -> hersteller)
+            const fieldMap: { [key: string]: string } = {
+              'manufacturer': 'hersteller',
+              'price': 'preis',
+              'weight': 'gewicht',
+              'category': 'kategorie'
+            };
+            const mappedKey = fieldMap[key] || key;
+            extractedDataArray.push({ key: mappedKey, value: String(value), type: 'text' as const });
+          }
+        });
+        
         return {
           produktname: product.productName,
           artikelnummer: product.articleNumber || '',
           produktbeschreibung: generatedContent?.description || '',
-          ean: product.ean || '',
-          hersteller: product.manufacturer || '',
-          preis: product.price || '',
-          gewicht: product.weight || '',
-          kategorie: product.category || '',
+          extractedData: extractedDataArray, // ALL scraped fields as array
           mediamarktname_v1: product.productName,
           seo_beschreibung: generatedContent?.seoDescription || product.description?.substring(0, 200) || '',
           source_url: url,
