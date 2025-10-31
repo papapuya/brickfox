@@ -631,16 +631,18 @@ export class SupabaseStorage implements IStorage {
       product_link_selector: data.productLinkSelector || null,
       session_cookies: data.sessionCookies || null,
       user_agent: data.userAgent || null,
-      login_url: data.loginUrl || null,
-      login_username_field: data.loginUsernameField || null,
-      login_password_field: data.loginPasswordField || null,
-      login_username: data.loginUsername || null,
+      // TEMPORARY FIX: Comment out login fields until Supabase schema cache refreshes
+      // login_url: data.loginUrl || null,
+      // login_username_field: data.loginUsernameField || null,
+      // login_password_field: data.loginPasswordField || null,
+      // login_username: data.loginUsername || null,
     };
 
     // SECURITY: Encrypt password before storing
-    if (data.loginPassword) {
-      insertData.login_password = encrypt(data.loginPassword);
-    }
+    // TEMPORARY FIX: Disabled until schema cache refreshes
+    // if (data.loginPassword) {
+    //   insertData.login_password = encrypt(data.loginPassword);
+    // }
 
     console.log('[createSupplier] Inserting data:', JSON.stringify(insertData, null, 2));
 
