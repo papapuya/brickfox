@@ -35,7 +35,7 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 - **Usage Tracking**: Real-time API call monitoring with limit enforcement.
 - **Protected Routes**: Server-side organization filtering and client-side protection.
 - **CSV Bulk Processing**: Upload and process product data via CSV for mass AI generation.
-- **URL Web Scraper**: Custom Cheerio-based scraper with configurable CSS selectors, intelligent auto-recognition, and a tables parser. Supports multi-URL scraping with timeout protection.
+- **URL Web Scraper**: Custom Cheerio-based scraper with configurable CSS selectors, intelligent auto-recognition, and a tables parser. Supports multi-URL scraping with timeout protection. **Automatic Login**: Suppliers can be configured with login credentials (encrypted at rest with AES-256) to access protected websites - system automatically performs login and captures session cookies for scraping requests.
 - **AI Generation**: Automated product descriptions in a MediaMarkt-like format using OpenAI GPT-4o-mini, with dynamic, product-specific prompts.
 - **Project Management**: Save and organize generated products into projects.
 - **Supplier Profiles**: Manage multiple suppliers with saved selectors.
@@ -73,3 +73,25 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 - **Matching Logic**: Article number (primary) + EAN validation (secondary)
 - **Security**: Full multi-tenant isolation with requireAuth middleware
 - **Documentation**: See `PIXI_INTEGRATION.md` for details
+
+### Automatic Supplier Login (31. Okt 2025) ✅ COMPLETED
+- **Feature**: Automatic authentication for protected supplier websites
+- **Database Schema**: 5 new columns in `suppliers` table:
+  - `login_url` - URL to POST credentials to
+  - `login_username_field` - Form field name for username
+  - `login_password_field` - Form field name for password
+  - `login_username` - Stored username
+  - `login_password` - **Encrypted with AES-256-CBC** (at rest)
+- **Security Implementation**:
+  - Passwords encrypted before storage using `server/encryption.ts` (AES-256-CBC)
+  - API responses NEVER return decrypted passwords (`loginPassword` always `undefined`)
+  - Internal-only `getSupplierWithCredentials()` method for login automation
+  - Session cookies captured and stored for future requests
+- **Login Flow** (`server/scraper-service.ts`):
+  1. POST form-encoded credentials to `login_url`
+  2. Capture `Set-Cookie` headers from response
+  3. Store cookies in `session_cookies` field
+  4. Attach cookies to all subsequent scraping requests
+- **UI**: Supplier dialog includes expandable "Login-Konfiguration" section
+- **Automatic Integration**: Scraping endpoints detect login config and perform authentication automatically
+- **Security Requirements**: `ENCRYPTION_KEY` environment variable must be configured in all environments
