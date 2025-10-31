@@ -142,9 +142,6 @@ export default function Suppliers() {
   };
 
   const handleSave = async () => {
-    console.log('[handleSave] formData:', formData);
-    console.log('[handleSave] formData.name:', formData.name);
-    
     if (!formData.name || !formData.name.trim()) {
       toast({
         title: "Fehler",
@@ -178,15 +175,9 @@ export default function Suppliers() {
         selectors: activeSelectors
       };
 
-      console.log('[handleSave] Sending payload:', JSON.stringify(payload, null, 2));
-      console.log('[handleSave] Payload type:', typeof payload);
-      console.log('[handleSave] Is editingSupplier?:', editingSupplier !== null);
-
       const data = editingSupplier 
         ? await apiPut<{ success: boolean; error?: string }>(`/api/suppliers/${editingSupplier.id}`, payload)
         : await apiPost<{ success: boolean; error?: string }>('/api/suppliers', payload);
-      
-      console.log('[handleSave] API response:', data);
 
       if (data.success) {
         toast({
