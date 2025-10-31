@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Project } from "@shared/schema";
 
 interface RawCSVRow {
@@ -438,21 +438,10 @@ export default function CSVBulkDescription() {
     try {
       if (selectedProjectId === "new") {
         // Neues Projekt erstellen
-        const response = await fetch('/api/bulk-save-to-project', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            projectName: projectName.trim(),
-            products: bulkProducts,
-          }),
+        const data = await apiRequest('POST', '/api/bulk-save-to-project', {
+          projectName: projectName.trim(),
+          products: bulkProducts,
         });
-
-        if (!response.ok) {
-          throw new Error('Fehler beim Speichern des Projekts');
-        }
-
-        const data = await response.json();
         
         toast({
           title: "Projekt gespeichert",
