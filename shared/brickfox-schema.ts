@@ -292,8 +292,8 @@ export interface BrickfoxExportMapping {
 export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   // Product fields - scraped
   'p_item_number': { source: 'scraped', field: 'articleNumber' },
-  'p_group_path[de]': { source: 'scraped', field: 'category' },
-  'p_brand': { source: 'scraped', field: 'manufacturer' },
+  'p_group_path[de]': { source: 'scraped', field: 'kategorie' },  // German field name
+  'p_brand': { source: 'scraped', field: 'hersteller' },  // German field name
   'p_name[de]': { source: 'scraped', field: 'productName' },
   
   // Product fields - constants
@@ -312,8 +312,8 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   'v_ean': { source: 'scraped', field: 'ean' },
   'v_manufacturers_item_number': { source: 'scraped', field: 'articleNumber' },
   'v_supplier_item_number': { source: 'scraped', field: 'articleNumber' },
-  'v_purchase_price': { source: 'scraped', field: 'price' },
-  'v_weight': { source: 'scraped', field: 'weight' },
+  'v_purchase_price': { source: 'scraped', field: 'preis' },  // German field name
+  'v_weight': { source: 'scraped', field: 'gewicht' },  // German field name
   'v_customs_tariff_text': { source: 'scraped', field: 'customsTariff' },
   
   // Variant fields - constants
