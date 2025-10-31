@@ -489,12 +489,22 @@ export default function ProjectDetail() {
                             const allKeys = new Set<string>();
                             products.forEach(product => {
                               const extractedData = product.extractedData || [];
+                              console.log('Product extracted data:', product.id, extractedData);
                               if (Array.isArray(extractedData)) {
                                 extractedData.forEach((item: any) => allKeys.add(item.key));
                               } else if (typeof extractedData === 'object') {
                                 Object.keys(extractedData).forEach(key => allKeys.add(key));
                               }
+                              // Also check customAttributes
+                              const customAttrs = product.customAttributes || [];
+                              console.log('Product custom attributes:', product.id, customAttrs);
+                              if (Array.isArray(customAttrs)) {
+                                customAttrs.forEach((item: any) => allKeys.add(item.key));
+                              } else if (typeof customAttrs === 'object') {
+                                Object.keys(customAttrs).forEach(key => allKeys.add(key));
+                              }
                             });
+                            console.log('All unique keys found:', Array.from(allKeys));
                             return Array.from(allKeys).map(key => (
                               <th key={key} className="text-left p-3 font-medium whitespace-nowrap">
                                 {key.charAt(0).toUpperCase() + key.slice(1)}
