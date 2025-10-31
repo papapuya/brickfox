@@ -359,11 +359,7 @@ export default function URLScraper() {
         });
 
         try {
-          // Add timeout protection (20 seconds per product)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-          const response = await apiRequest('POST', '/api/scrape-product', {
+          const data = await apiPost('/api/scrape-product', {
             url: productUrl,
             selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
             userAgent: userAgent || undefined,
@@ -371,9 +367,6 @@ export default function URLScraper() {
             supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
           });
 
-          clearTimeout(timeoutId);
-
-          const data = await response.json();
           if (data && data.product) {
             products.push(data.product);
           } else {
@@ -381,11 +374,7 @@ export default function URLScraper() {
             failedCount++;
           }
         } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') {
-            console.error(`Timeout beim Scrapen von ${productUrl}`);
-          } else {
-            console.error(`Fehler beim Scrapen von ${productUrl}:`, err);
-          }
+          console.error(`Fehler beim Scrapen von ${productUrl}:`, err);
           failedCount++;
         }
 
