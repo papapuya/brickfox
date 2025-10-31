@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Package, Download, Table as TableIcon, Eye, Sparkles, FileText } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
@@ -44,7 +43,6 @@ export default function URLScraper() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Multi-Product Scraping
-  const [scrapingMode, setScrapingMode] = useState<"single" | "list">("single");
   const [productLinkSelector, setProductLinkSelector] = useState("");
   const [maxProducts, setMaxProducts] = useState(50);
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
@@ -67,10 +65,6 @@ export default function URLScraper() {
   const [sessionCookies, setSessionCookies] = useState("");
   const [userAgent, setUserAgent] = useState("");
 
-  // Test-Scrape with Preview
-  const [showTestPreview, setShowTestPreview] = useState(false);
-  const [testResults, setTestResults] = useState<any>(null);
-  const [isTesting, setIsTesting] = useState(false);
   
   // HTML Preview Dialog
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
@@ -168,25 +162,6 @@ export default function URLScraper() {
     weight: ".weight",
     category: ".breadcrumb"
   });
-
-  // BUGFIX: Clear state when switching tabs to prevent data leakage
-  useEffect(() => {
-    if (scrapingMode === 'single') {
-      // Switched to single product mode -> clear list data
-      setScrapedProducts([]);
-      setGeneratedDescriptions(new Map());
-      setBatchProgress({ current: 0, total: 0, status: '' });
-      setIsGeneratingBatch(false);
-      setAiGenerationProgress({ current: 0, total: 0 });
-    } else {
-      // Switched to list mode -> clear single product data
-      setScrapedProduct(null);
-      setGeneratedDescription('');
-      setIsGenerating(false);
-      setTestResults(null);
-      setShowTestPreview(false);
-    }
-  }, [scrapingMode]);
 
   const handleScrapeProductList = async () => {
     if (!url.trim()) {
@@ -447,135 +422,6 @@ export default function URLScraper() {
 
     } catch (error) {
       console.error('Product list scraping error:', error);
-      toast({
-        title: "Fehler",
-        description: error instanceof Error ? error.message : 'Scraping fehlgeschlagen',
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      abortScrapingRef.current = false; // Reset abort flag
-    }
-  };
-
-  const handleTestScrape = async () => {
-    if (!url.trim()) {
-      toast({
-        title: "Fehler",
-        description: "Bitte geben Sie eine URL ein",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsTesting(true);
-    try {
-      // Build selectors object (only include non-empty selectors)
-      const activeSelectors: any = {};
-      Object.entries(selectors).forEach(([key, value]) => {
-        if (value.trim()) {
-          activeSelectors[key] = value;
-        }
-      });
-
-      const token = localStorage.getItem('supabase_token');
-      const response = await fetch('/api/test-scrape-product', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-          selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
-          userAgent: userAgent || undefined,
-          cookies: sessionCookies || undefined,
-          supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Test-Scraping fehlgeschlagen');
-      }
-
-      const data = await response.json();
-      setTestResults(data.product);
-      setShowTestPreview(true);
-      
-      toast({
-        title: "Test abgeschlossen",
-        description: `Produktdaten analysiert - Vorschau verfügbar`,
-      });
-
-    } catch (error) {
-      console.error('Test scraping error:', error);
-      toast({
-        title: "Fehler",
-        description: error instanceof Error ? error.message : 'Test-Scraping fehlgeschlagen',
-        variant: "destructive",
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleScrape = async () => {
-    if (!url.trim()) {
-      toast({
-        title: "Fehler",
-        description: "Bitte geben Sie eine URL ein",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    setGeneratedDescription("");
-    try {
-      // Build selectors object (only include non-empty selectors)
-      const activeSelectors: any = {};
-      Object.entries(selectors).forEach(([key, value]) => {
-        if (value.trim()) {
-          activeSelectors[key] = value;
-        }
-      });
-
-      const token = localStorage.getItem('supabase_token');
-      const response = await fetch('/api/scrape-product', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-          selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
-          userAgent: userAgent || undefined,
-          cookies: sessionCookies || undefined,
-          supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Scraping fehlgeschlagen');
-      }
-
-      const data = await response.json();
-      // Clear description field initially - will be filled after AI generation
-      setScrapedProduct({
-        ...data.product,
-        description: '' // Empty until AI generates content
-      });
-      
-      toast({
-        title: "Erfolgreich",
-        description: `Produktdaten von ${new URL(url).hostname} extrahiert`,
-      });
-
-    } catch (error) {
-      console.error('Scraping error:', error);
       toast({
         title: "Fehler",
         description: error instanceof Error ? error.message : 'Scraping fehlgeschlagen',
@@ -1000,87 +846,9 @@ export default function URLScraper() {
           </p>
         </div>
 
-        {/* URL Input with Tabs */}
+        {/* Lieferanten-Shop Scraper */}
         <Card className="p-6">
-          <Tabs value={scrapingMode} onValueChange={(value) => setScrapingMode(value as "single" | "list")}>
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="single">
-                <Package className="w-4 h-4 mr-2" />
-                Einzelnes Produkt
-              </TabsTrigger>
-              <TabsTrigger value="list">
-                <List className="w-4 h-4 mr-2" />
-                Produktliste
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="single" className="space-y-4">
-              <div>
-                <Label htmlFor="url">Produkt-URL</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="url"
-                    type="url"
-                    placeholder="https://www.beispiel.de/produkt/akku-123"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isLoading) {
-                        handleScrape();
-                      }
-                    }}
-                  />
-                  <Button onClick={handleTestScrape} disabled={isTesting || isLoading} variant="outline">
-                    {isTesting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Teste...
-                      </>
-                    ) : (
-                      <>
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        Test-Scrape
-                      </>
-                    )}
-                  </Button>
-                  <Button onClick={handleScrape} disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Scraping...
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="w-4 h-4 mr-2" />
-                        Scrapen
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="supplier-select-single">Lieferant auswählen (optional)</Label>
-                <Select value={selectedSupplierId} onValueChange={handleSupplierSelect}>
-                  <SelectTrigger id="supplier-select-single" className="mt-2">
-                    <SelectValue placeholder="Lieferant wählen oder manuell konfigurieren" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Keine Vorlage (Auto-Erkennung)</SelectItem>
-                    {suppliersData?.suppliers?.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  💡 Gespeicherte CSS-Selektoren für diesen Lieferanten laden
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="list" className="space-y-4">
+          <div className="space-y-4">
               <div>
                 <Label htmlFor="list-url">Kategorieseiten-URL</Label>
                 <Input
@@ -1237,8 +1005,7 @@ export default function URLScraper() {
                   <Progress value={(batchProgress.current / batchProgress.total) * 100} />
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+          </div>
 
           {/* Advanced Selectors */}
           <div className="mt-4 space-y-4">
@@ -1845,84 +1612,6 @@ export default function URLScraper() {
                 )}
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Test-Scrape Preview Dialog */}
-        <Dialog open={showTestPreview} onOpenChange={setShowTestPreview}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Test-Scrape Ergebnisse</DialogTitle>
-              <DialogDescription>
-                Überprüfen Sie, welche Felder erfolgreich extrahiert wurden
-              </DialogDescription>
-            </DialogHeader>
-            
-            {testResults && (
-              <div className="space-y-6">
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <h4 className="font-semibold mb-2">✅ Test erfolgreich</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Produktdaten wurden erfolgreich extrahiert. Sie können jetzt mit "Produktdaten scrapen" fortfahren.
-                  </p>
-                </div>
-
-                {/* Results Table */}
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Feld</TableHead>
-                        <TableHead>Extrahierter Wert</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Object.entries(testResults).map(([key, value]: [string, any], index: number) => {
-                        // Skip internal fields
-                        if (key === 'autoExtractedDescription' || key === 'technicalDataTable' || key === 'pdfManualUrl' || key === 'safetyWarnings' || key === 'rawHtml' || key === 'images') return null;
-                        if (!value) return null;
-                        
-                        return (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{key}</TableCell>
-                            <TableCell className="max-w-md">
-                              <span className="break-words text-sm">
-                                {typeof value === 'object' ? JSON.stringify(value) : String(value).substring(0, 150)}
-                                {String(value).length > 150 ? '...' : ''}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                      {testResults.images && testResults.images.length > 0 && (
-                        <TableRow>
-                          <TableCell className="font-medium">images</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">{testResults.images.length} gefunden</span>
-                              {testResults.images[0] && (
-                                <img 
-                                  src={testResults.images[0]} 
-                                  alt="Preview"
-                                  className="w-12 h-12 object-cover rounded border"
-                                />
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Action Button */}
-                <div className="flex gap-3 justify-end">
-                  <Button onClick={() => setShowTestPreview(false)}>
-                    Schließen
-                  </Button>
-                </div>
-              </div>
-            )}
           </DialogContent>
         </Dialog>
 
