@@ -1,5 +1,14 @@
 import * as cheerio from 'cheerio';
 
+export interface LoginConfig {
+  loginUrl: string;
+  usernameField: string;
+  passwordField: string;
+  username: string;
+  password: string;
+  userAgent?: string;
+}
+
 export interface ScraperSelectors {
   articleNumber?: string;
   productName?: string;
@@ -57,6 +66,64 @@ export interface ScrapeOptions {
   userAgent?: string;
   cookies?: string;
   timeout?: number;
+}
+
+/**
+ * Login to a website and retrieve session cookies
+ * Sends login form data and captures cookies from response
+ */
+export async function performLogin(config: LoginConfig): Promise<string> {
+  const {
+    loginUrl,
+    usernameField,
+    passwordField,
+    username,
+    password,
+    userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+  } = config;
+
+  console.log(`[Login] Attempting login to ${loginUrl}`);
+
+  try {
+    // Prepare form data
+    const formData = new URLSearchParams();
+    formData.append(usernameField, username);
+    formData.append(passwordField, password);
+
+    // Send POST request with credentials
+    const response = await fetch(loginUrl, {
+      method: 'POST',
+      headers: {
+        'User-Agent': userAgent,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'de,en-US;q=0.7,en;q=0.3'
+      },
+      body: formData.toString(),
+      redirect: 'manual' // Don't follow redirects automatically
+    });
+
+    // Extract cookies from Set-Cookie headers
+    const setCookieHeaders = response.headers.getSetCookie();
+    
+    if (!setCookieHeaders || setCookieHeaders.length === 0) {
+      console.log('[Login] No cookies received from login response');
+      return '';
+    }
+
+    // Parse cookies and build cookie string
+    const cookies = setCookieHeaders.map(cookie => {
+      // Extract cookie name and value (before first semicolon)
+      const match = cookie.match(/^([^=]+)=([^;]+)/);
+      return match ? `${match[1]}=${match[2]}` : '';
+    }).filter(c => c).join('; ');
+
+    console.log(`[Login] Successfully obtained ${setCookieHeaders.length} cookies`);
+    return cookies;
+  } catch (error) {
+    console.error('[Login] Login failed:', error);
+    throw new Error(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**

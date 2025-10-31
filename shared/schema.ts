@@ -353,6 +353,11 @@ export const supplierSchema = z.object({
   productLinkSelector: z.string().optional(),
   sessionCookies: z.string().optional(),
   userAgent: z.string().optional(),
+  loginUrl: z.string().optional(),
+  loginUsernameField: z.string().optional(),
+  loginPasswordField: z.string().optional(),
+  loginUsername: z.string().optional(),
+  loginPassword: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -368,6 +373,11 @@ export const createSupplierSchema = z.object({
   productLinkSelector: z.string().optional(),
   sessionCookies: z.string().optional(),
   userAgent: z.string().optional(),
+  loginUrl: z.string().optional(),
+  loginUsernameField: z.string().optional(),
+  loginPasswordField: z.string().optional(),
+  loginUsername: z.string().optional(),
+  loginPassword: z.string().optional(),
 });
 
 export type CreateSupplier = z.infer<typeof createSupplierSchema>;

@@ -14,7 +14,7 @@ import {
 } from './stripe-service';
 import multer from "multer";
 import { analyzeCSV, generateProductDescription, convertTextToHTML, refineDescription, generateProductName, processProductWithNewWorkflow } from "./ai-service";
-import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors } from "./scraper-service";
+import { scrapeProduct, scrapeProductList, defaultSelectors, type ScraperSelectors, performLogin } from "./scraper-service";
 import { pixiService } from "./services/pixi-service";
 import Papa from "papaparse";
 import { nanoid } from "nanoid";
@@ -98,6 +98,63 @@ async function trackApiUsage(req: any, res: any, next: any) {
     await supabaseStorage.incrementApiCalls(req.user.id);
   }
   next();
+}
+
+/**
+ * Helper function to perform login if supplier has login credentials configured
+ * Returns cookies to use for scraping requests
+ */
+async function getScrapingCookies(supplierId?: string, providedCookies?: string): Promise<string> {
+  // If cookies are already provided, use them
+  if (providedCookies) {
+    console.log('[getScrapingCookies] Using provided cookies');
+    return providedCookies;
+  }
+
+  // If no supplier ID, return empty cookies
+  if (!supplierId) {
+    console.log('[getScrapingCookies] No supplier ID, returning empty cookies');
+    return '';
+  }
+
+  // SECURITY: Fetch supplier data with decrypted credentials (internal use only)
+  const supplier = await supabaseStorage.getSupplierWithCredentials(supplierId);
+  if (!supplier) {
+    console.log('[getScrapingCookies] Supplier not found');
+    return '';
+  }
+
+  // Check if supplier has login credentials configured
+  if (!supplier.loginUrl || !supplier.loginUsernameField || !supplier.loginPasswordField || 
+      !supplier.loginUsername || !supplier.loginPassword) {
+    console.log('[getScrapingCookies] Supplier has no login credentials configured');
+    return supplier.sessionCookies || '';
+  }
+
+  // Perform login and get cookies
+  try {
+    console.log(`[getScrapingCookies] Performing login for supplier ${supplier.name}`);
+    const cookies = await performLogin({
+      loginUrl: supplier.loginUrl,
+      usernameField: supplier.loginUsernameField,
+      passwordField: supplier.loginPasswordField,
+      username: supplier.loginUsername,
+      password: supplier.loginPassword,
+      userAgent: supplier.userAgent
+    });
+
+    // Optionally update supplier with session cookies for future use
+    if (cookies) {
+      await supabaseStorage.updateSupplier(supplierId, { sessionCookies: cookies });
+      console.log(`[getScrapingCookies] Updated supplier session cookies`);
+    }
+
+    return cookies;
+  } catch (error) {
+    console.error('[getScrapingCookies] Login failed:', error);
+    // Fallback to stored session cookies if login fails
+    return supplier.sessionCookies || '';
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -523,17 +580,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Single product scraping is also FREE
   app.post('/api/scrape-product', requireAuth, async (req, res) => {
     try {
-      const { url, selectors, userAgent, cookies } = req.body;
+      const { url, selectors, userAgent, cookies, supplierId } = req.body;
       
       if (!url) {
         return res.status(400).json({ error: 'URL ist erforderlich' });
       }
 
+      // Get cookies from login if supplier has credentials configured
+      const effectiveCookies = await getScrapingCookies(supplierId, cookies);
+
       const product = await scrapeProduct({ 
         url, 
         selectors: selectors || defaultSelectors,
         userAgent,
-        cookies
+        cookies: effectiveCookies
       });
       
       await trackApiUsage(req, res, () => {});
@@ -545,17 +605,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/test-scrape-product', requireAuth, async (req, res) => {
     try {
-      const { url, selectors, userAgent, cookies } = req.body;
+      const { url, selectors, userAgent, cookies, supplierId } = req.body;
       
       if (!url) {
         return res.status(400).json({ error: 'URL ist erforderlich' });
       }
 
+      // Get cookies from login if supplier has credentials configured
+      const effectiveCookies = await getScrapingCookies(supplierId, cookies);
+
       const product = await scrapeProduct({ 
         url, 
         selectors: selectors || defaultSelectors,
         userAgent,
-        cookies
+        cookies: effectiveCookies
       });
       
       res.json({ product });
@@ -567,17 +630,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Scraping is FREE - no API limit check
   app.post('/api/scrape-product-list', requireAuth, async (req, res) => {
     try {
-      const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies } = req.body;
+      const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies, supplierId } = req.body;
       
       if (!listUrl) {
         return res.status(400).json({ error: 'Listen-URL ist erforderlich' });
       }
 
+      // Get cookies from login if supplier has credentials configured
+      const effectiveCookies = await getScrapingCookies(supplierId, cookies);
+
       const result = await scrapeProductList(
         listUrl,
         productLinkSelector || 'a.product-link',
         maxProducts || 50,
-        { selectors: selectors || defaultSelectors, userAgent, cookies }
+        { selectors: selectors || defaultSelectors, userAgent, cookies: effectiveCookies }
       );
       
       // No usage tracking for scraping (it's free)

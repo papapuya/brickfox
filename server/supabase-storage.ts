@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase';
+import { encrypt, decrypt } from './encryption';
 
 // Use admin client for backend operations to bypass RLS
 const db = supabaseAdmin || supabase;
@@ -711,6 +712,14 @@ export class SupabaseStorage implements IStorage {
     if (data.productLinkSelector !== undefined) updateData.product_link_selector = data.productLinkSelector;
     if (data.sessionCookies !== undefined) updateData.session_cookies = data.sessionCookies;
     if (data.userAgent !== undefined) updateData.user_agent = data.userAgent;
+    if (data.loginUrl !== undefined) updateData.login_url = data.loginUrl;
+    if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
+    if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
+    if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
+    // SECURITY: Encrypt password before storing
+    if (data.loginPassword !== undefined) {
+      updateData.login_password = data.loginPassword ? encrypt(data.loginPassword) : null;
+    }
 
     const { data: supplier, error } = await db
       .from('suppliers')
@@ -804,6 +813,8 @@ export class SupabaseStorage implements IStorage {
   }
 
   private mapSupplier(supplier: any): Supplier {
+    // SECURITY: DO NOT return decrypted password in API responses
+    // Password is only decrypted internally when needed for login
     return {
       id: supplier.id,
       name: supplier.name,
@@ -814,8 +825,42 @@ export class SupabaseStorage implements IStorage {
       productLinkSelector: supplier.product_link_selector || undefined,
       sessionCookies: supplier.session_cookies || undefined,
       userAgent: supplier.user_agent || undefined,
+      loginUrl: supplier.login_url || undefined,
+      loginUsernameField: supplier.login_username_field || undefined,
+      loginPasswordField: supplier.login_password_field || undefined,
+      loginUsername: supplier.login_username || undefined,
+      loginPassword: undefined, // SECURITY: Never expose password to clients
       createdAt: supplier.created_at,
       updatedAt: supplier.updated_at,
+    };
+  }
+
+  /**
+   * Internal method to get supplier with decrypted password for login purposes
+   * SECURITY: Only use this internally, never expose to API responses
+   */
+  async getSupplierWithCredentials(id: string): Promise<Supplier | null> {
+    const { data: supplier, error } = await db
+      .from('suppliers')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !supplier) return null;
+
+    // Decrypt password for internal use
+    let decryptedPassword: string | undefined = undefined;
+    if (supplier.login_password) {
+      try {
+        decryptedPassword = decrypt(supplier.login_password);
+      } catch (error) {
+        console.error('[getSupplierWithCredentials] Failed to decrypt login password:', error);
+      }
+    }
+
+    return {
+      ...this.mapSupplier(supplier),
+      loginPassword: decryptedPassword
     };
   }
 }
