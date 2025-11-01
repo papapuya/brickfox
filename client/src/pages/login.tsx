@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Benutzername oder E-Mail erforderlich'),
@@ -46,10 +47,20 @@ export default function Login() {
       
       return res.json();
     },
-    onSuccess: (data) => {
-      // Store access token for Supabase Auth
-      if (data.access_token) {
-        localStorage.setItem('supabase_token', data.access_token);
+    onSuccess: async (data) => {
+      // Set Supabase session properly
+      if (data.session) {
+        const { error } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        if (error) {
+          console.error('Failed to set Supabase session:', error);
+        } else {
+          console.log('✅ Supabase session set successfully');
+          localStorage.setItem('supabase_token', data.session.access_token);
+        }
       }
       
       toast({
@@ -57,12 +68,14 @@ export default function Login() {
         description: 'Sie werden weitergeleitet...',
       });
       
-      // Redirect based on user role
-      if (data.user?.isAdmin) {
-        window.location.href = '/admin/dashboard';
-      } else {
-        window.location.href = '/dashboard';
-      }
+      // Wait a moment for session to be set, then redirect
+      setTimeout(() => {
+        if (data.user?.isAdmin) {
+          window.location.href = '/admin/dashboard';
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }, 300);
     },
     onError: (error: Error) => {
       setIsLoading(false);
