@@ -61,6 +61,25 @@ async function requireAuth(req: any, res: any, next: any) {
   }
 
   req.user = user;
+
+  // Set tenant_id in PostgreSQL session for RLS policies
+  if (user.tenantId && supabaseAdmin) {
+    try {
+      await supabaseAdmin.rpc('set_config', {
+        setting_name: 'request.jwt.claims',
+        setting_value: JSON.stringify({
+          sub: user.id,
+          tenant_id: user.tenantId,
+          role: user.role || 'member',
+          user_role: user.role || 'member'
+        }),
+        is_local: true
+      });
+    } catch (error) {
+      console.error('[requireAuth] Failed to set tenant context:', error);
+    }
+  }
+
   next();
 }
 

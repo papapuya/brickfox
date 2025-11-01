@@ -1,11 +1,13 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from './supabase';
 
 interface User {
   id: string;
   email: string;
   username?: string;
   isAdmin: boolean;
+  tenantId?: string;
   subscriptionStatus?: string;
   planId?: string;
   apiCallsUsed: number;
@@ -25,12 +27,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['/api/auth/user'],
     queryFn: async () => {
-      const token = localStorage.getItem('supabase_token');
+      // Check Supabase session first
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (!token) {
+      if (error || !session) {
+        localStorage.removeItem('supabase_token');
         return { user: null };
       }
+
+      // Store token for API calls
+      const token = session.access_token;
+      localStorage.setItem('supabase_token', token);
       
+      // Fetch user data from backend with tenant_id
       const res = await fetch('/api/auth/user', { 
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -45,7 +54,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     retry: false,
+    refetchOnWindowFocus: true,
   });
+
+  // Listen for auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.access_token) {
+          localStorage.setItem('supabase_token', session.access_token);
+          refetch();
+        }
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('supabase_token');
+        refetch();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [refetch]);
 
   const value: AuthContextType = {
     user: data?.user || null,

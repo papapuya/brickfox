@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { storage } from './storage';
+import { supabaseStorage } from './supabase-storage';
 
 // Stripe Configuration
 const getStripe = () => {
@@ -52,7 +52,7 @@ export async function createStripeCustomer(userId: string, email: string) {
     },
   });
   
-  await storage.updateUserSubscription(userId, {
+  await supabaseStorage.updateUserSubscription(userId, {
     stripeCustomerId: customer.id,
   });
   
@@ -78,7 +78,7 @@ export async function createCheckoutSession(
   }
   
   // Get or create customer
-  const user = await storage.getUserById(userId);
+  const user = await supabaseStorage.getUserById(userId);
   let customerId = user?.stripeCustomerId;
   
   if (!customerId) {
@@ -168,7 +168,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       if (session.subscription) {
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
         
-        await storage.updateUserSubscription(userId, {
+        await supabaseStorage.updateUserSubscription(userId, {
           subscriptionStatus: 'active',
           subscriptionId: subscription.id,
           planId,
@@ -190,13 +190,13 @@ export async function handleWebhookEvent(event: Stripe.Event) {
         const userId = subscription.metadata?.userId;
         
         if (userId) {
-          await storage.updateUserSubscription(userId, {
+          await supabaseStorage.updateUserSubscription(userId, {
             subscriptionStatus: 'active',
             currentPeriodEnd: new Date((subscription.currentPeriodEnd || 0) * 1000).toISOString(),
           });
           
           // Reset API calls counter for new billing period
-          await storage.resetApiCalls(userId);
+          await supabaseStorage.resetApiCalls(userId);
           
           console.log(`✅ Payment succeeded, subscription renewed for user ${userId}`);
         }
@@ -213,7 +213,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
         const userId = subscription.metadata?.userId;
         
         if (userId) {
-          await storage.updateUserSubscription(userId, {
+          await supabaseStorage.updateUserSubscription(userId, {
             subscriptionStatus: 'past_due',
           });
           
@@ -237,7 +237,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
           newPlanId = subscription.metadata.planId as any;
         }
         
-        await storage.updateUserSubscription(userId, {
+        await supabaseStorage.updateUserSubscription(userId, {
           subscriptionStatus: subscription.status,
           currentPeriodEnd: new Date((subscription.currentPeriodEnd || 0) * 1000).toISOString(),
           planId: newPlanId,
@@ -254,7 +254,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       const userId = subscription.metadata?.userId;
       
       if (userId) {
-        await storage.updateUserSubscription(userId, {
+        await supabaseStorage.updateUserSubscription(userId, {
           subscriptionStatus: 'canceled',
           subscriptionId: undefined,
           planId: undefined,
@@ -272,7 +272,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
 
 // Get Subscription Status
 export async function getSubscriptionStatus(userId: string) {
-  const user = await storage.getUserById(userId);
+  const user = await supabaseStorage.getUserById(userId);
   
   if (!user) {
     throw new Error('User not found');
