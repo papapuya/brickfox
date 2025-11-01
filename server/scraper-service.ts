@@ -512,22 +512,26 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }
   }
 
-  // Calculate VK Price from EK Price (VK = EK × 2 × 1.19)
+  // Calculate VK Price from EK Price (VK = EK × 2 × 1.19, always ending in .95)
   if (product.ekPrice) {
     const ekValue = parseFloat(product.ekPrice.replace(',', '.'));
     if (!isNaN(ekValue)) {
-      const vkValue = ekValue * 2 * 1.19;
-      product.vkPrice = vkValue.toFixed(2);
-      console.log(`💰 Calculated VK Price: EK ${product.ekPrice}€ → VK ${product.vkPrice}€`);
+      const vkCalculated = ekValue * 2 * 1.19;
+      // Round to .95 ending (e.g., 91.76 → 91.95)
+      const vkRounded = Math.floor(vkCalculated) + 0.95;
+      product.vkPrice = vkRounded.toFixed(2);
+      console.log(`💰 Calculated VK Price: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2)})`);
     }
   } else if (product.price) {
     // If price field exists, treat it as EK and calculate VK
     const priceValue = parseFloat(product.price.replace(',', '.'));
     if (!isNaN(priceValue)) {
       product.ekPrice = product.price;
-      const vkValue = priceValue * 2 * 1.19;
-      product.vkPrice = vkValue.toFixed(2);
-      console.log(`💰 Calculated VK Price from price field: EK ${product.ekPrice}€ → VK ${product.vkPrice}€`);
+      const vkCalculated = priceValue * 2 * 1.19;
+      // Round to .95 ending (e.g., 91.76 → 91.95)
+      const vkRounded = Math.floor(vkCalculated) + 0.95;
+      product.vkPrice = vkRounded.toFixed(2);
+      console.log(`💰 Calculated VK Price from price field: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2)})`);
     }
   }
 
