@@ -382,7 +382,7 @@ export class SupabaseStorage implements IStorage {
 
       const projects = await query;
 
-      return projects.map(p => ({
+      return projects.map((p: any) => ({
         id: p.id,
         name: p.name,
         createdAt: p.createdAt!.toISOString(),
@@ -514,6 +514,13 @@ export class SupabaseStorage implements IStorage {
 
     if (isDevelopment) {
       // Use Helium DB in development
+      // First delete all products in this project (CASCADE delete)
+      await heliumDb
+        .delete()
+        .from(productsInProjectsTable)
+        .where(eq(productsInProjectsTable.projectId, id));
+      
+      // Then delete the project itself
       await heliumDb
         .delete()
         .from(projectsTable)
@@ -525,6 +532,13 @@ export class SupabaseStorage implements IStorage {
         throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
       }
 
+      // First delete all products in this project (CASCADE delete)
+      await supabaseAdmin
+        .from('products_in_projects')
+        .delete()
+        .eq('project_id', id);
+
+      // Then delete the project itself
       const { error } = await supabaseAdmin
         .from('projects')
         .delete()
@@ -621,7 +635,7 @@ export class SupabaseStorage implements IStorage {
         .where(eq(productsInProjectsTable.projectId, projectId))
         .orderBy(desc(productsInProjectsTable.createdAt));
 
-      return products.map(p => this.mapProduct(p));
+      return products.map((p: any) => this.mapProduct(p));
     } else {
       // Use Supabase in production
       if (!supabaseAdmin) {
@@ -641,48 +655,85 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProduct(id: string, userId?: string): Promise<ProductInProject | null> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
+    if (isDevelopment) {
+      // Use Helium DB in development
+      const [product] = await heliumDb
+        .select()
+        .from(productsInProjectsTable)
+        .where(eq(productsInProjectsTable.id, id))
+        .limit(1);
+
+      if (!product) return null;
+
+      if (userId) {
+        const user = await this.getUserById(userId);
+        if (!user) {
+          console.warn(`[SECURITY] Invalid user ${userId} tried to access product ${id}`);
+          return null;
+        }
+        
+        if (!user.tenantId) {
+          console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
+          return null;
+        }
+        
+        if (!product.tenantId) {
+          console.warn(`[SECURITY CRITICAL] Product ${id} has NO tenant_id - blocking access (needs backfill)`);
+          return null;
+        }
+        
+        if (user.tenantId !== product.tenantId) {
+          console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access product ${id} (org: ${product.tenantId})`);
+          return null;
+        }
+      }
+
+      return this.mapProduct(product);
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const { data: product, error } = await supabaseAdmin
+        .from('products_in_projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error || !product) return null;
+
+      if (userId) {
+        const user = await this.getUserById(userId);
+        if (!user) {
+          console.warn(`[SECURITY] Invalid user ${userId} tried to access product ${id}`);
+          return null;
+        }
+        
+        if (!user.tenantId) {
+          console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
+          return null;
+        }
+        
+        if (!product.tenant_id) {
+          console.warn(`[SECURITY CRITICAL] Product ${id} has NO tenant_id - blocking access (needs backfill)`);
+          return null;
+        }
+        
+        if (user.tenantId !== product.tenant_id) {
+          console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access product ${id} (org: ${product.tenant_id})`);
+          return null;
+        }
+      }
+
+      return this.mapProduct(product);
     }
-
-    const { data: product, error } = await supabaseAdmin
-      .from('products_in_projects')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !product) return null;
-
-    if (userId) {
-      const user = await this.getUserById(userId);
-      if (!user) {
-        console.warn(`[SECURITY] Invalid user ${userId} tried to access product ${id}`);
-        return null;
-      }
-      
-      if (!user.tenantId) {
-        console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
-        return null;
-      }
-      
-      if (!product.tenant_id) {
-        console.warn(`[SECURITY CRITICAL] Product ${id} has NO tenant_id - blocking access (needs backfill)`);
-        return null;
-      }
-      
-      if (user.tenantId !== product.tenant_id) {
-        console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access product ${id} (org: ${product.tenant_id})`);
-        return null;
-      }
-    }
-
-    return this.mapProduct(product);
   }
 
   async updateProduct(id: string, data: UpdateProductInProject, userId?: string): Promise<ProductInProject | null> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     if (userId) {
       const existingProduct = await this.getProduct(id, userId);
@@ -692,30 +743,62 @@ export class SupabaseStorage implements IStorage {
       }
     }
 
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.files !== undefined) updateData.files = data.files;
-    if (data.htmlCode !== undefined) updateData.html_code = data.htmlCode;
-    if (data.previewText !== undefined) updateData.preview_text = data.previewText;
-    if (data.extractedData !== undefined) updateData.extracted_data = data.extractedData;
-    if (data.template !== undefined) updateData.template = data.template;
-    if (data.customAttributes !== undefined) updateData.custom_attributes = data.customAttributes;
-    if (data.exactProductName !== undefined) updateData.exact_product_name = data.exactProductName;
-    if (data.articleNumber !== undefined) updateData.article_number = data.articleNumber;
-    if (data.pixi_status !== undefined) updateData.pixi_status = data.pixi_status;
-    if (data.pixi_ean !== undefined) updateData.pixi_ean = data.pixi_ean;
-    if (data.pixi_checked_at !== undefined) updateData.pixi_checked_at = data.pixi_checked_at;
+    if (isDevelopment) {
+      // Use Helium DB in development
+      const updateData: any = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.files !== undefined) updateData.files = data.files;
+      if (data.htmlCode !== undefined) updateData.htmlCode = data.htmlCode;
+      if (data.previewText !== undefined) updateData.previewText = data.previewText;
+      if (data.extractedData !== undefined) updateData.extractedData = data.extractedData;
+      if (data.template !== undefined) updateData.template = data.template;
+      if (data.customAttributes !== undefined) updateData.customAttributes = data.customAttributes;
+      if (data.exactProductName !== undefined) updateData.exactProductName = data.exactProductName;
+      if (data.articleNumber !== undefined) updateData.articleNumber = data.articleNumber;
+      if (data.pixi_status !== undefined) updateData.pixiStatus = data.pixi_status;
+      if (data.pixi_ean !== undefined) updateData.pixiEan = data.pixi_ean;
+      if (data.pixi_checked_at !== undefined) updateData.pixiCheckedAt = data.pixi_checked_at;
 
-    const { data: product, error } = await supabaseAdmin
-      .from('products_in_projects')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+      const [product] = await heliumDb
+        .update(productsInProjectsTable)
+        .set(updateData)
+        .where(eq(productsInProjectsTable.id, id))
+        .returning();
 
-    if (error || !product) return null;
+      if (!product) return null;
 
-    return this.mapProduct(product);
+      return this.mapProduct(product);
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const updateData: any = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.files !== undefined) updateData.files = data.files;
+      if (data.htmlCode !== undefined) updateData.html_code = data.htmlCode;
+      if (data.previewText !== undefined) updateData.preview_text = data.previewText;
+      if (data.extractedData !== undefined) updateData.extracted_data = data.extractedData;
+      if (data.template !== undefined) updateData.template = data.template;
+      if (data.customAttributes !== undefined) updateData.custom_attributes = data.customAttributes;
+      if (data.exactProductName !== undefined) updateData.exact_product_name = data.exactProductName;
+      if (data.articleNumber !== undefined) updateData.article_number = data.articleNumber;
+      if (data.pixi_status !== undefined) updateData.pixi_status = data.pixi_status;
+      if (data.pixi_ean !== undefined) updateData.pixi_ean = data.pixi_ean;
+      if (data.pixi_checked_at !== undefined) updateData.pixi_checked_at = data.pixi_checked_at;
+
+      const { data: product, error } = await supabaseAdmin
+        .from('products_in_projects')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error || !product) return null;
+
+      return this.mapProduct(product);
+    }
   }
 
   async deleteProduct(id: string, userId?: string): Promise<boolean> {
@@ -895,7 +978,7 @@ export class SupabaseStorage implements IStorage {
 
     console.log('[getSuppliers] Found suppliers:', suppliers.length);
     
-    return suppliers.map(s => ({
+    return suppliers.map((s: any) => ({
       id: s.id,
       userId: s.userId,
       tenantId: s.tenantId || undefined,
@@ -1122,7 +1205,7 @@ export class SupabaseStorage implements IStorage {
   async getAllTenants(): Promise<Tenant[]> {
     const tenants = await heliumDb.select().from(tenantsTable).orderBy(desc(tenantsTable.createdAt));
 
-    return tenants.map(tenant => ({
+    return tenants.map((tenant: any) => ({
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
