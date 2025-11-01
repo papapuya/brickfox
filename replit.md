@@ -18,10 +18,10 @@ Keine spezifischen Präferenzen dokumentiert.
 ### Technology Stack
 - **Frontend**: React 18, TypeScript, Vite, shadcn/ui, Radix UI, Tailwind CSS
 - **Backend**: Express.js, TypeScript
-- **Database**: PostgreSQL (Supabase) with Drizzle ORM
+- **Database**: PostgreSQL (Helium Dev / Supabase Production) with Drizzle ORM
 - **AI/ML**: OpenAI API (GPT-4o-mini)
 - **Web Scraping**: Cheerio (Custom scraper service)
-- **Authentication**: Passport.js + bcrypt
+- **Authentication**: Supabase Auth (JWT-based)
 
 ### System Design
 The application employs a **modular subprompt architecture** (`server/prompts/`) for specialized AI tasks (e.g., USP generation, technical data extraction, safety warnings) orchestrated by a central component. A **category-based template system** (`server/templates/`) uses a 3-layer approach: Category Configuration, AI Generator (returning structured JSON), and Template Renderer (constructing HTML). This system supports automatic category recognition and dynamic AI prompt adaptation.

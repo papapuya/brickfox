@@ -62,21 +62,26 @@ async function requireAuth(req: any, res: any, next: any) {
 
   req.user = user;
 
-  // Set tenant_id in PostgreSQL session for RLS policies
-  if (user.tenantId && supabaseAdmin) {
+  // CRITICAL: Set tenant_id on the ACTUAL Drizzle database connection for RLS
+  if (user.tenantId) {
     try {
-      await supabaseAdmin.rpc('set_config', {
-        setting_name: 'request.jwt.claims',
-        setting_value: JSON.stringify({
+      const { pool } = await import('./db');
+      if (pool) {
+        const jwtClaims = JSON.stringify({
           sub: user.id,
           tenant_id: user.tenantId,
           role: user.role || 'member',
           user_role: user.role || 'member'
-        }),
-        is_local: true
-      });
+        });
+        
+        // Set config on the PostgreSQL connection that Drizzle uses
+        await pool.query("SELECT set_config('request.jwt.claims', $1, true)", [jwtClaims]);
+        console.log(`[RLS] Set tenant context for user ${user.email}: tenant_id=${user.tenantId}`);
+      }
     } catch (error) {
-      console.error('[requireAuth] Failed to set tenant context:', error);
+      console.error('[requireAuth] CRITICAL: Failed to set tenant context on DB connection:', error);
+      // Don't proceed without RLS context - this would allow cross-tenant access!
+      return res.status(500).json({ error: 'Fehler beim Setzen des Tenant-Kontexts' });
     }
   }
 
@@ -204,56 +209,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Registrierung fehlgeschlagen' });
       }
 
-      const { data: akkushopOrg } = await supabaseAdmin
-        .from('tenants')
-        .select('id')
-        .eq('slug', 'akkushop')
-        .single();
+      // CRITICAL: Use supabaseStorage (Drizzle) for Helium DB, NOT supabaseAdmin (Supabase Remote)
+      const akkushopTenant = await supabaseStorage.getTenantBySlug('akkushop');
 
-      if (!akkushopOrg) {
-        console.error('AkkuShop organization not found - creating it now');
-        const { data: newOrg } = await supabaseAdmin
-          .from('tenants')
-          .insert({
-            name: 'AkkuShop',
-            slug: 'akkushop',
-            settings: {
-              default_categories: ['battery', 'charger', 'tool', 'gps', 'drone', 'camera'],
-              mediamarkt_title_format: 'Kategorie + Artikelnummer'
-            }
-          })
-          .select()
-          .single();
+      if (!akkushopTenant) {
+        console.error('AkkuShop tenant not found in Helium DB - creating it now');
+        const newTenant = await supabaseStorage.createTenant({
+          name: 'AkkuShop',
+          slug: 'akkushop',
+          settings: {
+            default_categories: ['battery', 'charger', 'tool', 'gps', 'drone', 'camera'],
+            mediamarkt_title_format: 'Kategorie + Artikelnummer'
+          }
+        });
         
-        if (!newOrg) {
+        if (!newTenant) {
           return res.status(500).json({ error: 'Tenant konnte nicht erstellt werden' });
         }
       }
 
-      const orgId = akkushopOrg?.id || (await supabaseAdmin
-        .from('tenants')
-        .select('id')
-        .eq('slug', 'akkushop')
-        .single()).data?.id;
+      const orgId = akkushopTenant?.id || (await supabaseStorage.getTenantBySlug('akkushop'))?.id;
 
-      const { error: insertError } = await supabaseAdmin
-        .from('users')
-        .upsert({
-          id: data.user.id,
-          email: validatedData.email,
-          username: validatedData.username || validatedData.email.split('@')[0],
-          is_admin: false,
-          tenant_id: orgId,
-          role: 'member',
-          subscription_status: 'trial',
-          plan_id: 'trial',
-          api_calls_limit: 3000, // 3000 GPT-4o-mini calls = same cost as 100 GPT-4o calls
-          api_calls_used: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'id'
-        });
+      if (!orgId) {
+        return res.status(500).json({ error: 'Tenant-ID konnte nicht ermittelt werden' });
+      }
+
+      // Create user in Helium DB via Drizzle
+      const insertError = await supabaseStorage.createUserFromAuth({
+        id: data.user.id,
+        email: validatedData.email,
+        username: validatedData.username || validatedData.email.split('@')[0],
+        isAdmin: false,
+        tenantId: orgId,
+        role: 'member',
+        subscriptionStatus: 'trial',
+        planId: 'trial',
+        apiCallsLimit: 3000,
+        apiCallsUsed: 0,
+      });
 
       if (insertError) {
         console.error('Failed to create user record:', insertError);
