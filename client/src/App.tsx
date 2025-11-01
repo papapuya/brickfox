@@ -6,9 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthProvider } from "@/lib/auth-context";
+import { TenantProvider } from "@/lib/tenant-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AdminProtectedRoute } from "@/components/admin-protected-route";
 import { SubscriptionBadge } from "@/components/subscription-badge";
+import { TenantSwitcher } from "@/components/tenant-switcher";
+import { useAuth } from "@/lib/auth-context";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -95,6 +98,7 @@ function Router() {
 
 function AppContent() {
   const [location] = useLocation();
+  const { user } = useAuth();
   
   // Public routes that should NOT show sidebar
   const publicRoutes = ['/', '/login', '/register', '/pricing', '/success'];
@@ -124,6 +128,7 @@ function AppContent() {
           <header className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-4">
+              {user?.isAdmin && <TenantSwitcher />}
               <SubscriptionBadge />
             </div>
           </header>
@@ -141,9 +146,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <AppContent />
-        </TooltipProvider>
+        <TenantProvider>
+          <TooltipProvider>
+            <AppContent />
+          </TooltipProvider>
+        </TenantProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

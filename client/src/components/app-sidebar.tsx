@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { useTenant } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -74,7 +75,34 @@ const menuItems = [
 export function AppSidebar() {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
+  const { currentTenant } = useTenant();
   const { toast } = useToast();
+
+  // Filter menu items based on tenant features
+  const tenantFeatures = currentTenant?.settings?.features || {};
+  const filteredMenuItems = menuItems.filter(item => {
+    // Always show these basic items
+    if (['/', '/dashboard', '/projects', '/suppliers', '/credentials', '/account', '/pricing'].includes(item.url)) {
+      return true;
+    }
+    
+    // Show Pixi Compare only if tenant has pixiIntegration enabled
+    if (item.url === '/pixi-compare') {
+      return tenantFeatures.pixiIntegration === true;
+    }
+    
+    // Show CSV Bulk if enabled (default: true)
+    if (item.url === '/csv-bulk-description') {
+      return tenantFeatures.csvBulkImport !== false;
+    }
+    
+    // Show URL Scraper if enabled (default: true)
+    if (item.url === '/url-scraper') {
+      return tenantFeatures.urlScraper !== false;
+    }
+    
+    return true;
+  });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -117,7 +145,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

@@ -304,6 +304,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user });
   });
 
+  // Get current user's tenant (for both admins and regular users)
+  app.get('/api/user/tenant', requireAuth, async (req: any, res) => {
+    try {
+      if (!req.user.tenantId) {
+        return res.json({ tenant: null });
+      }
+
+      const tenant = await supabaseStorage.getTenant(req.user.tenantId);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant nicht gefunden' });
+      }
+
+      const stats = await supabaseStorage.getTenantStats(tenant.id);
+      
+      res.json({
+        tenant: {
+          ...tenant,
+          ...stats,
+        },
+      });
+    } catch (error: any) {
+      console.error('Get user tenant error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Laden des Tenants' });
+    }
+  });
+
   // Temporary: Update current user's API limit to 3000
   app.post('/api/auth/update-my-limit', requireAuth, async (req: any, res) => {
     try {
