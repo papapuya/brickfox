@@ -28,6 +28,17 @@ interface ScrapedProduct {
   images: string[];
   weight?: string;
   category?: string;
+  // ANSMANN technical specifications
+  nominalspannung?: string;
+  nominalkapazitaet?: string;
+  maxEntladestrom?: string;
+  laenge?: string;
+  breite?: string;
+  hoehe?: string;
+  gewicht?: string;
+  zellenchemie?: string;
+  energie?: string;
+  farbe?: string;
 }
 
 interface GeneratedContent {
@@ -229,7 +240,17 @@ export default function URLScraper() {
         description: "",
         images: "",
         weight: "",
-        category: ""
+        category: "",
+        nominalspannung: "",
+        nominalkapazitaet: "",
+        maxEntladestrom: "",
+        laenge: "",
+        breite: "",
+        hoehe: "",
+        gewicht: "",
+        zellenchemie: "",
+        energie: "",
+        farbe: ""
       });
       setProductLinkSelector("");
       setSessionCookies("");
@@ -266,7 +287,18 @@ export default function URLScraper() {
     description: ".product-description",
     images: ".product-image img",
     weight: ".weight",
-    category: ".breadcrumb"
+    category: ".breadcrumb",
+    // ANSMANN technical specifications
+    nominalspannung: "",
+    nominalkapazitaet: "",
+    maxEntladestrom: "",
+    laenge: "",
+    breite: "",
+    hoehe: "",
+    gewicht: "",
+    zellenchemie: "",
+    energie: "",
+    farbe: ""
   });
 
   const handleScrapeProductList = async () => {
@@ -1714,18 +1746,17 @@ export default function URLScraper() {
                       <TableHead className="min-w-[80px]">Preis</TableHead>
                       <TableHead className="min-w-[80px]">Gewicht</TableHead>
                       <TableHead className="min-w-[150px]">Kategorie</TableHead>
+                      {/* ANSMANN Technical Specifications */}
+                      <TableHead className="min-w-[120px]">Nominalspannung (V)</TableHead>
+                      <TableHead className="min-w-[140px]">Nominalkapazität (mAh)</TableHead>
+                      <TableHead className="min-w-[140px]">max. Entladestrom (A)</TableHead>
                       <TableHead className="min-w-[100px]">Länge (mm)</TableHead>
-                      <TableHead className="min-w-[140px]">Gehäusedurchmesser (mm)</TableHead>
-                      <TableHead className="min-w-[140px]">Kopfdurchmesser (mm)</TableHead>
-                      <TableHead className="min-w-[150px]">Gewicht ohne Akku (g)</TableHead>
-                      <TableHead className="min-w-[130px]">Gesamt Gewicht (g)</TableHead>
-                      <TableHead className="min-w-[140px]">Stromversorgung</TableHead>
-                      <TableHead className="min-w-[130px]">Leuchtmittel 1</TableHead>
-                      <TableHead className="min-w-[130px]">Leuchtmittel 2</TableHead>
-                      <TableHead className="min-w-[130px]">Spotintensität (cd)</TableHead>
-                      <TableHead className="min-w-[140px]">Leuchtleistung max.</TableHead>
-                      <TableHead className="min-w-[150px]">Leuchtweite max. (m)</TableHead>
-                      <TableHead className="min-w-[200px]">PDF Bedienungsanleitung</TableHead>
+                      <TableHead className="min-w-[100px]">Breite (mm)</TableHead>
+                      <TableHead className="min-w-[100px]">Höhe (mm)</TableHead>
+                      <TableHead className="min-w-[100px]">Gewicht (g)</TableHead>
+                      <TableHead className="min-w-[120px]">Zellenchemie</TableHead>
+                      <TableHead className="min-w-[100px]">Energie (Wh)</TableHead>
+                      <TableHead className="min-w-[100px]">Farbe</TableHead>
                       
                       {/* KI-generierte Spalten (blau markiert) */}
                       <TableHead className="min-w-[180px] bg-primary/10 text-primary font-semibold">
@@ -1775,31 +1806,17 @@ export default function URLScraper() {
                         <TableCell className="font-semibold whitespace-nowrap">{product.price || '-'}</TableCell>
                         <TableCell className="whitespace-nowrap">{product.weight || '-'}</TableCell>
                         <TableCell className="text-xs whitespace-normal break-words">{product.category || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).length || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).bodyDiameter || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).headDiameter || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).weightWithoutBattery || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).totalWeight || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).powerSupply || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).led1 || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).led2 || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).spotIntensity || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).maxLuminosity || '-'}</TableCell>
-                        <TableCell className="text-sm">{(product as any).maxBeamDistance || '-'}</TableCell>
-                        <TableCell className="text-sm">
-                          {(product as any).pdfManualUrl ? (
-                            <a 
-                              href={(product as any).pdfManualUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline flex items-center gap-1"
-                              title="Bedienungsanleitung öffnen"
-                            >
-                              <FileText className="w-4 h-4" />
-                              PDF
-                            </a>
-                          ) : '-'}
-                        </TableCell>
+                        {/* ANSMANN Technical Specifications */}
+                        <TableCell className="text-sm">{product.nominalspannung || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.nominalkapazitaet || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.maxEntladestrom || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.laenge || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.breite || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.hoehe || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.gewicht || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.zellenchemie || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.energie || '-'}</TableCell>
+                        <TableCell className="text-sm">{product.farbe || '-'}</TableCell>
                         
                         {/* KI-generierte Spalten (blau markiert) */}
                         <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">

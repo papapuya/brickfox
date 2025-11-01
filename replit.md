@@ -15,6 +15,35 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-01: ANSMANN Supplier Integration - 10 Technical Specification Selectors
+**Feature**: Hinzufügung von 10 lieferantenspezifischen CSS-Selektoren für ANSMANN-Produkte.
+
+**Neue ANSMANN-Selektoren**:
+- Nominalspannung (V) → `td.col.data[data-th="Nominal-Spannung"]`
+- Nominalkapazität (mAh) → `td.col.data[data-th="Nominal-Kapazität"]`
+- max. Entladestrom (A) → `td.col.data[data-th="max. Entladestrom"]`
+- Länge (mm) → `td.col.data[data-th="Länge"]`
+- Breite (mm) → `td.col.data[data-th="Breite"]`
+- Höhe (mm) → `td.col.data[data-th="Höhe"]`
+- Gewicht (g) → `td.col.data[data-th="Produktgewicht"]`
+- Zellenchemie → `td.col.data[data-th="Zellenchemie"]`
+- Energie (Wh) → `td.col.data[data-th="Energie"]`
+- Farbe → `td.col.data[data-th="Farbe"]`
+
+**Frontend-Änderungen**:
+- `ScrapedProduct` Interface um 10 technische Felder erweitert
+- Selector State Variable mit ANSMANN-Selektoren initialisiert
+- Tabellen-Header und -Zellen angepasst (Nitecore-Spalten entfernt, ANSMANN-Spalten hinzugefügt)
+
+**Critical Fix - Race Condition in Supplier Selector Loading**:
+- **Problem**: Beim PDF-Auto-Scraper wurden Selektoren aus React State gelesen, der asynchron aktualisiert wird → leere Felder beim Scraping
+- **Lösung**: Selektoren werden jetzt **direkt** vom Supplier-Objekt gelesen statt aus State
+- **Betroffene Datei**: `client/src/pages/url-scraper.tsx` - `handleScrapeFromPDF()` Funktion
+
+**Supplier-Konfiguration**:
+- ANSMANN Supplier-Profil in Datenbank mit allen technischen Selektoren aktualisiert
+- Automatische Übernahme der Selektoren beim PDF-Auto-Scraper Workflow
+
 ### 2025-11-01: Performance-Optimierung - Debug-Modus für Logging
 **Problem**: Übermäßiges Console-Logging (besonders im Brickfox-Mapper und AI-Service) verlangsamte die Entwicklungsumgebung.
 
