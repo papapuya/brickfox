@@ -516,14 +516,12 @@ export class SupabaseStorage implements IStorage {
       // Use Helium DB in development
       // First delete all products in this project (CASCADE delete)
       await heliumDb
-        .delete()
-        .from(productsInProjectsTable)
+        .delete(productsInProjectsTable)
         .where(eq(productsInProjectsTable.projectId, id));
       
       // Then delete the project itself
       await heliumDb
-        .delete()
-        .from(projectsTable)
+        .delete(projectsTable)
         .where(eq(projectsTable.id, id));
       return true;
     } else {
@@ -815,8 +813,7 @@ export class SupabaseStorage implements IStorage {
     if (isDevelopment) {
       // Use Helium DB in development
       await heliumDb
-        .delete()
-        .from(productsInProjectsTable)
+        .delete(productsInProjectsTable)
         .where(eq(productsInProjectsTable.id, id));
       return true;
     } else {
