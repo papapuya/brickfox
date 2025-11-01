@@ -75,14 +75,35 @@ export async function detectFieldsFromUrlScraper(
     });
 
     const detectedFields: DetectedField[] = [];
+    
+    // Liste technischer/Meta-Felder, die nicht angezeigt werden sollen
+    const technicalFieldBlacklist = [
+      'key', 'type', 'label', 'value', 'id', 'index',
+      'class', 'className', 'style', 'href', 'src',
+      'data-', 'aria-', 'role', 'tabindex',
+      'onClick', 'onChange', 'onSubmit', 'disabled'
+    ];
+    
     fieldMap.forEach((value, key) => {
-      detectedFields.push({
-        key,
-        label: formatFieldLabel(key),
-        type: value.type as any,
-        sampleValue: value.samples[0],
-        count: value.count,
-      });
+      // Filtere technische Felder aus
+      const lowerKey = key.toLowerCase();
+      const isTechnical = technicalFieldBlacklist.some(tech => 
+        lowerKey.includes(tech.toLowerCase()) || 
+        lowerKey.endsWith('.' + tech.toLowerCase())
+      );
+      
+      // Filtere auch verschachtelte Array-Eigenschaften wie [0].key, [1].type
+      const isArrayMeta = /\[\d+\]\.(key|type|label|value|id)$/i.test(key);
+      
+      if (!isTechnical && !isArrayMeta) {
+        detectedFields.push({
+          key,
+          label: formatFieldLabel(key),
+          type: value.type as any,
+          sampleValue: value.samples[0],
+          count: value.count,
+        });
+      }
     });
 
     return detectedFields.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
@@ -139,14 +160,32 @@ export async function detectFieldsFromCSV(
     });
 
     const detectedFields: DetectedField[] = [];
+    
+    // Liste technischer/Meta-Felder, die nicht angezeigt werden sollen (gleiche wie bei URL Scraper)
+    const technicalFieldBlacklist = [
+      'key', 'type', 'label', 'value', 'id', 'index',
+      'class', 'className', 'style', 'href', 'src',
+      'data-', 'aria-', 'role', 'tabindex',
+      'onClick', 'onChange', 'onSubmit', 'disabled'
+    ];
+    
     fieldMap.forEach((value, key) => {
-      detectedFields.push({
-        key,
-        label: formatFieldLabel(key),
-        type: value.type as any,
-        sampleValue: value.samples[0],
-        count: value.count,
-      });
+      // Filtere technische Felder aus
+      const lowerKey = key.toLowerCase();
+      const isTechnical = technicalFieldBlacklist.some(tech => 
+        lowerKey.includes(tech.toLowerCase()) || 
+        lowerKey.endsWith('.' + tech.toLowerCase())
+      );
+      
+      if (!isTechnical) {
+        detectedFields.push({
+          key,
+          label: formatFieldLabel(key),
+          type: value.type as any,
+          sampleValue: value.samples[0],
+          count: value.count,
+        });
+      }
     });
 
     return detectedFields.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
