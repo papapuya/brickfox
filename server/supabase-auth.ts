@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase';
+import { supabaseStorage } from './supabase-storage';
 import type { Request, Response, NextFunction } from 'express';
 import type { User } from '@shared/schema';
 
@@ -11,41 +12,23 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
   
   if (error || !user) return null;
 
-  const { data: userData } = await supabaseAdmin
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // CRITICAL: Use supabaseStorage which queries Helium DB (local), not Supabase remote DB!
+  const userData = await supabaseStorage.getUserById(user.id);
 
   if (!userData) {
-    console.error(`[getSupabaseUser] No user data found for id: ${user.id}`);
+    console.error(`[getSupabaseUser] No user data found in Helium DB for id: ${user.id}`);
     return null;
   }
 
-  console.log(`[getSupabaseUser] User data:`, {
+  console.log(`[getSupabaseUser] User data from Helium DB:`, {
     id: userData.id,
     email: userData.email,
-    tenant_id: userData.tenant_id,
-    role: userData.role
+    tenant_id: userData.tenantId,
+    role: userData.role,
+    is_admin: userData.isAdmin
   });
 
-  return {
-    id: userData.id,
-    email: userData.email,
-    username: userData.username || undefined,
-    isAdmin: userData.is_admin || false,
-    role: userData.role || 'member',
-    tenantId: userData.tenant_id || undefined,
-    stripeCustomerId: userData.stripe_customer_id || undefined,
-    subscriptionStatus: userData.subscription_status || undefined,
-    subscriptionId: userData.subscription_id || undefined,
-    planId: userData.plan_id || undefined,
-    currentPeriodEnd: userData.current_period_end || undefined,
-    apiCallsUsed: userData.api_calls_used || 0,
-    apiCallsLimit: userData.api_calls_limit || 3000, // 30× more for GPT-4o-mini
-    createdAt: userData.created_at,
-    updatedAt: userData.updated_at,
-  };
+  return userData;
 }
 
 export async function createAdminUser(email: string, password: string): Promise<void> {
