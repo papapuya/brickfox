@@ -1,8 +1,8 @@
 import { supabase, supabaseAdmin } from './supabase';
 import { encrypt, decrypt } from './encryption';
 import { db as heliumDb } from './db'; // Helium/Neon PostgreSQL client
-import { eq } from 'drizzle-orm';
-import { users as usersTable } from '@shared/schema';
+import { eq, desc } from 'drizzle-orm';
+import { users as usersTable, tenants as tenantsTable } from '@shared/schema';
 
 // Use admin client for backend operations to bypass RLS
 const db = supabaseAdmin || supabase;
@@ -944,39 +944,31 @@ export class SupabaseStorage implements IStorage {
 
   // Tenant Management Methods
   async getAllTenants(): Promise<Tenant[]> {
-    const { data: tenants, error } = await db
-      .from('tenants')
-      .select('*')
-      .order('created_at');
-
-    if (error || !tenants) return [];
+    const tenants = await heliumDb.select().from(tenantsTable).orderBy(desc(tenantsTable.createdAt));
 
     return tenants.map(tenant => ({
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      settings: tenant.settings || {},
-      createdAt: tenant.created_at,
-      updatedAt: tenant.updated_at,
+      settings: tenant.settings as TenantSettings || {},
+      createdAt: tenant.createdAt!,
+      updatedAt: tenant.updatedAt!,
     }));
   }
 
   async getTenant(id: string): Promise<Tenant | null> {
-    const { data: tenant, error } = await db
-      .from('tenants')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const tenants = await heliumDb.select().from(tenantsTable).where(eq(tenantsTable.id, id)).limit(1);
+    const tenant = tenants[0];
 
-    if (error || !tenant) return null;
+    if (!tenant) return null;
 
     return {
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      settings: tenant.settings || {},
-      createdAt: tenant.created_at,
-      updatedAt: tenant.updated_at,
+      settings: tenant.settings as TenantSettings || {},
+      createdAt: tenant.createdAt!,
+      updatedAt: tenant.updatedAt!,
     };
   }
 
@@ -1001,64 +993,63 @@ export class SupabaseStorage implements IStorage {
       ...data.settings,
     };
 
-    const { data: tenant, error } = await db
-      .from('tenants')
-      .insert({
-        name: data.name,
-        slug,
-        settings: defaultSettings,
-      })
-      .select()
-      .single();
+    const result = await heliumDb.insert(tenantsTable).values({
+      name: data.name,
+      slug,
+      settings: defaultSettings,
+    }).returning();
 
-    if (error || !tenant) {
-      throw new Error(`Failed to create tenant: ${error?.message}`);
+    const tenant = result[0];
+
+    if (!tenant) {
+      throw new Error(`Failed to create tenant`);
     }
 
     return {
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      settings: tenant.settings || {},
-      createdAt: tenant.created_at,
-      updatedAt: tenant.updated_at,
+      settings: tenant.settings as TenantSettings || {},
+      createdAt: tenant.createdAt!,
+      updatedAt: tenant.updatedAt!,
     };
   }
 
   async updateTenant(id: string, data: UpdateTenant): Promise<Tenant | null> {
     const updates: any = {
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (data.name) updates.name = data.name;
     if (data.settings) updates.settings = data.settings;
 
-    const { data: tenant, error } = await db
-      .from('tenants')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    const result = await heliumDb
+      .update(tenantsTable)
+      .set(updates)
+      .where(eq(tenantsTable.id, id))
+      .returning();
 
-    if (error || !tenant) return null;
+    const tenant = result[0];
+
+    if (!tenant) return null;
 
     return {
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      settings: tenant.settings || {},
-      createdAt: tenant.created_at,
-      updatedAt: tenant.updated_at,
+      settings: tenant.settings as TenantSettings || {},
+      createdAt: tenant.createdAt!,
+      updatedAt: tenant.updatedAt!,
     };
   }
 
   async deleteTenant(id: string): Promise<boolean> {
-    const { error } = await db
-      .from('tenants')
-      .delete()
-      .eq('id', id);
-
-    return !error;
+    try {
+      await heliumDb.delete(tenantsTable).where(eq(tenantsTable.id, id));
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   async getTenantStats(tenantId: string): Promise<{
