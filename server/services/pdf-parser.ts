@@ -81,7 +81,7 @@ export class PDFParserService {
 
           // Parse this specific row
           const product = this.parseProductRow(rowText, link.url);
-          if (product) {
+          if (product && this.isValidProduct(product)) {
             products.push(product);
           }
         });
@@ -147,6 +147,37 @@ export class PDFParserService {
       console.error('Error parsing product row:', error);
       return null;
     }
+  }
+
+  /**
+   * Filter out non-product links (AGB, Datenschutz, Impressum, etc.)
+   */
+  private isValidProduct(product: PDFProduct): boolean {
+    const name = product.productName.toLowerCase();
+    
+    // Filter out common non-product pages
+    const invalidKeywords = [
+      'agb',
+      'geschaeftskunden',
+      'datenschutz',
+      'impressum',
+      'kontakt',
+      'cookie',
+      'nutzungsbedingungen',
+      'widerruf',
+      'versand',
+      'zahlung'
+    ];
+    
+    // If product name contains any invalid keyword, reject it
+    if (invalidKeywords.some(keyword => name.includes(keyword))) {
+      if (DEBUG_MODE) {
+        console.log(`⚠️ Filtered out non-product: ${product.productName}`);
+      }
+      return false;
+    }
+    
+    return true;
   }
 }
 
