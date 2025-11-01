@@ -55,11 +55,14 @@ export class PDFParserService {
 
         // For each link, find text items in the same row (within Y range)
         links.forEach((link) => {
-          // Define row bounds: within ±30 units of link Y position (accounting for multi-line rows)
-          const rowYMin = link.y - 30;
-          const rowYMax = link.y + 50; // Links are usually in the top section of multi-line rows
+          // Define row bounds: within ±8 units of link Y position for tight row matching
+          // Typical PDF line height is ~12 units, so ±8 ensures we stay within one row
+          // while accounting for slight vertical alignment variations
+          const rowYMin = link.y - 8;
+          const rowYMax = link.y + 8;
 
           // Find all text items in this row
+          // We use Y-coordinate for row matching only - X-coordinates are used for ordering
           const rowTextItems = textItems.filter((item) => {
             const itemY = item.transform[5];
             return itemY >= rowYMin && itemY <= rowYMax;
