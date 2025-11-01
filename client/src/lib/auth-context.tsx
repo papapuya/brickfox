@@ -24,6 +24,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Helper to get the correct storage based on rememberMe preference
+  const getTokenStorage = () => {
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    return rememberMe ? localStorage : sessionStorage;
+  };
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['/api/auth/user'],
     queryFn: async () => {
@@ -31,13 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error || !session) {
+        // Remove token from both storages
         localStorage.removeItem('supabase_token');
+        sessionStorage.removeItem('supabase_token');
         return { user: null };
       }
 
-      // Store token for API calls
+      // Store token for API calls in the correct storage
       const token = session.access_token;
-      localStorage.setItem('supabase_token', token);
+      const storage = getTokenStorage();
+      const otherStorage = storage === localStorage ? sessionStorage : localStorage;
+      
+      storage.setItem('supabase_token', token);
+      otherStorage.removeItem('supabase_token'); // Clean up other storage
       
       // Fetch user data from backend with tenant_id
       const res = await fetch('/api/auth/user', { 
@@ -47,7 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (!res.ok) {
+        // Remove token from both storages
         localStorage.removeItem('supabase_token');
+        sessionStorage.removeItem('supabase_token');
         return { user: null };
       }
       
@@ -62,11 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.access_token) {
-          localStorage.setItem('supabase_token', session.access_token);
+          const storage = getTokenStorage();
+          const otherStorage = storage === localStorage ? sessionStorage : localStorage;
+          
+          storage.setItem('supabase_token', session.access_token);
+          otherStorage.removeItem('supabase_token'); // Clean up other storage
           refetch();
         }
       } else if (event === 'SIGNED_OUT') {
+        // Remove token from both storages
         localStorage.removeItem('supabase_token');
+        sessionStorage.removeItem('supabase_token');
         refetch();
       }
     });
