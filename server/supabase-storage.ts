@@ -2,7 +2,7 @@ import { supabase, supabaseAdmin } from './supabase';
 import { encrypt, decrypt } from './encryption';
 import { db as heliumDb } from './db'; // Helium/Neon PostgreSQL client
 import { eq, desc, and } from 'drizzle-orm';
-import { users as usersTable, tenants as tenantsTable, suppliers as suppliersTable } from '@shared/schema';
+import { users as usersTable, tenants as tenantsTable, suppliers as suppliersTable, projects as projectsTable, productsInProjects as productsInProjectsTable } from '@shared/schema';
 
 // Use admin client for backend operations to bypass RLS
 const db = supabaseAdmin || supabase;
@@ -291,10 +291,6 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createProject(userId: string, data: CreateProject): Promise<Project> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
-
     const user = await this.getUserById(userId);
     if (!user) throw new Error('User not found');
     
@@ -309,31 +305,61 @@ export class SupabaseStorage implements IStorage {
       name: data.name,
     });
 
-    const { data: project, error } = await supabaseAdmin
-      .from('projects')
-      .insert({
-        user_id: userId,
-        tenant_id: user.tenantId,
-        name: data.name,
-      })
-      .select()
-      .single();
+    // Use Helium DB in development, Supabase in production
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
-    if (error) {
-      console.error('[createProject] Supabase error:', JSON.stringify(error, null, 2));
-      throw new Error(`Failed to create project: ${error.message}`);
-    }
-    
-    if (!project) {
-      console.error('[createProject] No project returned but no error');
-      throw new Error('Failed to create project: No data returned');
-    }
+    if (isDevelopment) {
+      // Use Drizzle ORM with Helium DB
+      const [project] = await heliumDb
+        .insert(projectsTable)
+        .values({
+          userId,
+          tenantId: user.tenantId,
+          name: data.name,
+        })
+        .returning();
 
-    return {
-      id: project.id,
-      name: project.name,
-      createdAt: project.created_at,
-    };
+      if (!project) {
+        throw new Error('Failed to create project: No data returned');
+      }
+
+      return {
+        id: project.id,
+        name: project.name,
+        createdAt: project.createdAt!.toISOString(),
+      };
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const { data: project, error } = await supabaseAdmin
+        .from('projects')
+        .insert({
+          user_id: userId,
+          tenant_id: user.tenantId,
+          name: data.name,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[createProject] Supabase error:', JSON.stringify(error, null, 2));
+        throw new Error(`Failed to create project: ${error.message}`);
+      }
+      
+      if (!project) {
+        console.error('[createProject] No project returned but no error');
+        throw new Error('Failed to create project: No data returned');
+      }
+
+      return {
+        id: project.id,
+        name: project.name,
+        createdAt: project.created_at,
+      };
+    }
   }
 
   async getProjects(): Promise<Project[]> {
