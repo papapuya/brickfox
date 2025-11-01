@@ -283,8 +283,8 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
                               {field.type}
                             </Badge>
                             {field.sampleValue && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                z.B. "{String(field.sampleValue).slice(0, 30)}"
+                              <span className="text-xs text-muted-foreground truncate" title={`Beispiel: ${String(field.sampleValue)}`}>
+                                Beispiel: "{String(field.sampleValue).slice(0, 30)}{String(field.sampleValue).length > 30 ? '...' : ''}"
                               </span>
                             )}
                           </div>

@@ -215,12 +215,43 @@ function detectType(value: any): string {
 }
 
 function formatFieldLabel(key: string): string {
-  return key
+  // Common field mappings for better labels
+  const fieldLabels: Record<string, string> = {
+    'ean': 'EAN (Barcode)',
+    'articleNumber': 'Artikelnummer',
+    'productName': 'Produktname',
+    'price': 'Preis',
+    'manufacturer': 'Hersteller',
+    'description': 'Beschreibung',
+    'images': 'Bilder',
+    'weight': 'Gewicht',
+    'category': 'Kategorie',
+    'stock': 'Lagerbestand',
+    'sku': 'SKU',
+  };
+
+  // Check for exact matches first
+  const lowerKey = key.toLowerCase();
+  for (const [fieldKey, label] of Object.entries(fieldLabels)) {
+    if (lowerKey.includes(fieldKey.toLowerCase())) {
+      // If it's an array element like [0].ean, add array info
+      const arrayMatch = key.match(/\[(\d+)\]/);
+      if (arrayMatch) {
+        return `${label} (Element ${parseInt(arrayMatch[1]) + 1})`;
+      }
+      return label;
+    }
+  }
+
+  // Default formatting
+  let formatted = key
     .replace(/([A-Z])/g, ' $1')
     .replace(/[._]/g, ' ')
-    .replace(/\[(\d+)\]/g, ' [$1]')
+    .replace(/\[(\d+)\]/g, (match, index) => ` (Element ${parseInt(index) + 1})`)
     .trim()
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+
+  return formatted;
 }
