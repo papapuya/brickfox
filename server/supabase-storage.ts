@@ -502,9 +502,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteProject(id: string, userId?: string): Promise<boolean> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     if (userId) {
       const project = await this.getProject(id, userId);
@@ -514,12 +512,26 @@ export class SupabaseStorage implements IStorage {
       }
     }
 
-    const { error } = await supabaseAdmin
-      .from('projects')
-      .delete()
-      .eq('id', id);
+    if (isDevelopment) {
+      // Use Helium DB in development
+      await heliumDb
+        .delete()
+        .from(projectsTable)
+        .where(eq(projectsTable.id, id));
+      return true;
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
 
-    return !error;
+      const { error } = await supabaseAdmin
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      return !error;
+    }
   }
 
   async createProduct(projectId: string, data: CreateProductInProject, userId?: string): Promise<ProductInProject> {
@@ -596,22 +608,36 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProducts(projectId: string, userId?: string): Promise<ProductInProject[]> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     const project = await this.getProject(projectId, userId);
     if (!project) return [];
 
-    const { data: products, error } = await supabaseAdmin
-      .from('products_in_projects')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at');
+    if (isDevelopment) {
+      // Use Helium DB in development
+      const products = await heliumDb
+        .select()
+        .from(productsInProjectsTable)
+        .where(eq(productsInProjectsTable.projectId, projectId))
+        .orderBy(desc(productsInProjectsTable.createdAt));
 
-    if (error || !products) return [];
+      return products.map(p => this.mapProduct(p));
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
 
-    return products.map(p => this.mapProduct(p));
+      const { data: products, error } = await supabaseAdmin
+        .from('products_in_projects')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at');
+
+      if (error || !products) return [];
+
+      return products.map(p => this.mapProduct(p));
+    }
   }
 
   async getProduct(id: string, userId?: string): Promise<ProductInProject | null> {
