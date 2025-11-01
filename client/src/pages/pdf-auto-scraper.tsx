@@ -43,6 +43,8 @@ export default function PDFAutoScraper() {
   const [selectedSupplier, setSelectedSupplier] = useState<string>('');
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
 
   const { data: projects } = useQuery({
     queryKey: ['/api/projects'],
@@ -52,39 +54,75 @@ export default function PDFAutoScraper() {
     queryKey: ['/api/suppliers'],
   });
 
+  const uploadWithProgress = async (file: File) => {
+    const formData = new FormData();
+    formData.append('pdf', file);
+    formData.append('projectId', selectedProject);
+    if (selectedSupplier) {
+      formData.append('supplierId', selectedSupplier);
+    }
+
+    const response = await fetch('/api/pdf/upload-and-scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
+      },
+      body: formData,
+      credentials: 'include',
+    });
+
+    if (!response.ok || !response.body) {
+      throw new Error('Upload fehlgeschlagen');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+
+          if (data.stage === 'extracting') {
+            setProgressMessage(data.message);
+            setProgress(10);
+          } else if (data.stage === 'extracted') {
+            setProgressMessage(data.message);
+            setProgress(20);
+          } else if (data.stage === 'scraping') {
+            setProgressMessage(`${data.message} - ${data.currentProduct}`);
+            setProgress(20 + (data.progress * 0.75)); // 20-95%
+          } else if (data.stage === 'complete') {
+            setProgress(100);
+            setProgressMessage(data.message);
+            setScrapeResult(data);
+            
+            toast({
+              title: 'PDF verarbeitet!',
+              description: `${data.totalScraped} von ${data.totalExtracted} Produkten erfolgreich gescraped`,
+            });
+            
+            setTimeout(() => {
+              setIsProcessing(false);
+              setProgress(0);
+              setProgressMessage('');
+            }, 1500);
+          } else if (data.stage === 'error') {
+            throw new Error(data.error || 'Fehler beim Verarbeiten');
+          }
+        }
+      }
+    }
+  };
+
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('pdf', file);
-      formData.append('projectId', selectedProject);
-      if (selectedSupplier) {
-        formData.append('supplierId', selectedSupplier);
-      }
-
-      const response = await fetch('/api/pdf/upload-and-scrape', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
-        },
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload fehlgeschlagen');
-      }
-
-      return response.json();
-    },
-    onSuccess: (data: ScrapeResult) => {
-      setScrapeResult(data);
-      toast({
-        title: 'PDF verarbeitet!',
-        description: `${data.totalScraped} von ${data.totalExtracted} Produkten erfolgreich gescraped`,
-      });
-      setIsProcessing(false);
-    },
+    mutationFn: uploadWithProgress,
     onError: (error: Error) => {
       toast({
         title: 'Fehler',
@@ -92,6 +130,8 @@ export default function PDFAutoScraper() {
         variant: 'destructive',
       });
       setIsProcessing(false);
+      setProgress(0);
+      setProgressMessage('');
     },
   });
 
@@ -233,10 +273,10 @@ export default function PDFAutoScraper() {
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Verarbeite PDF...</span>
-                  <span>Bitte warten</span>
+                  <span>{progressMessage || 'Verarbeite PDF...'}</span>
+                  <span>{progress}%</span>
                 </div>
-                <Progress value={undefined} className="w-full" />
+                <Progress value={progress} className="w-full" />
               </div>
             </CardContent>
           </Card>

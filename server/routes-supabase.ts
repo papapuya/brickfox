@@ -1356,7 +1356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PDF Upload & Auto-Scrape
+  // PDF Upload & Auto-Scrape with Progress
   app.post('/api/pdf/upload-and-scrape', requireAuth, upload.single('pdf'), async (req: any, res) => {
     try {
       if (!req.file) {
@@ -1377,17 +1377,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[PDF Upload] Processing PDF: ${req.file.originalname}`);
 
+      // Set up Server-Sent Events for progress updates
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const sendProgress = (data: any) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
       // Extract products from PDF
+      sendProgress({ stage: 'extracting', message: 'PDF wird analysiert...' });
+      
       const extractedProducts = await pdfParserService.extractProductsFromPDFAdvanced(req.file.buffer);
 
       if (extractedProducts.length === 0) {
-        return res.status(400).json({ 
-          success: false, 
+        sendProgress({ 
+          stage: 'error', 
           error: 'Keine Produkte mit URLs im PDF gefunden' 
         });
+        res.end();
+        return;
       }
 
       console.log(`[PDF Upload] Found ${extractedProducts.length} products with URLs`);
+      sendProgress({ 
+        stage: 'extracted', 
+        total: extractedProducts.length,
+        message: `${extractedProducts.length} Produkte gefunden` 
+      });
 
       // Get supplier selectors if supplierId provided
       let selectors = defaultSelectors;
@@ -1403,7 +1421,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scrapedProducts = [];
       const errors = [];
 
-      for (const pdfProduct of extractedProducts) {
+      for (let i = 0; i < extractedProducts.length; i++) {
+        const pdfProduct = extractedProducts[i];
+        
+        sendProgress({
+          stage: 'scraping',
+          current: i + 1,
+          total: extractedProducts.length,
+          progress: Math.round(((i + 1) / extractedProducts.length) * 100),
+          message: `Scrape Produkt ${i + 1}/${extractedProducts.length}...`,
+          currentProduct: pdfProduct.productName
+        });
+
         if (!pdfProduct.url) {
           errors.push({ 
             product: pdfProduct.productName, 
@@ -1413,7 +1442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          console.log(`[PDF Upload] Scraping: ${pdfProduct.url}`);
+          console.log(`[PDF Upload] Scraping (${i + 1}/${extractedProducts.length}): ${pdfProduct.url}`);
           
           const scrapedData = await scrapeProduct({
             url: pdfProduct.url,
@@ -1444,19 +1473,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[PDF Upload] Successfully scraped ${scrapedProducts.length}/${extractedProducts.length} products`);
 
-      res.json({
+      // Send final result
+      sendProgress({
+        stage: 'complete',
         success: true,
         totalExtracted: extractedProducts.length,
         totalScraped: scrapedProducts.length,
         products: scrapedProducts,
         errors: errors.length > 0 ? errors : undefined,
+        message: `Fertig! ${scrapedProducts.length} Produkte erfolgreich gescraped`
       });
+
+      res.end();
     } catch (error: any) {
       console.error('[PDF Upload] Error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message || 'Fehler beim Verarbeiten der PDF' 
-      });
+      
+      // Try to send error via SSE if connection still open
+      try {
+        res.write(`data: ${JSON.stringify({ 
+          stage: 'error',
+          success: false, 
+          error: error.message || 'Fehler beim Verarbeiten der PDF' 
+        })}\n\n`);
+      } catch {}
+      
+      res.end();
     }
   });
 
