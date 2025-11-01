@@ -64,7 +64,7 @@ export default function PDFAutoScraper() {
       const response = await fetch('/api/pdf/upload-and-scrape', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
         },
         body: formData,
         credentials: 'include',

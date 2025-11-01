@@ -184,47 +184,49 @@ export class PDFParserService {
         
         const textContent = await page.getTextContent();
         const annotations = await page.getAnnotations();
+        const textItems = textContent.items as TextItem[];
 
-        // Group text items by Y coordinate (rows)
-        const rowMap = new Map<number, TextItem[]>();
-        
-        (textContent.items as TextItem[]).forEach((item) => {
-          const y = Math.round(item.transform[5]);
-          if (!rowMap.has(y)) {
-            rowMap.set(y, []);
-          }
-          rowMap.get(y)!.push(item);
-        });
-
-        // Sort rows by Y position (top to bottom)
-        const rows = Array.from(rowMap.entries())
-          .sort((a, b) => b[0] - a[0]) // Descending Y (top to bottom)
-          .map(([_, items]) => items.sort((a, b) => a.transform[4] - b.transform[4])); // Sort items in row by X
-
-        // Extract links
+        // Extract links with their bounding boxes
         const links = annotations
           .filter((anno: any) => anno.subtype === 'Link' && anno.url)
           .map((anno: any) => ({
             url: anno.url,
-            rect: anno.rect,
+            rect: anno.rect, // [x1, y1, x2, y2]
             y: anno.rect[1], // Bottom Y coordinate
+            x: anno.rect[0], // Left X coordinate
           }));
 
-        // Try to match each row with a link
-        rows.forEach((rowItems) => {
-          if (rowItems.length === 0) return;
+        if (DEBUG_MODE) {
+          console.log(`Page ${pageNum}: Found ${links.length} links`);
+        }
 
-          const rowY = rowItems[0].transform[5];
-          const rowText = rowItems.map(item => item.str).join(' ');
+        // For each link, find text items in the same row (within Y range)
+        links.forEach((link) => {
+          // Define row bounds: within ±30 units of link Y position (accounting for multi-line rows)
+          const rowYMin = link.y - 30;
+          const rowYMax = link.y + 50; // Links are usually in the top section of multi-line rows
 
-          // Check if this row has a link nearby
-          const nearbyLink = links.find(link => Math.abs(link.y - rowY) < 20);
+          // Find all text items in this row
+          const rowTextItems = textItems.filter((item) => {
+            const itemY = item.transform[5];
+            return itemY >= rowYMin && itemY <= rowYMax;
+          });
 
-          if (nearbyLink) {
-            const product = this.parseProductRow(rowText, nearbyLink.url);
-            if (product) {
-              products.push(product);
-            }
+          // Sort by X position (left to right)
+          rowTextItems.sort((a, b) => a.transform[4] - b.transform[4]);
+
+          // Build row text
+          const rowText = rowTextItems.map(item => item.str).join(' ');
+
+          if (DEBUG_MODE) {
+            console.log(`Link URL: ${link.url}`);
+            console.log(`Row text: ${rowText.substring(0, 100)}...`);
+          }
+
+          // Parse this specific row
+          const product = this.parseProductRow(rowText, link.url);
+          if (product) {
+            products.push(product);
           }
         });
       }
