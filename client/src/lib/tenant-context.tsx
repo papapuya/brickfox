@@ -98,16 +98,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     console.log(`[TenantContext] Switched to tenant: ${tenants.find((t: Tenant) => t.id === tenantId)?.name}`);
   };
 
-  const refetch = () => {
-    refetchTenants();
-  };
-
   const value: TenantContextType = {
     currentTenant,
     tenants,
     isLoading,
     switchTenant,
-    refetch,
+    refetch: refetchTenants,
   };
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
