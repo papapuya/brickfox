@@ -39,6 +39,9 @@ interface ScrapedProduct {
   zellenchemie?: string;
   energie?: string;
   farbe?: string;
+  // Pricing
+  ekPrice?: string;
+  vkPrice?: string;
 }
 
 interface GeneratedContent {
@@ -1743,7 +1746,8 @@ export default function URLScraper() {
                       <TableHead className="min-w-[200px]">Produktname</TableHead>
                       <TableHead className="min-w-[120px]">EAN</TableHead>
                       <TableHead className="min-w-[120px]">Hersteller</TableHead>
-                      <TableHead className="min-w-[80px]">Preis</TableHead>
+                      <TableHead className="min-w-[100px]">EK (netto) €</TableHead>
+                      <TableHead className="min-w-[100px]">VK (brutto) €</TableHead>
                       <TableHead className="min-w-[150px]">Kategorie</TableHead>
                       {/* ANSMANN Technical Specifications */}
                       <TableHead className="min-w-[120px]">Nominalspannung (V)</TableHead>
@@ -1802,7 +1806,8 @@ export default function URLScraper() {
                         <TableCell className="font-medium whitespace-normal break-words">{product.productName || '-'}</TableCell>
                         <TableCell className="font-mono text-sm whitespace-nowrap">{product.ean || '-'}</TableCell>
                         <TableCell className="whitespace-nowrap">{product.manufacturer || '-'}</TableCell>
-                        <TableCell className="font-semibold whitespace-nowrap">{product.price || '-'}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap text-green-700">{(product as any).ekPrice || '-'}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap text-blue-700">{(product as any).vkPrice || '-'}</TableCell>
                         <TableCell className="text-xs whitespace-normal break-words">{product.category || '-'}</TableCell>
                         {/* ANSMANN Technical Specifications */}
                         <TableCell className="text-sm">{product.nominalspannung || '-'}</TableCell>
