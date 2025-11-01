@@ -26,13 +26,14 @@ interface FieldMapping {
 }
 
 interface FieldMappingEditorProps {
-  supplierId: string;
+  supplierId?: string;
   projectId?: string;
+  sourceType?: 'url_scraper' | 'csv';
   onSave?: (mappings: FieldMapping[]) => void;
 }
 
-export function FieldMappingEditor({ supplierId, projectId, onSave }: FieldMappingEditorProps) {
-  const [sourceType, setSourceType] = useState<'url_scraper' | 'csv'>('url_scraper');
+export function FieldMappingEditor({ supplierId, projectId, sourceType: initialSourceType, onSave }: FieldMappingEditorProps) {
+  const [sourceType, setSourceType] = useState<'url_scraper' | 'csv'>(initialSourceType || 'url_scraper');
   const [sourceFields, setSourceFields] = useState<DetectedField[]>([]);
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
   const [selectedSourceField, setSelectedSourceField] = useState<string | null>(null);
