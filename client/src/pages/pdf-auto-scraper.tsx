@@ -272,15 +272,30 @@ export default function PDFAutoScraper() {
         </Card>
 
         {isProcessing && (
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                <span>Verarbeitung läuft...</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{progressMessage || 'Verarbeite PDF...'}</span>
-                  <span>{progress}%</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium">{progressMessage || 'Verarbeite PDF...'}</span>
+                  <span className="text-blue-600 font-semibold">{progress}%</span>
                 </div>
-                <Progress value={progress} className="w-full" />
+                <Progress value={progress} className="w-full h-3" />
               </div>
+              
+              {progress > 0 && (
+                <div className="text-xs text-muted-foreground bg-white/50 p-3 rounded border">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"></div>
+                    <span>Die Verarbeitung kann einige Minuten dauern...</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

@@ -1383,7 +1383,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Connection', 'keep-alive');
 
       const sendProgress = (data: any) => {
-        res.write(`data: ${JSON.stringify(data)}\n\n`);
+        try {
+          // Safely stringify, escaping problematic characters
+          const jsonString = JSON.stringify(data)
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t');
+          res.write(`data: ${jsonString}\n\n`);
+        } catch (error) {
+          console.error('[SSE] Failed to send progress:', error);
+        }
       };
 
       // Extract products from PDF
