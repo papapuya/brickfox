@@ -11,6 +11,14 @@ import {
 } from '../../shared/brickfox-schema';
 import type { ProductInProject } from '../../shared/schema';
 
+// Debug logging helper - only logs when DEBUG_MODE=true
+const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+function debugLog(...args: any[]) {
+  if (DEBUG_MODE) {
+    console.log('[Brickfox Mapper DEBUG]', ...args);
+  }
+}
+
 export interface BrickfoxRow {
   [key: string]: string | number | boolean | null;
 }
@@ -161,12 +169,8 @@ function getFieldValue(
       }
     }
     
-    // DEBUG: Log what we found
-    if (config.field === 'hersteller' || config.field === 'preis' || config.field === 'gewicht' || config.field === 'kategorie' || config.field === 'ean') {
-      console.log(`[Brickfox Mapper] Field: ${config.field}, Found value:`, value);
-      console.log(`[Brickfox Mapper] Product extractedData:`, product.extractedData);
-      console.log(`[Brickfox Mapper] Product customAttributes:`, product.customAttributes);
-    }
+    // Debug logging - only when DEBUG_MODE=true
+    debugLog(`Field: ${config.field}, Found value:`, value);
     
     // Parse based on field type
     if (fieldMeta.type === 'number' || fieldMeta.key === 'v_weight') {

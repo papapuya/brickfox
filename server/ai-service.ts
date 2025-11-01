@@ -1,5 +1,13 @@
 import OpenAI from 'openai';
 
+// Debug logging helper - only logs when DEBUG_MODE=true
+const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+function debugLog(...args: any[]) {
+  if (DEBUG_MODE) {
+    console.log('[AI Service DEBUG]', ...args);
+  }
+}
+
 // Helper function to clean HTML responses from markdown code blocks
 function cleanHTMLResponse(content: string): string {
   // Remove markdown code blocks (```html, ```, etc.)
@@ -818,13 +826,13 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
     console.log('Schritt 1: ExtractProductData...');
     onProgress?.(33, 'Daten werden extrahiert...');
     const extractedData = await extractProductData(htmlOrText);
-    console.log('Extrahierte Daten:', extractedData);
+    debugLog('Extrahierte Daten:', extractedData);
     
     // Schritt 2: Daten normalisieren
     console.log('Schritt 2: NormalizeProductData...');
     onProgress?.(66, 'Daten werden strukturiert...');
     const normalizedData = normalizeProductData(extractedData);
-    console.log('Normalisierte Daten:', normalizedData);
+    debugLog('Normalisierte Daten:', normalizedData);
     
     // Schritt 3: HTML generieren mit einfacher Template-Funktion
     console.log('Schritt 3: GenerateAkkushopDescription...');
