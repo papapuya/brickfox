@@ -33,7 +33,8 @@ export interface ScraperSelectors {
 }
 
 export interface ScrapedProduct {
-  articleNumber: string;
+  articleNumber: string;  // Brickfox Article Number (ANS + manufacturer number)
+  manufacturerArticleNumber?: string;  // Original manufacturer article number
   productName: string;
   ean?: string;
   manufacturer?: string;
@@ -194,7 +195,18 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   const articleSelector = (selectors as any).productCode || selectors.articleNumber;
   if (articleSelector) {
     const element = $(articleSelector).first();
-    product.articleNumber = element.text().trim() || element.attr('content')?.trim() || '';
+    const manufacturerNumber = element.text().trim() || element.attr('content')?.trim() || '';
+    
+    // Store original manufacturer article number
+    product.manufacturerArticleNumber = manufacturerNumber;
+    
+    // Generate Brickfox article number: ANS + manufacturer number
+    if (manufacturerNumber) {
+      product.articleNumber = 'ANS' + manufacturerNumber;
+      console.log(`📦 Generated Brickfox Article Number: ${product.articleNumber} (from ${manufacturerNumber})`);
+    } else {
+      product.articleNumber = '';
+    }
   }
 
   // Product Name
