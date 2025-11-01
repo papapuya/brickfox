@@ -34,12 +34,26 @@ import {
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import { Switch } from '@/components/ui/switch';
+
+interface TenantSettings {
+  features: {
+    pixiIntegration: boolean;
+    sapIntegration: boolean;
+    urlScraper: boolean;
+    csvBulkImport: boolean;
+    aiDescriptions: boolean;
+  };
+  erp: {
+    type: string | null;
+  };
+}
 
 interface Tenant {
   id: string;
   name: string;
   slug: string;
-  settings: any;
+  settings: TenantSettings;
   userCount: number;
   projectCount: number;
   supplierCount: number;
@@ -54,6 +68,8 @@ interface TenantsData {
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [newTenantName, setNewTenantName] = useState('');
   const { toast } = useToast();
 
@@ -110,6 +126,93 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const updateTenantMutation = useMutation({
+    mutationFn: async ({ id, settings }: { id: string; settings: TenantSettings }) => {
+      const token = localStorage.getItem('supabase_token');
+      const res = await fetch(`/api/admin/tenants/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ settings }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update tenant');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Einstellungen gespeichert',
+        description: `Einstellungen für ${selectedTenant?.name} wurden erfolgreich aktualisiert!`,
+      });
+      setIsSettingsDialogOpen(false);
+      setSelectedTenant(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Fehler',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleOpenSettings = (tenant: Tenant) => {
+    // Defensive defaults for legacy tenants without full settings
+    const defaultSettings: TenantSettings = {
+      features: {
+        pixiIntegration: false,
+        sapIntegration: false,
+        urlScraper: true,
+        csvBulkImport: true,
+        aiDescriptions: true,
+      },
+      erp: {
+        type: null,
+      },
+    };
+
+    setSelectedTenant({
+      ...tenant,
+      settings: {
+        ...defaultSettings,
+        ...tenant.settings,
+        features: {
+          ...defaultSettings.features,
+          ...(tenant.settings?.features || {}),
+        },
+      },
+    });
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleToggleFeature = (feature: keyof TenantSettings['features']) => {
+    if (!selectedTenant) return;
+    
+    setSelectedTenant({
+      ...selectedTenant,
+      settings: {
+        ...selectedTenant.settings,
+        features: {
+          ...selectedTenant.settings.features,
+          [feature]: !selectedTenant.settings.features[feature],
+        },
+      },
+    });
+  };
+
+  const handleSaveSettings = () => {
+    if (!selectedTenant) return;
+    updateTenantMutation.mutate({
+      id: selectedTenant.id,
+      settings: selectedTenant.settings,
+    });
+  };
 
   const tenants = data?.tenants || [];
   const filteredTenants = tenants.filter(
@@ -308,7 +411,12 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleOpenSettings(tenant)}
+                              >
                                 <Settings className="h-4 w-4" />
                               </Button>
                             </div>
@@ -323,6 +431,135 @@ export default function AdminDashboard() {
           </Card>
         </>
       )}
+
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-indigo-600" />
+              Einstellungen für {selectedTenant?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Konfigurieren Sie welche Features für diesen Kunden verfügbar sind.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Feature-Flags
+              </h3>
+              
+              {/* Pixi Integration */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Pixi ERP Integration</div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Automatischer Produktabgleich mit Pixi ERP System
+                  </p>
+                </div>
+                <Switch
+                  checked={selectedTenant?.settings.features.pixiIntegration || false}
+                  onCheckedChange={() => handleToggleFeature('pixiIntegration')}
+                />
+              </div>
+
+              {/* SAP Integration */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">SAP Integration</div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Anbindung an SAP-Systeme für Datenimport/Export
+                  </p>
+                </div>
+                <Switch
+                  checked={selectedTenant?.settings.features.sapIntegration || false}
+                  onCheckedChange={() => handleToggleFeature('sapIntegration')}
+                />
+              </div>
+
+              {/* URL Scraper */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">URL Web-Scraper</div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Produktdaten von Lieferanten-Webseiten extrahieren
+                  </p>
+                </div>
+                <Switch
+                  checked={selectedTenant?.settings.features.urlScraper || false}
+                  onCheckedChange={() => handleToggleFeature('urlScraper')}
+                />
+              </div>
+
+              {/* CSV Bulk Import */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">CSV Massenimport</div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Große Mengen an Produkten via CSV hochladen
+                  </p>
+                </div>
+                <Switch
+                  checked={selectedTenant?.settings.features.csvBulkImport || false}
+                  onCheckedChange={() => handleToggleFeature('csvBulkImport')}
+                />
+              </div>
+
+              {/* AI Descriptions */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">KI-Produktbeschreibungen</div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Automatische Generierung von Produkttexten mit GPT-4o-mini
+                  </p>
+                </div>
+                <Switch
+                  checked={selectedTenant?.settings.features.aiDescriptions || false}
+                  onCheckedChange={() => handleToggleFeature('aiDescriptions')}
+                />
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="bg-indigo-600 text-white rounded p-1">
+                  <Settings className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-indigo-900 mb-1">
+                    Aktive Features
+                  </h4>
+                  <p className="text-xs text-indigo-700">
+                    {Object.values(selectedTenant?.settings.features || {}).filter(Boolean).length} von 5 Features aktiviert
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSettingsDialogOpen(false);
+                setSelectedTenant(null);
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSaveSettings}
+              disabled={updateTenantMutation.isPending}
+              className="gap-2"
+            >
+              {updateTenantMutation.isPending ? 'Wird gespeichert...' : 'Einstellungen speichern'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
