@@ -131,16 +131,20 @@ export async function performLogin(config: LoginConfig): Promise<string> {
 
 /**
  * Helper function: Convert measurement to German format (comma, no units)
- * Examples: "250g" → "250", "1.5kg" → "1,5", "120mm" → "120"
+ * Automatically converts to millimeters (mm) for length measurements
+ * Examples: 
+ *   "250g" → "250", "1.5kg" → "1,5"
+ *   "120mm" → "120", "12cm" → "120", "1.5m" → "1500"
  */
 function formatMeasurement(text: string): string {
   if (!text) return '';
   
-  // Extract only numeric portion with separators (remove units)
-  const numericMatch = text.match(/[\d,.]+/);
-  if (!numericMatch) return '';
+  // Extract numeric portion and detect unit
+  const match = text.match(/([\d,.]+)\s*([a-zA-Z]+)?/);
+  if (!match) return '';
   
-  let value = numericMatch[0];
+  let value = match[1];
+  const unit = match[2]?.toLowerCase() || '';
   
   // Normalize to internal format (dot as decimal separator)
   const hasComma = value.includes(',');
@@ -163,8 +167,23 @@ function formatMeasurement(text: string): string {
   }
   // If only dot or neither: keep as is
   
-  // Convert to German format with comma (0.25 → 0,25)
-  return value.replace('.', ',');
+  // Convert to number for unit conversion
+  let numValue = parseFloat(value);
+  
+  // Convert length units to millimeters
+  if (unit === 'cm' || unit === 'zentimeter') {
+    numValue = numValue * 10; // cm → mm
+  } else if (unit === 'm' || unit === 'meter') {
+    numValue = numValue * 1000; // m → mm
+  } else if (unit === 'km' || unit === 'kilometer') {
+    numValue = numValue * 1000000; // km → mm
+  }
+  // mm stays as is, other units (g, kg, etc.) stay as is
+  
+  // Convert back to string with German format (comma as decimal separator)
+  const formattedValue = numValue.toString().replace('.', ',');
+  
+  return formattedValue;
 }
 
 /**
