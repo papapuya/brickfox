@@ -1384,14 +1384,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const sendProgress = (data: any) => {
         try {
-          // Safely stringify, escaping problematic characters
-          const jsonString = JSON.stringify(data)
-            .replace(/\n/g, '\\n')
-            .replace(/\r/g, '\\r')
-            .replace(/\t/g, '\\t');
-          res.write(`data: ${jsonString}\n\n`);
+          // Create a safe copy without problematic nested objects
+          const safeData: Record<string, any> = {
+            stage: data.stage,
+            current: data.current,
+            total: data.total,
+            progress: data.progress,
+          };
+          
+          if (data.message) {
+            safeData.message = String(data.message).substring(0, 200);
+          }
+          if (data.error) {
+            safeData.error = String(data.error).substring(0, 200);
+          }
+          
+          res.write(`data: ${JSON.stringify(safeData)}\n\n`);
         } catch (error) {
           console.error('[SSE] Failed to send progress:', error);
+          res.write(`data: ${JSON.stringify({ stage: 'error', error: 'Fehler beim Senden' })}\n\n`);
         }
       };
 
