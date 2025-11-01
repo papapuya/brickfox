@@ -1001,7 +1001,7 @@ export default function ProjectDetail() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-auto border rounded-md">
-              {brickfoxPreviewData.length > 0 && (
+              {brickfoxPreviewData.length > 0 && brickfoxPreviewData[0] ? (
                 <table className="w-full text-sm">
                   <thead className="bg-muted sticky top-0">
                     <tr>
@@ -1024,7 +1024,11 @@ export default function ProjectDetail() {
                     ))}
                   </tbody>
                 </table>
-              )}
+              ) : brickfoxPreviewData.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Keine Daten vorhanden
+                </div>
+              ) : null}
               {brickfoxPreviewData.length > 50 && (
                 <div className="p-3 text-sm text-muted-foreground border-t bg-muted/30">
                   Zeige 50 von {brickfoxPreviewData.length} Produkten. Alle Daten werden beim Export eingeschlossen.
