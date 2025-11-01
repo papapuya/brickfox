@@ -170,7 +170,7 @@ function formatMeasurement(text: string): string {
   // Convert to number for unit conversion
   let numValue = parseFloat(value);
   
-  // Convert length units to millimeters
+  // Convert length units to millimeters (mm)
   if (unit === 'cm' || unit === 'zentimeter') {
     numValue = numValue * 10; // cm → mm
   } else if (unit === 'm' || unit === 'meter') {
@@ -178,7 +178,14 @@ function formatMeasurement(text: string): string {
   } else if (unit === 'km' || unit === 'kilometer') {
     numValue = numValue * 1000000; // km → mm
   }
-  // mm stays as is, other units (g, kg, etc.) stay as is
+  
+  // Convert weight units to grams (g)
+  else if (unit === 'kg' || unit === 'kilogramm') {
+    numValue = numValue * 1000; // kg → g
+  } else if (unit === 't' || unit === 'tonne') {
+    numValue = numValue * 1000000; // t → g
+  }
+  // mm and g stay as is
   
   // Convert back to string with German format (comma as decimal separator)
   const formattedValue = numValue.toString().replace('.', ',');
