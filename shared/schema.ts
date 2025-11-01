@@ -121,7 +121,7 @@ export const productInProjectSchema = z.object({
   })).optional(),
   htmlCode: z.string().optional(),
   previewText: z.string().optional(),
-  extractedData: z.array(extractedProductDataSchema).optional(),
+  extractedData: z.array(z.any()).optional(), // Flexible format: can be extractedProductDataSchema OR simple key-value pairs
   template: z.string().optional(),
   customAttributes: z.array(z.object({
     key: z.string(),
