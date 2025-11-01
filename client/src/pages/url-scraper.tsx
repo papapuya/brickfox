@@ -153,14 +153,30 @@ export default function URLScraper() {
 
     const pdfUrls = sessionStorage.getItem('pdf_extracted_urls');
     const pdfMetadataMap = sessionStorage.getItem('pdf_url_metadata_map');
+    const pdfSupplierId = sessionStorage.getItem('pdf_selected_supplier_id');
     
     if (pdfUrls && pdfMetadataMap) {
       try {
         const urls = pdfUrls.split('\n').filter(url => url.trim());
         const metadataMap = JSON.parse(pdfMetadataMap);
         
-        // Auto-detect supplier from first URL
-        if (urls.length > 0 && suppliersData?.suppliers) {
+        // Use supplier from PDF-Auto-Scraper if set
+        if (pdfSupplierId && pdfSupplierId !== "__none__" && suppliersData?.suppliers) {
+          setSelectedSupplierId(pdfSupplierId);
+          const supplier = suppliersData.suppliers.find((s: any) => s.id === pdfSupplierId);
+          if (supplier) {
+            // Load supplier selectors automatically
+            handleSupplierSelect(pdfSupplierId);
+            toast({
+              title: "✅ Lieferant geladen",
+              description: `${supplier.name} aus PDF-Upload übernommen`,
+            });
+          }
+          // Clear from sessionStorage
+          sessionStorage.removeItem('pdf_selected_supplier_id');
+        }
+        // Fallback: Auto-detect supplier from URL if no supplier was selected in PDF-Auto-Scraper
+        else if (urls.length > 0 && suppliersData?.suppliers) {
           const detectedSupplierId = autoDetectSupplier(urls[0], suppliersData.suppliers);
           if (detectedSupplierId) {
             setSelectedSupplierId(detectedSupplierId);
@@ -502,6 +518,33 @@ export default function URLScraper() {
   const handleScrapeFromPDF = async (urls: string[], metadataMap: Record<string, any>) => {
     setIsLoading(true);
     setScrapedProducts([]);
+    setBatchProgress({ current: 0, total: urls.length, status: "Erkenne Lieferanten..." });
+
+    // WICHTIG: Auto-detect supplier BEFORE scraping starts
+    let detectedSupplierId = selectedSupplierId;
+    if (urls.length > 0 && suppliersData?.suppliers && detectedSupplierId === "__none__") {
+      const detected = autoDetectSupplier(urls[0], suppliersData.suppliers);
+      if (detected) {
+        detectedSupplierId = detected;
+        setSelectedSupplierId(detected);
+        
+        // Load supplier selectors
+        const supplier = suppliersData.suppliers.find((s: any) => s.id === detected);
+        if (supplier) {
+          setSelectors({ ...selectors, ...supplier.selectors });
+          setProductLinkSelector(supplier.productLinkSelector || "");
+          setSessionCookies(supplier.sessionCookies || "");
+          setUserAgent(supplier.userAgent || "");
+          
+          console.log(`✅ Auto-detected and loaded supplier: ${supplier.name}`);
+          toast({
+            title: "✅ Lieferant erkannt",
+            description: `${supplier.name} wurde automatisch ausgewählt`,
+          });
+        }
+      }
+    }
+    
     setBatchProgress({ current: 0, total: urls.length, status: "Scraping aus PDF gestartet..." });
 
     try {

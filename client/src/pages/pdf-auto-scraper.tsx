@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Loader2, ExternalLink, ArrowRight } from 'lucide-react';
@@ -32,6 +33,24 @@ export default function PDFAutoScraper() {
   const [, setLocation] = useLocation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extractedProducts, setExtractedProducts] = useState<PDFProduct[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
+
+  // Load suppliers
+  const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
+    queryKey: ['/api/suppliers'],
+    queryFn: async () => {
+      const token = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
+      const response = await fetch('/api/suppliers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch suppliers');
+      }
+      return response.json();
+    },
+  });
 
   const extractMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -138,6 +157,11 @@ export default function PDFAutoScraper() {
     sessionStorage.setItem('pdf_extracted_urls', urls);
     sessionStorage.setItem('pdf_url_metadata_map', JSON.stringify(urlToMetadata));
     
+    // Store selected supplier ID
+    if (selectedSupplierId && selectedSupplierId !== "__none__") {
+      sessionStorage.setItem('pdf_selected_supplier_id', selectedSupplierId);
+    }
+    
     setLocation('/url-scraper');
   };
 
@@ -176,6 +200,26 @@ export default function PDFAutoScraper() {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier-select">Lieferant auswählen (optional)</Label>
+              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                <SelectTrigger id="supplier-select">
+                  <SelectValue placeholder="Keine Vorlage (Auto-Erkennung)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Keine Vorlage (Auto-Erkennung)</SelectItem>
+                  {suppliersData?.suppliers?.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                💡 Gespeicherte CSS-Selektoren für diesen Lieferanten laden
+              </p>
             </div>
 
             <Button
