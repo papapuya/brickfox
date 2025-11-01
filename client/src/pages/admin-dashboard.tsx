@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -10,43 +10,58 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Users,
   TrendingUp,
-  Zap,
-  DollarSign,
+  Building2,
+  Plus,
   Search,
-  Crown
+  Crown,
+  Settings,
+  Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
-interface CustomerStats {
+interface Tenant {
   id: string;
-  email: string;
-  username?: string;
-  isAdmin: boolean;
-  planId?: string;
-  subscriptionStatus?: string;
-  apiCallsUsed: number;
-  apiCallsLimit: number;
+  name: string;
+  slug: string;
+  settings: any;
+  userCount: number;
   projectCount: number;
-  productCount: number;
+  supplierCount: number;
   createdAt: string;
 }
 
-interface CustomersData {
+interface TenantsData {
   success: boolean;
-  customers: CustomerStats[];
+  tenants: Tenant[];
 }
 
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newTenantName, setNewTenantName] = useState('');
+  const { toast } = useToast();
 
-  const { data, isLoading } = useQuery<CustomersData>({
-    queryKey: ['admin-customers'],
+  const { data, isLoading } = useQuery<TenantsData>({
+    queryKey: ['admin-tenants'],
     queryFn: async () => {
       const token = localStorage.getItem('supabase_token');
-      const res = await fetch('/api/admin/customers', {
+      const res = await fetch('/api/admin/tenants', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -55,68 +70,121 @@ export default function AdminDashboard() {
         if (res.status === 403) {
           throw new Error('Zugriff verweigert - nur für Administratoren');
         }
-        throw new Error('Failed to load customers');
+        throw new Error('Failed to load tenants');
       }
       return res.json();
     },
   });
 
-  const customers = data?.customers || [];
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  const createTenantMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const token = localStorage.getItem('supabase_token');
+      const res = await fetch('/api/admin/tenants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create tenant');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Kunde angelegt',
+        description: `${newTenantName} wurde erfolgreich erstellt!`,
+      });
+      setIsCreateDialogOpen(false);
+      setNewTenantName('');
+      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Fehler',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const tenants = data?.tenants || [];
+  const filteredTenants = tenants.filter(
+    (t) =>
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Calculate overall stats
-  const totalCustomers = customers.length;
-  const activeSubscriptions = customers.filter(
-    (c) => c.subscriptionStatus === 'active'
-  ).length;
-  const totalApiCalls = customers.reduce((sum, c) => sum + c.apiCallsUsed, 0);
-  const totalProjects = customers.reduce((sum, c) => sum + c.projectCount, 0);
-
-  const getPlanBadgeColor = (planId?: string) => {
-    switch (planId) {
-      case 'enterprise':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'pro':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'starter':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'trial':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-600 border-gray-200';
-    }
-  };
-
-  const getStatusBadgeColor = (status?: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'past_due':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'canceled':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'trial':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-600 border-gray-200';
-    }
-  };
+  const totalTenants = tenants.length;
+  const totalUsers = tenants.reduce((sum, t) => sum + t.userCount, 0);
+  const totalProjects = tenants.reduce((sum, t) => sum + t.projectCount, 0);
+  const totalSuppliers = tenants.reduce((sum, t) => sum + t.supplierCount, 0);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Crown className="h-8 w-8 text-amber-500" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            Admin Dashboard
-          </h1>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Crown className="h-8 w-8 text-amber-500" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              Kundenverwaltung
+            </h1>
+          </div>
+          <p className="text-gray-600">Verwalten Sie alle Mandanten (Tenants) Ihrer SaaS-Plattform</p>
         </div>
-        <p className="text-gray-600">Übersicht aller Kunden und Statistiken</p>
+        
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="lg" className="gap-2">
+              <Plus className="h-5 w-5" />
+              Neuen Kunden anlegen
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Neuen Kunden anlegen</DialogTitle>
+              <DialogDescription>
+                Legen Sie einen neuen Mandanten (z.B. AkkuShop.de, Sport2000) für Ihre SaaS-Plattform an.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="tenant-name">Kundenname</Label>
+                <Input
+                  id="tenant-name"
+                  placeholder="z.B. AkkuShop.de oder Sport2000"
+                  value={newTenantName}
+                  onChange={(e) => setNewTenantName(e.target.value)}
+                />
+                <p className="text-xs text-gray-500">
+                  Der Slug wird automatisch generiert (z.B. akkushop-de)
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCreateDialogOpen(false);
+                  setNewTenantName('');
+                }}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => createTenantMutation.mutate(newTenantName)}
+                disabled={!newTenantName.trim() || createTenantMutation.isPending}
+              >
+                {createTenantMutation.isPending ? 'Wird erstellt...' : 'Kunde anlegen'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {isLoading ? (
@@ -130,57 +198,55 @@ export default function AdminDashboard() {
             <Card className="border-indigo-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">Gesamt-Kunden</CardTitle>
-                <Users className="h-4 w-4 text-indigo-600" />
+                <Building2 className="h-4 w-4 text-indigo-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-indigo-600">{totalCustomers}</div>
-                <p className="text-xs text-gray-500 mt-1">Registrierte User</p>
+                <div className="text-3xl font-bold text-indigo-600">{totalTenants}</div>
+                <p className="text-xs text-gray-500 mt-1">Mandanten (Tenants)</p>
               </CardContent>
             </Card>
 
             <Card className="border-green-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Aktive Abos</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Gesamt-User</CardTitle>
+                <Users className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">{activeSubscriptions}</div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {((activeSubscriptions / Math.max(totalCustomers, 1)) * 100).toFixed(0)}% Conversion
-                </p>
+                <div className="text-3xl font-bold text-green-600">{totalUsers}</div>
+                <p className="text-xs text-gray-500 mt-1">Über alle Kunden</p>
               </CardContent>
             </Card>
 
             <Card className="border-violet-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">API Calls (Gesamt)</CardTitle>
-                <Zap className="h-4 w-4 text-violet-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Projekte (Gesamt)</CardTitle>
+                <TrendingUp className="h-4 w-4 text-violet-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-violet-600">{totalApiCalls}</div>
-                <p className="text-xs text-gray-500 mt-1">Genutzte AI-Generierungen</p>
+                <div className="text-3xl font-bold text-violet-600">{totalProjects}</div>
+                <p className="text-xs text-gray-500 mt-1">Über alle Kunden</p>
               </CardContent>
             </Card>
 
             <Card className="border-amber-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Projekte (Gesamt)</CardTitle>
-                <DollarSign className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Lieferanten (Gesamt)</CardTitle>
+                <Settings className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-amber-600">{totalProjects}</div>
-                <p className="text-xs text-gray-500 mt-1">Erstellte Projekte</p>
+                <div className="text-3xl font-bold text-amber-600">{totalSuppliers}</div>
+                <p className="text-xs text-gray-500 mt-1">Über alle Kunden</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Customer Table */}
+          {/* Tenant Table */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">Kunden-Übersicht</CardTitle>
-                  <CardDescription>Alle registrierten Benutzer mit Details</CardDescription>
+                  <CardDescription>Alle Mandanten mit Details und Statistiken</CardDescription>
                 </div>
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -198,71 +264,54 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead className="font-semibold">Email</TableHead>
-                      <TableHead className="font-semibold">Plan</TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                      <TableHead className="font-semibold text-right">API Calls</TableHead>
+                      <TableHead className="font-semibold">Kundenname</TableHead>
+                      <TableHead className="font-semibold">Slug</TableHead>
+                      <TableHead className="font-semibold text-right">User</TableHead>
                       <TableHead className="font-semibold text-right">Projekte</TableHead>
-                      <TableHead className="font-semibold text-right">Produkte</TableHead>
-                      <TableHead className="font-semibold">Registriert</TableHead>
+                      <TableHead className="font-semibold text-right">Lieferanten</TableHead>
+                      <TableHead className="font-semibold">Erstellt am</TableHead>
+                      <TableHead className="font-semibold">Aktionen</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredCustomers.length === 0 ? (
+                    {filteredTenants.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                          Keine Kunden gefunden
+                          {searchQuery ? 'Keine Kunden gefunden' : 'Noch keine Kunden angelegt'}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredCustomers.map((customer) => (
-                        <TableRow key={customer.id} className="hover:bg-gray-50">
+                      filteredTenants.map((tenant) => (
+                        <TableRow key={tenant.id} className="hover:bg-gray-50">
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              {customer.isAdmin && (
-                                <Crown className="h-4 w-4 text-amber-500" />
-                              )}
-                              <div>
-                                <div className="font-medium text-gray-900">{customer.email}</div>
-                                {customer.username && (
-                                  <div className="text-xs text-gray-500">{customer.username}</div>
-                                )}
-                              </div>
+                              <Building2 className="h-4 w-4 text-indigo-600" />
+                              <div className="font-medium text-gray-900">{tenant.name}</div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={getPlanBadgeColor(customer.planId)}>
-                              {customer.planId === 'trial' ? 'Trial' : customer.planId || 'Free'}
+                            <Badge variant="outline" className="bg-gray-50 text-gray-700 font-mono text-xs">
+                              {tenant.slug}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={getStatusBadgeColor(customer.subscriptionStatus)}
-                            >
-                              {customer.subscriptionStatus === 'active'
-                                ? 'Aktiv'
-                                : customer.subscriptionStatus === 'past_due'
-                                ? 'Überfällig'
-                                : customer.subscriptionStatus === 'canceled'
-                                ? 'Gekündigt'
-                                : customer.subscriptionStatus || 'Trial'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="text-sm">
-                              <span className="font-medium">{customer.apiCallsUsed}</span>
-                              <span className="text-gray-400"> / {customer.apiCallsLimit}</span>
-                            </div>
+                          <TableCell className="text-right font-medium">
+                            {tenant.userCount}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            {customer.projectCount}
+                            {tenant.projectCount}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            {customer.productCount}
+                            {tenant.supplierCount}
                           </TableCell>
                           <TableCell className="text-sm text-gray-500">
-                            {new Date(customer.createdAt).toLocaleDateString('de-DE')}
+                            {new Date(tenant.createdAt).toLocaleDateString('de-DE')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
