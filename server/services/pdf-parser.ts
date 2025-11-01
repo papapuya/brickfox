@@ -129,7 +129,8 @@ export class PDFParserService {
       };
 
       // Extract structured data using regex
-      const articleMatch = rowText.match(/\b\d{4}-\d{4}-\d{2}\b/);
+      // Support both formats: XXXX-XXXX-XX (10 digits) and XXXX-XXXX (8 digits)
+      const articleMatch = rowText.match(/\b\d{4}-\d{4}(?:-\d{2})?\b/);
       const eanMatch = rowText.match(/\b\d{13}\b/);
       const priceMatches = rowText.match(/(\d+[,\.]\d{2})\s*€/g);
 
