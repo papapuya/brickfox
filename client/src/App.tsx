@@ -28,6 +28,7 @@ import Pricing from "@/pages/pricing";
 import Success from "@/pages/success";
 import Account from "@/pages/account";
 import NotFound from "@/pages/not-found";
+import FieldMappingDemo from "@/pages/field-mapping-demo";
 
 function Router() {
   return (
@@ -88,6 +89,11 @@ function Router() {
       <Route path="/account">
         <ProtectedRoute>
           <Account />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/field-mapping-demo">
+        <ProtectedRoute>
+          <FieldMappingDemo />
         </ProtectedRoute>
       </Route>
       
