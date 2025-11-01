@@ -225,6 +225,23 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Anleitung */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+            <span className="text-lg">ℹ️</span>
+            So funktioniert die Zuordnung:
+          </h4>
+          <ol className="text-sm text-blue-800 space-y-1 ml-6 list-decimal">
+            <li><strong>Schritt 1:</strong> Klicken Sie auf ein Quellenfeld links (z.B. "EAN Barcode")</li>
+            <li><strong>Schritt 2:</strong> Klicken Sie dann auf das passende Brickfox-Feld rechts (z.B. "EAN")</li>
+            <li><strong>Schritt 3:</strong> Die Felder werden automatisch verknüpft (✓ grünes Häkchen)</li>
+            <li><strong>Fertig:</strong> Klicken Sie auf "Speichern" um die Zuordnung zu sichern</li>
+          </ol>
+          <p className="text-xs text-blue-700 mt-2 italic">
+            💡 Tipp: Bereits zugeordnete Felder sind mit einem grünen Häkchen markiert
+          </p>
+        </div>
+
         <div>
           <Label>Datenquelle wählen</Label>
           <RadioGroup
@@ -252,9 +269,16 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
         ) : (
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-semibold mb-3">
-                Quellenfelder ({sourceType === 'url_scraper' ? 'Scraper' : 'CSV'})
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold">
+                  ① Quellenfelder ({sourceType === 'url_scraper' ? 'Scraper' : 'CSV'})
+                </h3>
+                {selectedSourceField && (
+                  <Badge variant="default" className="bg-blue-600">
+                    Ausgewählt ✓
+                  </Badge>
+                )}
+              </div>
               <ScrollArea className="h-[400px] rounded-md border p-3">
                 <div className="space-y-2">
                   {sourceFields.length === 0 && (
@@ -314,9 +338,16 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold mb-3">
-                Brickfox CSV Felder
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold">
+                  ② Brickfox CSV Felder
+                </h3>
+                {selectedSourceField && (
+                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                    Wählen Sie ein Ziel →
+                  </Badge>
+                )}
+              </div>
               <ScrollArea className="h-[400px] rounded-md border p-3">
                 <div className="space-y-2">
                   {brickfoxFields.map((field: typeof brickfoxFields[number]) => {
