@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -94,6 +94,9 @@ export default function URLScraper() {
   // HTML Preview Dialog
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState("");
+  
+  // HTML Copy State
+  const [copiedArticleNumber, setCopiedArticleNumber] = useState<string | null>(null);
 
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -718,6 +721,34 @@ export default function URLScraper() {
     } finally {
       setIsLoading(false);
       abortScrapingRef.current = false;
+    }
+  };
+
+  // Copy HTML to clipboard
+  const handleCopyHtml = async (articleNumber: string) => {
+    const htmlContent = generatedDescriptions.get(articleNumber)?.description;
+    if (!htmlContent) return;
+
+    try {
+      await navigator.clipboard.writeText(htmlContent);
+      setCopiedArticleNumber(articleNumber);
+      
+      toast({
+        title: "Erfolgreich kopiert",
+        description: "HTML-Code wurde in die Zwischenablage kopiert",
+      });
+
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedArticleNumber(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast({
+        title: "Fehler",
+        description: "HTML konnte nicht kopiert werden",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1901,6 +1932,19 @@ export default function URLScraper() {
                                 title="HTML Vorschau anzeigen"
                               >
                                 <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCopyHtml(product.articleNumber)}
+                                title="HTML kopieren"
+                                className={copiedArticleNumber === product.articleNumber ? "text-green-600" : ""}
+                              >
+                                {copiedArticleNumber === product.articleNumber ? (
+                                  <Check className="w-4 h-4" />
+                                ) : (
+                                  <Copy className="w-4 h-4" />
+                                )}
                               </Button>
                             </div>
                           ) : (
