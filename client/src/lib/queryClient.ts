@@ -7,12 +7,25 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Helper to get token from the correct storage based on rememberMe preference
+function getAuthToken(): string | null {
+  const saved = localStorage.getItem('rememberMe');
+  // Default to true if not set (matches login page default and DynamicStorage)
+  const rememberMe = saved === null ? true : saved === 'true';
+  
+  if (rememberMe) {
+    return localStorage.getItem('supabase_token');
+  } else {
+    return sessionStorage.getItem('supabase_token');
+  }
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const token = localStorage.getItem('supabase_token');
+  const token = getAuthToken();
   const headers: Record<string, string> = {};
   
   if (data) {
@@ -40,7 +53,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const token = localStorage.getItem('supabase_token');
+    const token = getAuthToken();
     const headers: Record<string, string> = {};
     
     if (token) {
