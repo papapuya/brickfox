@@ -557,6 +557,46 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     (product as any).farbe = element.text().trim() || '';
   }
 
+  // ANSMANN: Extract Abmessungen (Dimensions) and split into Länge, Breite, Höhe
+  // Format: "Abmessungen: 70×37.5×37.5 mm" or "7 × 18 × 18 cm" or "70×37,5×37,5 mm"
+  if (!(product as any).laenge || !(product as any).breite || !(product as any).hoehe) {
+    const abmessungenMatch = html.match(/abmessungen[:\s]+([\d.,]+)\s*[×x]\s*([\d.,]+)\s*[×x]\s*([\d.,]+)\s*(mm|cm)/i);
+    if (abmessungenMatch) {
+      // Normalize numbers: handle both German (,) and English (.) decimal separators
+      const normalizeNumber = (num: string): string => {
+        // If both comma and dot present, assume German format (1.234,5)
+        if (num.includes(',') && num.includes('.')) {
+          return num.replace(/\./g, '').replace(',', '.');
+        }
+        // If only comma, assume decimal separator (37,5)
+        if (num.includes(',')) {
+          return num.replace(',', '.');
+        }
+        // Otherwise already English format
+        return num;
+      };
+      
+      let laenge = normalizeNumber(abmessungenMatch[1]);
+      let breite = normalizeNumber(abmessungenMatch[2]);
+      let hoehe = normalizeNumber(abmessungenMatch[3]);
+      const unit = abmessungenMatch[4].toLowerCase();
+      
+      // Convert cm to mm if needed
+      if (unit === 'cm') {
+        laenge = (parseFloat(laenge) * 10).toString();
+        breite = (parseFloat(breite) * 10).toString();
+        hoehe = (parseFloat(hoehe) * 10).toString();
+      }
+      
+      // Format with German comma and no units
+      (product as any).laenge = formatMeasurement(laenge);
+      (product as any).breite = formatMeasurement(breite);
+      (product as any).hoehe = formatMeasurement(hoehe);
+      
+      console.log(`📏 Extracted Abmessungen: ${(product as any).laenge} × ${(product as any).breite} × ${(product as any).hoehe} mm`);
+    }
+  }
+
   // Store raw HTML for debugging
   product.rawHtml = html.substring(0, 1000); // First 1000 chars
 
