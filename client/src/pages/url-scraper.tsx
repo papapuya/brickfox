@@ -651,7 +651,7 @@ export default function URLScraper() {
 
           if (data && data.product) {
             // Merge PDF data with scraped data (only if metadata exists for this URL)
-            const mergedProduct = pdfMetadata ? {
+            let mergedProduct = pdfMetadata ? {
               ...data.product,
               // Add EK price from PDF
               ekPrice: pdfMetadata.ekPrice,
@@ -660,6 +660,15 @@ export default function URLScraper() {
               pdfEanCode: pdfMetadata.eanCode,
               pdfProductName: pdfMetadata.productName,
             } : data.product;
+            
+            // Calculate VK if EK exists
+            if (mergedProduct.ekPrice) {
+              const ekValue = parseFloat(mergedProduct.ekPrice.replace(',', '.'));
+              if (!isNaN(ekValue)) {
+                const vkValue = Math.floor(ekValue * 2 * 1.19) + 0.95;
+                mergedProduct.vkPrice = vkValue.toFixed(2).replace('.', ',');
+              }
+            }
             
             products.push(mergedProduct);
           } else {
