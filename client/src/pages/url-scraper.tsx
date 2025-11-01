@@ -1521,13 +1521,13 @@ export default function URLScraper() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{product.articleNumber || '-'}</TableCell>
-                        <TableCell className="font-medium">{product.productName || '-'}</TableCell>
-                        <TableCell className="font-mono text-sm">{product.ean || '-'}</TableCell>
-                        <TableCell>{product.manufacturer || '-'}</TableCell>
-                        <TableCell className="font-semibold">{product.price || '-'}</TableCell>
-                        <TableCell>{product.weight || '-'}</TableCell>
-                        <TableCell className="text-xs">{product.category || '-'}</TableCell>
+                        <TableCell className="font-mono text-sm whitespace-nowrap">{product.articleNumber || '-'}</TableCell>
+                        <TableCell className="font-medium whitespace-normal break-words">{product.productName || '-'}</TableCell>
+                        <TableCell className="font-mono text-sm whitespace-nowrap">{product.ean || '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{product.manufacturer || '-'}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap">{product.price || '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{product.weight || '-'}</TableCell>
+                        <TableCell className="text-xs whitespace-normal break-words">{product.category || '-'}</TableCell>
                         <TableCell className="text-sm">{(product as any).length || '-'}</TableCell>
                         <TableCell className="text-sm">{(product as any).bodyDiameter || '-'}</TableCell>
                         <TableCell className="text-sm">{(product as any).headDiameter || '-'}</TableCell>
