@@ -13,6 +13,27 @@ PIMPilot is a production-ready multi-tenant B2B SaaS platform designed to automa
 ## User Preferences
 Keine spezifischen Präferenzen dokumentiert.
 
+## Recent Changes
+
+### 2025-11-01: Performance-Optimierung - Debug-Modus für Logging
+**Problem**: Übermäßiges Console-Logging (besonders im Brickfox-Mapper und AI-Service) verlangsamte die Entwicklungsumgebung.
+
+**Lösung**: 
+- Environment Variable `DEBUG_MODE` hinzugefügt (Standard: `false`)
+- Debug-Logging-Funktionen in kritischen Services implementiert
+- Massive Datenausgaben (extractedData, customAttributes, etc.) werden nur noch bei aktiviertem Debug-Modus geloggt
+- Normale Logs zeigen nur wichtige Status-Updates und Fehler
+
+**Debug-Modus aktivieren**:
+```bash
+# In Development Environment
+DEBUG_MODE=true
+```
+
+**Betroffene Dateien**:
+- `server/services/brickfox-mapper.ts` - Reduzierung von 3x Logging pro Feld auf 1x Debug-Log
+- `server/ai-service.ts` - Komplette Datenausgaben nur im Debug-Modus
+
 ## System Architecture
 
 ### Technology Stack
