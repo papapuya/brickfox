@@ -25,7 +25,7 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
   console.log(`[getSupabaseUser] User data:`, {
     id: userData.id,
     email: userData.email,
-    organization_id: userData.organization_id,
+    tenant_id: userData.tenant_id,
     role: userData.role
   });
 
@@ -35,7 +35,7 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
     username: userData.username || undefined,
     isAdmin: userData.is_admin || false,
     role: userData.role || 'member',
-    organizationId: userData.organization_id || undefined,
+    tenantId: userData.tenant_id || undefined,
     stripeCustomerId: userData.stripe_customer_id || undefined,
     subscriptionStatus: userData.subscription_status || undefined,
     subscriptionId: userData.subscription_id || undefined,
@@ -61,14 +61,14 @@ export async function createAdminUser(email: string, password: string): Promise<
 
   if (error) throw error;
 
-  const { data: akkushopOrg } = await supabaseAdmin
-    .from('organizations')
+  const { data: akkushopTenant } = await supabaseAdmin
+    .from('tenants')
     .select('id')
     .eq('slug', 'akkushop')
     .single();
 
-  if (!akkushopOrg) {
-    console.error('AkkuShop organization not found for admin user');
+  if (!akkushopTenant) {
+    console.error('AkkuShop tenant not found for admin user');
   }
 
   const { error: insertError } = await supabaseAdmin
@@ -79,7 +79,7 @@ export async function createAdminUser(email: string, password: string): Promise<
       username: 'Admin',
       is_admin: true,
       role: 'admin',
-      organization_id: akkushopOrg?.id,
+      tenant_id: akkushopTenant?.id,
       subscription_status: 'trial',
       plan_id: 'trial',
       api_calls_limit: 3000, // 3000 GPT-4o-mini = same cost as 100 GPT-4o

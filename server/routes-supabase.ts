@@ -186,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { data: akkushopOrg } = await supabaseAdmin
-        .from('organizations')
+        .from('tenants')
         .select('id')
         .eq('slug', 'akkushop')
         .single();
@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!akkushopOrg) {
         console.error('AkkuShop organization not found - creating it now');
         const { data: newOrg } = await supabaseAdmin
-          .from('organizations')
+          .from('tenants')
           .insert({
             name: 'AkkuShop',
             slug: 'akkushop',
@@ -207,12 +207,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .single();
         
         if (!newOrg) {
-          return res.status(500).json({ error: 'Organization konnte nicht erstellt werden' });
+          return res.status(500).json({ error: 'Tenant konnte nicht erstellt werden' });
         }
       }
 
       const orgId = akkushopOrg?.id || (await supabaseAdmin
-        .from('organizations')
+        .from('tenants')
         .select('id')
         .eq('slug', 'akkushop')
         .single()).data?.id;
@@ -224,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: validatedData.email,
           username: validatedData.username || validatedData.email.split('@')[0],
           is_admin: false,
-          organization_id: orgId,
+          tenant_id: orgId,
           role: 'member',
           subscription_status: 'trial',
           plan_id: 'trial',

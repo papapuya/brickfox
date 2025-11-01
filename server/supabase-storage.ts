@@ -93,7 +93,7 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
-      organizationId: user.organization_id || undefined,
+      tenantId: user.tenant_id || undefined,
       role: user.role || 'member',
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
@@ -125,7 +125,7 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
-      organizationId: user.organization_id || undefined,
+      tenantId: user.tenant_id || undefined,
       role: user.role || 'member',
       passwordHash: '', // Not used with Supabase Auth
       stripeCustomerId: user.stripe_customer_id || undefined,
@@ -158,7 +158,7 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
-      organizationId: user.organization_id || undefined,
+      tenantId: user.tenant_id || undefined,
       role: user.role || 'member',
       passwordHash: '', // Not used with Supabase Auth
       stripeCustomerId: user.stripe_customer_id || undefined,
@@ -190,7 +190,7 @@ export class SupabaseStorage implements IStorage {
       email: user.email,
       username: user.username || undefined,
       isAdmin: user.is_admin || false,
-      organizationId: user.organization_id || undefined,
+      tenantId: user.tenant_id || undefined,
       role: user.role || 'member',
       stripeCustomerId: user.stripe_customer_id || undefined,
       subscriptionStatus: user.subscription_status || undefined,
@@ -289,14 +289,14 @@ export class SupabaseStorage implements IStorage {
     const user = await this.getUserById(userId);
     if (!user) throw new Error('User not found');
     
-    if (!user.organizationId) {
-      console.error(`[SECURITY CRITICAL] User ${userId} has NO organization_id - cannot create project`);
+    if (!user.tenantId) {
+      console.error(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - cannot create project`);
       throw new Error('User must belong to an organization to create projects');
     }
 
     console.log('[createProject] Attempting to insert:', {
       user_id: userId,
-      organization_id: user.organizationId,
+      tenant_id: user.tenantId,
       name: data.name,
     });
 
@@ -304,7 +304,7 @@ export class SupabaseStorage implements IStorage {
       .from('projects')
       .insert({
         user_id: userId,
-        organization_id: user.organizationId,
+        tenant_id: user.tenantId,
         name: data.name,
       })
       .select()
@@ -345,8 +345,8 @@ export class SupabaseStorage implements IStorage {
       .eq('user_id', userId)
       .order('created_at');
 
-    if (user.organizationId) {
-      query.eq('organization_id', user.organizationId);
+    if (user.tenantId) {
+      query.eq('tenant_id', user.tenantId);
     }
 
     const { data: projects, error } = await query;
@@ -380,18 +380,18 @@ export class SupabaseStorage implements IStorage {
         return null;
       }
       
-      if (!user.organizationId) {
-        console.warn(`[SECURITY CRITICAL] User ${userId} has NO organization_id - blocking ALL access`);
+      if (!user.tenantId) {
+        console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
         return null;
       }
       
-      if (!project.organization_id) {
-        console.warn(`[SECURITY CRITICAL] Project ${id} has NO organization_id - blocking access (needs backfill)`);
+      if (!project.tenant_id) {
+        console.warn(`[SECURITY CRITICAL] Project ${id} has NO tenant_id - blocking access (needs backfill)`);
         return null;
       }
       
-      if (user.organizationId !== project.organization_id) {
-        console.warn(`[SECURITY] User ${userId} (org: ${user.organizationId}) tried to access project ${id} (org: ${project.organization_id})`);
+      if (user.tenantId !== project.tenant_id) {
+        console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access project ${id} (org: ${project.tenant_id})`);
         return null;
       }
     }
@@ -437,7 +437,7 @@ export class SupabaseStorage implements IStorage {
 
     const projectData = await supabaseAdmin
       .from('projects')
-      .select('organization_id')
+      .select('tenant_id')
       .eq('id', projectId)
       .single();
 
@@ -445,7 +445,7 @@ export class SupabaseStorage implements IStorage {
       .from('products_in_projects')
       .insert({
         project_id: projectId,
-        organization_id: projectData.data?.organization_id || null,
+        tenant_id: projectData.data?.tenant_id || null,
         name: data.name,
         files: data.files || null,
         html_code: data.htmlCode,
@@ -503,18 +503,18 @@ export class SupabaseStorage implements IStorage {
         return null;
       }
       
-      if (!user.organizationId) {
-        console.warn(`[SECURITY CRITICAL] User ${userId} has NO organization_id - blocking ALL access`);
+      if (!user.tenantId) {
+        console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
         return null;
       }
       
-      if (!product.organization_id) {
-        console.warn(`[SECURITY CRITICAL] Product ${id} has NO organization_id - blocking access (needs backfill)`);
+      if (!product.tenant_id) {
+        console.warn(`[SECURITY CRITICAL] Product ${id} has NO tenant_id - blocking access (needs backfill)`);
         return null;
       }
       
-      if (user.organizationId !== product.organization_id) {
-        console.warn(`[SECURITY] User ${userId} (org: ${user.organizationId}) tried to access product ${id} (org: ${product.organization_id})`);
+      if (user.tenantId !== product.tenant_id) {
+        console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access product ${id} (org: ${product.tenant_id})`);
         return null;
       }
     }
@@ -604,11 +604,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getTemplates(userId?: string): Promise<Template[]> {
-    let organizationId: string | null = null;
+    let tenantId: string | null = null;
     
     if (userId) {
       const user = await this.getUserById(userId);
-      organizationId = user?.organizationId || null;
+      tenantId = user?.tenantId || null;
     }
 
     const query = supabase
@@ -616,10 +616,10 @@ export class SupabaseStorage implements IStorage {
       .select('*')
       .order('created_at');
 
-    if (organizationId) {
-      query.or(`organization_id.eq.${organizationId},organization_id.is.null`);
+    if (tenantId) {
+      query.or(`tenant_id.eq.${tenantId},tenant_id.is.null`);
     } else {
-      query.is('organization_id', null);
+      query.is('tenant_id', null);
     }
 
     const { data: templates, error } = await query;
@@ -666,7 +666,7 @@ export class SupabaseStorage implements IStorage {
 
     const insertData: any = {
       user_id: userId,
-      organization_id: user.organizationId || null,
+      tenant_id: user.tenantId || null,
       name: data.name,
       suppl_nr: data.supplNr || null,
       url_pattern: data.urlPattern || null,
@@ -720,10 +720,10 @@ export class SupabaseStorage implements IStorage {
       .from('suppliers')
       .select('*');
 
-    // Multi-tenant filtering: use organization_id if available, otherwise user_id
-    if (user.organizationId) {
-      console.log('[getSuppliers] Filtering by organization_id:', user.organizationId);
-      query = query.eq('organization_id', user.organizationId);
+    // Multi-tenant filtering: use tenant_id if available, otherwise user_id
+    if (user.tenantId) {
+      console.log('[getSuppliers] Filtering by tenant_id:', user.tenantId);
+      query = query.eq('tenant_id', user.tenantId);
     } else {
       console.log('[getSuppliers] Filtering by user_id:', userId);
       query = query.eq('user_id', userId);
