@@ -40,6 +40,7 @@ The application employs a **modular subprompt architecture** for specialized AI 
 - **Supplier Profiles**: Manage multiple suppliers with saved selectors.
 - **Pixi ERP Integration**: Automated product comparison with Pixi ERP system to identify new vs. existing products, with CSV upload, intelligent matching, and CSV export functionality.
 - **CSS Selector Verification System**: Comprehensive workflow for testing and verifying supplier-specific CSS selectors with visual feedback and persistence.
+- **Field Mapping Tool**: Visual Click-to-Connect interface for mapping scraped data fields (URL Scraper) or CSV columns to Brickfox CSV export fields. Supports automatic field detection, custom transformations, and reusable mapping presets. Includes tenant-isolated storage and API endpoints for CRUD operations.
 
 ## External Dependencies
 - **OpenAI API**: Used for AI-driven text generation (GPT-4o-mini).

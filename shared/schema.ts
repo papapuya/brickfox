@@ -480,6 +480,9 @@ export const loginUserSchema = z.object({
 
 export type LoginUser = z.infer<typeof loginUserSchema>;
 
+// Import mapping tables
+export * from './mapping-schema';
+
 // Drizzle insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });

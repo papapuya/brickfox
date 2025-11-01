@@ -46,6 +46,7 @@ const upload = multer({
 
 import { apiKeyManager } from './api-key-manager';
 import webhooksRouter from './webhooks-supabase';
+import mappingRouter from './routes-mapping';
 
 async function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
@@ -1319,6 +1320,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount webhook routes
   app.use('/api/webhooks', webhooksRouter);
+
+  // Mount mapping routes
+  app.use('/api', mappingRouter);
 
   const httpServer = createServer(app);
   return httpServer;

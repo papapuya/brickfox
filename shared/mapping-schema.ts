@@ -13,11 +13,19 @@ import { suppliers } from './schema';
 export const fieldMappings = pgTable("field_mappings", {
   id: uuid("id").primaryKey().defaultRandom(),
   
+  // Multi-tenancy
+  tenantId: uuid("tenant_id"),
+  
   // Link to supplier (each supplier can have custom mappings)
   supplierId: uuid("supplier_id").references(() => suppliers.id, { onDelete: "cascade" }),
   
-  // Source field from scraper (JSON path notation)
-  // Examples: "product.title", "product.price", "customAttributes.brand"
+  // Source type: "csv" or "url_scraper"
+  sourceType: text("source_type").notNull().default('url_scraper'),
+  
+  // Source field from scraper (JSON path notation) or CSV column name
+  // Examples: 
+  // - URL Scraper: "product.title", "product.price", "customAttributes.brand"
+  // - CSV: "Produktname", "EAN", "Preis"
   sourceField: text("source_field").notNull(),
   
   // Target field in Brickfox CSV
@@ -48,11 +56,17 @@ export const fieldMappings = pgTable("field_mappings", {
 export const mappingPresets = pgTable("mapping_presets", {
   id: uuid("id").primaryKey().defaultRandom(),
   
+  // Multi-tenancy
+  tenantId: uuid("tenant_id"),
+  
   // Preset name (e.g., "Brickfox Standard", "MediaMarkt Format")
   name: text("name").notNull(),
   
   // Description
   description: text("description"),
+  
+  // Source type this preset is for: "csv" or "url_scraper"
+  sourceType: text("source_type").notNull().default('url_scraper'),
   
   // Complete mapping configuration (JSON array of field mappings)
   mappingConfig: jsonb("mapping_config").notNull(),
