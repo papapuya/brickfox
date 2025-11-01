@@ -695,6 +695,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/suppliers/:id', requireAuth, async (req: any, res) => {
+    try {
+      const supplier = await supabaseStorage.getSupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).json({ success: false, error: 'Lieferant nicht gefunden' });
+      }
+      res.json({ success: true, supplier });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Fehler beim Laden des Lieferanten' });
+    }
+  });
+
   // Get Brickfox-optimized selector template
   app.get('/api/selectors/brickfox', requireAuth, (req: any, res) => {
     res.json({ success: true, selectors: brickfoxSelectors });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,7 @@ interface Supplier {
 }
 
 export default function Suppliers() {
+  const [, setLocation] = useLocation();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -345,8 +347,14 @@ export default function Suppliers() {
             </TableHeader>
             <TableBody>
               {suppliers.map((supplier) => (
-                <TableRow key={supplier.id}>
-                  <TableCell className="font-medium">{supplier.name}</TableCell>
+                <TableRow 
+                  key={supplier.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setLocation(`/suppliers/${supplier.id}`)}
+                >
+                  <TableCell className="font-medium text-primary hover:underline">
+                    {supplier.name}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {supplier.urlPattern || '-'}
                   </TableCell>
@@ -363,14 +371,20 @@ export default function Suppliers() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleOpenDialog(supplier)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(supplier);
+                        }}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(supplier.id, supplier.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(supplier.id, supplier.name);
+                        }}
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
