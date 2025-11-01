@@ -108,15 +108,35 @@ export default function PDFAutoScraper() {
       return;
     }
 
-    // Navigate to URL Scraper with product URLs
-    const urls = extractedProducts
-      .filter(p => p.url)
-      .map(p => p.url)
-      .join('\n');
+    // Filter products with URLs and create URL→metadata map
+    const productsWithUrls = extractedProducts.filter(p => p.url);
     
-    // Store URLs in sessionStorage for URL Scraper to pick up
+    if (productsWithUrls.length === 0) {
+      toast({
+        title: 'Keine URLs gefunden',
+        description: 'Keine Produkte mit URLs im PDF gefunden',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Create map: URL → Product metadata (for correct merging in URL-Scraper)
+    const urlToMetadata: Record<string, any> = {};
+    productsWithUrls.forEach(product => {
+      if (product.url) {
+        urlToMetadata[product.url] = {
+          ekPrice: product.ekPrice,
+          articleNumber: product.articleNumber,
+          eanCode: product.eanCode,
+          productName: product.productName,
+        };
+      }
+    });
+    
+    // Store URLs and metadata map in sessionStorage
+    const urls = productsWithUrls.map(p => p.url).join('\n');
     sessionStorage.setItem('pdf_extracted_urls', urls);
-    sessionStorage.setItem('pdf_extracted_products', JSON.stringify(extractedProducts));
+    sessionStorage.setItem('pdf_url_metadata_map', JSON.stringify(urlToMetadata));
     
     setLocation('/url-scraper');
   };
@@ -182,9 +202,9 @@ export default function PDFAutoScraper() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>2. Extrahierte Produkte ({extractedProducts.length})</CardTitle>
+                <CardTitle>2. Extrahierte Produkte mit URLs ({extractedProducts.filter(p => p.url).length})</CardTitle>
                 <CardDescription>
-                  Produkt-URLs und EK-Preise aus dem PDF
+                  Diese Produkte können direkt mit dem URL-Scraper verarbeitet werden
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -200,24 +220,22 @@ export default function PDFAutoScraper() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {extractedProducts.map((product, index) => (
+                      {extractedProducts.filter(p => p.url).map((product, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{product.productName || '-'}</TableCell>
                           <TableCell>{product.articleNumber || '-'}</TableCell>
                           <TableCell>{product.eanCode || '-'}</TableCell>
                           <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
                           <TableCell className="max-w-xs truncate">
-                            {product.url ? (
-                              <a 
-                                href={product.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline flex items-center gap-1"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                {product.url}
-                              </a>
-                            ) : '-'}
+                            <a 
+                              href={product.url!} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {product.url}
+                            </a>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -226,6 +244,41 @@ export default function PDFAutoScraper() {
                 </div>
               </CardContent>
             </Card>
+
+            {extractedProducts.filter(p => !p.url).length > 0 && (
+              <Card className="border-orange-200 bg-orange-50/50">
+                <CardHeader>
+                  <CardTitle className="text-orange-900">⚠️ Produkte ohne URL ({extractedProducts.filter(p => !p.url).length})</CardTitle>
+                  <CardDescription className="text-orange-700">
+                    Für diese Produkte müssen Sie den Lieferanten kontaktieren, um die Daten zu bekommen
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border border-orange-200 max-h-64 overflow-auto bg-white">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Produktname</TableHead>
+                          <TableHead>Artikel-Nr.</TableHead>
+                          <TableHead>EAN</TableHead>
+                          <TableHead>EK-Preis</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedProducts.filter(p => !p.url).map((product, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{product.productName || '-'}</TableCell>
+                            <TableCell>{product.articleNumber || '-'}</TableCell>
+                            <TableCell>{product.eanCode || '-'}</TableCell>
+                            <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border-blue-200 bg-blue-50/50">
               <CardHeader>

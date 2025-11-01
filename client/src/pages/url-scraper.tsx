@@ -117,6 +117,39 @@ export default function URLScraper() {
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
 
+  // Check for PDF-extracted URLs on component mount
+  useEffect(() => {
+    const pdfUrls = sessionStorage.getItem('pdf_extracted_urls');
+    const pdfMetadataMap = sessionStorage.getItem('pdf_url_metadata_map');
+    
+    if (pdfUrls && pdfMetadataMap) {
+      try {
+        const urls = pdfUrls.split('\n').filter(url => url.trim());
+        const metadataMap = JSON.parse(pdfMetadataMap);
+        
+        // Clear session storage
+        sessionStorage.removeItem('pdf_extracted_urls');
+        sessionStorage.removeItem('pdf_url_metadata_map');
+        
+        // Show notification
+        toast({
+          title: "PDF-Daten geladen",
+          description: `${urls.length} Produkt-URLs aus PDF übernommen. Scraping wird gestartet...`,
+        });
+        
+        // Start scraping automatically
+        handleScrapeFromPDF(urls, metadataMap);
+      } catch (error) {
+        console.error('Error loading PDF data:', error);
+        toast({
+          title: "Fehler beim Laden der PDF-Daten",
+          description: "Bitte versuchen Sie es erneut",
+          variant: "destructive",
+        });
+      }
+    }
+  }, []);
+
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplierId(supplierId);
     
@@ -418,6 +451,106 @@ export default function URLScraper() {
     } finally {
       setIsLoading(false);
       abortScrapingRef.current = false; // Reset abort flag
+    }
+  };
+
+  // Handle scraping from PDF-extracted URLs
+  const handleScrapeFromPDF = async (urls: string[], metadataMap: Record<string, any>) => {
+    setIsLoading(true);
+    setScrapedProducts([]);
+    setBatchProgress({ current: 0, total: urls.length, status: "Scraping aus PDF gestartet..." });
+
+    try {
+      const products: ScrapedProduct[] = [];
+      const activeSelectors: any = {};
+      Object.entries(selectors).forEach(([key, value]) => {
+        if (value.trim()) activeSelectors[key] = value;
+      });
+
+      let failedCount = 0;
+      for (let i = 0; i < urls.length; i++) {
+        if (abortScrapingRef.current) {
+          console.log('Scraping aborted by user');
+          break;
+        }
+
+        const productUrl = urls[i];
+        const pdfMetadata = metadataMap[productUrl]; // Use URL as key for correct mapping
+        
+        setBatchProgress({ 
+          current: i + 1, 
+          total: urls.length, 
+          status: `Scrape Produkt ${i + 1}/${urls.length}...` 
+        });
+
+        try {
+          const data = await apiPost('/api/scrape-product', {
+            url: productUrl,
+            selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
+            userAgent: userAgent || undefined,
+            cookies: sessionCookies || undefined,
+            supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
+          }) as any;
+
+          if (data && data.product) {
+            // Merge PDF data with scraped data (only if metadata exists for this URL)
+            const mergedProduct = pdfMetadata ? {
+              ...data.product,
+              // Add EK price from PDF
+              ekPrice: pdfMetadata.ekPrice,
+              // Add additional PDF metadata
+              pdfArticleNumber: pdfMetadata.articleNumber,
+              pdfEanCode: pdfMetadata.eanCode,
+              pdfProductName: pdfMetadata.productName,
+            } : data.product;
+            
+            products.push(mergedProduct);
+          } else {
+            console.error(`Fehler beim Scrapen von ${productUrl}`);
+            failedCount++;
+          }
+        } catch (err) {
+          console.error(`Fehler beim Scrapen von ${productUrl}:`, err);
+          failedCount++;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      if (failedCount > 0) {
+        toast({
+          title: "Teilweise erfolgreich",
+          description: `${products.length} erfolgreich, ${failedCount} fehlgeschlagen`,
+          variant: "destructive",
+        });
+      }
+
+      setScrapedProducts(products);
+      
+      if (abortScrapingRef.current) {
+        setBatchProgress({ current: products.length, total: urls.length, status: "Abgebrochen" });
+        toast({
+          title: "Scraping abgebrochen",
+          description: `${products.length} von ${urls.length} Produkten gescraped`,
+          variant: "destructive",
+        });
+      } else {
+        setBatchProgress({ current: products.length, total: urls.length, status: "Fertig!" });
+        toast({
+          title: "PDF-Scraping abgeschlossen",
+          description: `${products.length} von ${urls.length} Produkten erfolgreich gescraped (inkl. EK-Preise aus PDF)`,
+        });
+      }
+    } catch (error) {
+      console.error('PDF scraping error:', error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : 'Scraping fehlgeschlagen',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      abortScrapingRef.current = false;
     }
   };
 
