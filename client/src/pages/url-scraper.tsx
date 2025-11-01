@@ -1911,41 +1911,52 @@ export default function URLScraper() {
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <span className="line-clamp-1">{product.manufacturer}, {product.category}, {product.articleNumber}</span>
+                            <div className="max-w-md whitespace-normal">
+                              {product.manufacturer}, {product.category}, {product.articleNumber}
+                            </div>
                           ) : (
                             'wird generiert...'
                           )}
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs font-mono">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <div className="flex items-center gap-2">
-                              <span className="max-w-xs truncate text-muted-foreground" title={generatedDescriptions.get(product.articleNumber)?.description}>
-                                {(generatedDescriptions.get(product.articleNumber)?.description || '').substring(0, 60) + '...'}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber)?.description || '');
-                                  setShowHtmlPreview(true);
-                                }}
-                                title="HTML Vorschau anzeigen"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCopyHtml(product.articleNumber)}
-                                title="HTML kopieren"
-                                className={copiedArticleNumber === product.articleNumber ? "text-green-600" : ""}
-                              >
-                                {copiedArticleNumber === product.articleNumber ? (
-                                  <Check className="w-4 h-4" />
-                                ) : (
-                                  <Copy className="w-4 h-4" />
-                                )}
-                              </Button>
+                            <div className="flex flex-col gap-2">
+                              <div className="max-w-2xl whitespace-normal break-words text-muted-foreground text-xs">
+                                {generatedDescriptions.get(product.articleNumber)?.description || '-'}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber)?.description || '');
+                                    setShowHtmlPreview(true);
+                                  }}
+                                  title="HTML Vorschau anzeigen"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Vorschau
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCopyHtml(product.articleNumber)}
+                                  title="HTML kopieren"
+                                  className={copiedArticleNumber === product.articleNumber ? "text-green-600 border-green-600" : ""}
+                                >
+                                  {copiedArticleNumber === product.articleNumber ? (
+                                    <>
+                                      <Check className="w-4 h-4 mr-1" />
+                                      Kopiert!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-4 h-4 mr-1" />
+                                      Kopieren
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <span className="text-muted-foreground italic">wird generiert...</span>
