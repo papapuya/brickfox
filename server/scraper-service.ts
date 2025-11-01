@@ -506,6 +506,57 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.maxBeamDistance = formatMeasurement(element.text().trim());
   }
 
+  // ANSMANN Technical Fields - extract and format measurements (German format, no units)
+  if ((selectors as any).nominalspannung) {
+    const element = $((selectors as any).nominalspannung).first();
+    (product as any).nominalspannung = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).nominalkapazitaet) {
+    const element = $((selectors as any).nominalkapazitaet).first();
+    (product as any).nominalkapazitaet = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).maxEntladestrom) {
+    const element = $((selectors as any).maxEntladestrom).first();
+    (product as any).maxEntladestrom = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).laenge) {
+    const element = $((selectors as any).laenge).first();
+    (product as any).laenge = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).breite) {
+    const element = $((selectors as any).breite).first();
+    (product as any).breite = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).hoehe) {
+    const element = $((selectors as any).hoehe).first();
+    (product as any).hoehe = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).gewicht) {
+    const element = $((selectors as any).gewicht).first();
+    (product as any).gewicht = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).zellenchemie) {
+    const element = $((selectors as any).zellenchemie).first();
+    (product as any).zellenchemie = element.text().trim() || '';
+  }
+
+  if ((selectors as any).energie) {
+    const element = $((selectors as any).energie).first();
+    (product as any).energie = formatMeasurement(element.text().trim());
+  }
+
+  if ((selectors as any).farbe) {
+    const element = $((selectors as any).farbe).first();
+    (product as any).farbe = element.text().trim() || '';
+  }
+
   // Store raw HTML for debugging
   product.rawHtml = html.substring(0, 1000); // First 1000 chars
 
