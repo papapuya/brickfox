@@ -188,9 +188,10 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     images: []
   };
 
-  // Article Number / SKU
-  if (selectors.articleNumber) {
-    const element = $(selectors.articleNumber).first();
+  // Article Number / SKU (support both 'articleNumber' and 'productCode')
+  const articleSelector = (selectors as any).productCode || selectors.articleNumber;
+  if (articleSelector) {
+    const element = $(articleSelector).first();
     product.articleNumber = element.text().trim() || element.attr('content')?.trim() || '';
   }
 
@@ -217,7 +218,13 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   // Manufacturer / Brand
   if (selectors.manufacturer) {
     const element = $(selectors.manufacturer).first();
-    product.manufacturer = element.text().trim() || element.attr('content')?.trim() || '';
+    // Try text first, then common attributes (content, alt, title, data-brand)
+    product.manufacturer = element.text().trim() 
+      || element.attr('content')?.trim() 
+      || element.attr('alt')?.trim() 
+      || element.attr('title')?.trim() 
+      || element.attr('data-brand')?.trim() 
+      || '';
   }
 
   // Price - Format for Brickfox: English decimal format (19.99)
@@ -302,9 +309,10 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.description = element.html()?.trim() || element.text().trim() || '';
   }
 
-  // Images
-  if (selectors.images) {
-    const imageElements = $(selectors.images);
+  // Images (support both 'images' and 'image')
+  const imageSelector = (selectors as any).image || selectors.images;
+  if (imageSelector) {
+    const imageElements = $(imageSelector);
     product.images = imageElements.map((_, el) => {
       const $el = $(el);
       // Try src, data-src, href
