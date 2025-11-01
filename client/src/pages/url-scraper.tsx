@@ -119,6 +119,31 @@ export default function URLScraper() {
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
 
+  // Auto-detect supplier based on URL domain
+  const autoDetectSupplier = (url: string, suppliers: any[]) => {
+    if (!suppliers || suppliers.length === 0) return null;
+    
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.toLowerCase();
+      
+      // Match supplier by url_pattern or name
+      for (const supplier of suppliers) {
+        const pattern = supplier.url_pattern?.toLowerCase() || '';
+        const name = supplier.name?.toLowerCase() || '';
+        
+        if (domain.includes(pattern) || domain.includes(name)) {
+          console.log(`🔍 Auto-detected supplier: ${supplier.name} (${domain} matches ${pattern})`);
+          return supplier.id;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to auto-detect supplier:', err);
+    }
+    
+    return null;
+  };
+
   // Check for PDF-extracted URLs on component mount (only when authenticated)
   useEffect(() => {
     // Wait until user is authenticated
@@ -133,6 +158,18 @@ export default function URLScraper() {
       try {
         const urls = pdfUrls.split('\n').filter(url => url.trim());
         const metadataMap = JSON.parse(pdfMetadataMap);
+        
+        // Auto-detect supplier from first URL
+        if (urls.length > 0 && suppliersData?.suppliers) {
+          const detectedSupplierId = autoDetectSupplier(urls[0], suppliersData.suppliers);
+          if (detectedSupplierId) {
+            setSelectedSupplierId(detectedSupplierId);
+            toast({
+              title: "✅ Lieferant erkannt",
+              description: `${suppliersData.suppliers.find((s: any) => s.id === detectedSupplierId)?.name} wurde automatisch ausgewählt`,
+            });
+          }
+        }
         
         // Clear session storage
         sessionStorage.removeItem('pdf_extracted_urls');
@@ -155,7 +192,7 @@ export default function URLScraper() {
         });
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, suppliersData]);
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplierId(supplierId);
