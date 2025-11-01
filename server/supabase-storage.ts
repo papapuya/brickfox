@@ -719,9 +719,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteProduct(id: string, userId?: string): Promise<boolean> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     if (userId) {
       const product = await this.getProduct(id, userId);
@@ -731,12 +729,26 @@ export class SupabaseStorage implements IStorage {
       }
     }
 
-    const { error } = await supabaseAdmin
-      .from('products_in_projects')
-      .delete()
-      .eq('id', id);
+    if (isDevelopment) {
+      // Use Helium DB in development
+      await heliumDb
+        .delete()
+        .from(productsInProjectsTable)
+        .where(eq(productsInProjectsTable.id, id));
+      return true;
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
 
-    return !error;
+      const { error } = await supabaseAdmin
+        .from('products_in_projects')
+        .delete()
+        .eq('id', id);
+
+      return !error;
+    }
   }
 
   async createTemplate(name: string, content: string, isDefault?: boolean): Promise<Template> {
