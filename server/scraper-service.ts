@@ -38,6 +38,8 @@ export interface ScrapedProduct {
   ean?: string;
   manufacturer?: string;
   price?: string;
+  ekPrice?: string;  // Einkaufspreis (Purchase Price)
+  vkPrice?: string;  // Verkaufspreis (Sales Price) - calculated as EK * 2 * 1.19
   description?: string;
   images: string[];
   weight?: string;
@@ -490,6 +492,25 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     if (fullTableRows.length > 0) {
       product.technicalDataTable = `<table border="0" summary="">\n<tbody>\n${fullTableRows.join('\n')}\n</tbody>\n</table>`;
       console.log(`✅ Rebuilt COMPLETE HTML table from parsed data (${fullTableRows.length} rows)`);
+    }
+  }
+
+  // Calculate VK Price from EK Price (VK = EK × 2 × 1.19)
+  if (product.ekPrice) {
+    const ekValue = parseFloat(product.ekPrice.replace(',', '.'));
+    if (!isNaN(ekValue)) {
+      const vkValue = ekValue * 2 * 1.19;
+      product.vkPrice = vkValue.toFixed(2);
+      console.log(`💰 Calculated VK Price: EK ${product.ekPrice}€ → VK ${product.vkPrice}€`);
+    }
+  } else if (product.price) {
+    // If price field exists, treat it as EK and calculate VK
+    const priceValue = parseFloat(product.price.replace(',', '.'));
+    if (!isNaN(priceValue)) {
+      product.ekPrice = product.price;
+      const vkValue = priceValue * 2 * 1.19;
+      product.vkPrice = vkValue.toFixed(2);
+      console.log(`💰 Calculated VK Price from price field: EK ${product.ekPrice}€ → VK ${product.vkPrice}€`);
     }
   }
 
