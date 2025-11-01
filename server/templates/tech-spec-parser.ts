@@ -165,6 +165,7 @@ export function extractTechSpecsFromStructured(
       'lagerbestand', 'stock', 'availability',
       'bild', 'image', 'foto', 'picture',
       'url', 'link', 'website',
+      'extractedtext', 'extracteddata', // Rohdaten von Vision/OCR - nicht als Tech Spec anzeigen
     ];
     
     // Normalisiere Feldname: entferne Leerzeichen, Sonderzeichen, Unterstriche
