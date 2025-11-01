@@ -27,6 +27,12 @@ export function parseTechSpecsFromText(
     const trimmed = line.trim();
     if (!trimmed) continue;
     
+    // Skip JSON objects (lines starting with { or containing JSON-like structure)
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      console.log(`⏭️ Skipping JSON line: ${trimmed.substring(0, 50)}...`);
+      continue;
+    }
+    
     // Pattern: "- Kapazität: 3800mAh" oder "Kapazität: 3800mAh"
     const match = trimmed.match(/^-?\s*\*?\*?\s*([^:]+):\s*(.+)$/);
     if (!match) continue;
