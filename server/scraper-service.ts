@@ -526,6 +526,15 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     const element = $((selectors as any).maxEntladestrom).first();
     (product as any).maxEntladestrom = formatMeasurement(element.text().trim());
   }
+  
+  // Fallback: Extract max. Entladestrom from description if not found via selector
+  if (!(product as any).maxEntladestrom || (product as any).maxEntladestrom === '') {
+    const entladestromMatch = html.match(/max\.\s*entladestrom[:\s]+([\d.,]+)\s*a/i);
+    if (entladestromMatch) {
+      (product as any).maxEntladestrom = formatMeasurement(entladestromMatch[1]);
+      console.log(`📊 Extracted max. Entladestrom from description: ${(product as any).maxEntladestrom}`);
+    }
+  }
 
   if ((selectors as any).laenge) {
     const element = $((selectors as any).laenge).first();

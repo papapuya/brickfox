@@ -17,6 +17,7 @@ import type { Project } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 
 interface ScrapedProduct {
   articleNumber: string;
@@ -725,6 +726,12 @@ export default function URLScraper() {
 
     setIsGenerating(true);
     try {
+      // Refresh token before generation
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        localStorage.setItem('supabase_token', session.access_token);
+      }
+
       const productData = {
         productName: scrapedProduct.productName,
         articleNumber: scrapedProduct.articleNumber,
@@ -803,6 +810,14 @@ export default function URLScraper() {
     let errorCount = 0;
 
     try {
+      // Refresh token before batch generation
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        localStorage.setItem('supabase_token', session.access_token);
+      } else {
+        throw new Error('Keine gültige Session. Bitte neu anmelden.');
+      }
+
       const BATCH_SIZE = 5; // Process 5 products simultaneously
       const TIMEOUT_MS = 30000; // 30 seconds timeout per product
 
