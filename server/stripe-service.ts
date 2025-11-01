@@ -44,6 +44,9 @@ export const PLANS = {
 // Create Stripe Customer
 export async function createStripeCustomer(userId: string, email: string) {
   const stripe = getStripe();
+  if (!stripe) {
+    throw new Error('Stripe ist nicht konfiguriert');
+  }
   
   const customer = await stripe.customers.create({
     email,
@@ -172,7 +175,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
           subscriptionStatus: 'active',
           subscriptionId: subscription.id,
           planId,
-          currentPeriodEnd: new Date((subscription.currentPeriodEnd || 0) * 1000).toISOString(),
+          currentPeriodEnd: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
           apiCallsLimit: plan.apiCallsLimit,
         });
         
@@ -192,7 +195,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
         if (userId) {
           await supabaseStorage.updateUserSubscription(userId, {
             subscriptionStatus: 'active',
-            currentPeriodEnd: new Date((subscription.currentPeriodEnd || 0) * 1000).toISOString(),
+            currentPeriodEnd: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
           });
           
           // Reset API calls counter for new billing period
@@ -239,7 +242,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
         
         await supabaseStorage.updateUserSubscription(userId, {
           subscriptionStatus: subscription.status,
-          currentPeriodEnd: new Date((subscription.currentPeriodEnd || 0) * 1000).toISOString(),
+          currentPeriodEnd: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
           planId: newPlanId,
           apiCallsLimit: newPlanId ? PLANS[newPlanId].apiCallsLimit : undefined,
         });
@@ -313,8 +316,8 @@ export async function getSubscriptionStatus(userId: string) {
       subscriptionDetails = {
         id: subscription.id,
         status: subscription.status,
-        currentPeriodEnd: new Date((subscription.currentPeriodEnd || 0) * 1000).toISOString(),
-        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        currentPeriodEnd: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
       };
     } catch (error) {
       console.error('Error retrieving subscription:', error);

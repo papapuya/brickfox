@@ -49,8 +49,11 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 
 ## Recent Changes (Okt 2025)
 
-### Multi-Tenant Database Migration (30. Okt 2025 → 01. Nov 2025) ✅ COMPLETED
-- **Database**: Successfully migrated to full multi-tenant architecture
+### Multi-Tenant Database Migration + Supabase Auth (30. Okt → 01. Nov 2025) ✅ COMPLETED
+- **Database Architecture**: 
+  - **Development**: Helium PostgreSQL (local) - fast, no network latency
+  - **Production**: Supabase PostgreSQL via Port 6543 (Pooler) - scalable, managed
+  - **Switch**: Single `DATABASE_URL` environment variable
 - **Schema Changes**: 
   - Renamed `organizations` → `tenants` table
   - Renamed all `organization_id` → `tenant_id` columns across 7 tables
@@ -58,10 +61,16 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 - **Row-Level Security (RLS)**: 
   - Enabled RLS on all 7 tables (tenants, users, projects, products_in_projects, suppliers, templates, scrape_session)
   - Created 10 RLS policies with `get_tenant_id()` helper function
+  - Middleware sets `tenant_id` via PostgreSQL `set_config()` for RLS context
   - Service role bypass for admin operations
+- **Authentication Migration** (Passport.js → Supabase Auth):
+  - ✅ Backend: Supabase Auth API (routes-supabase.ts)
+  - ✅ Frontend: Supabase Client + AuthContext with session listeners
+  - ✅ JWT: Access tokens from Supabase Auth stored in localStorage
+  - ✅ Cleanup: Removed Passport.js, bcryptjs, express-session, memorystore
+- **Database Logging**: Auto-detects Helium vs Supabase, logs DNS/SSL/timeout errors
 - **User Setup**: Admin user (saranzerrer@icloud.com) assigned to AkkuShop tenant as admin
-- **Status**: Full tenant isolation with RLS enforcement
-- **Database**: Development uses local Helium PostgreSQL (will migrate to Supabase pooler in production)
+- **Status**: Full tenant isolation + Production-ready Supabase Auth
 
 ### Pixi ERP Integration
 - **New Service**: `server/services/pixi-service.ts` - Pixi API integration with 5-min caching

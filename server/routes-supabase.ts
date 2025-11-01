@@ -350,9 +350,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Temporary: Update current user's API limit to 3000
-  app.post('/api/auth/update-my-limit', requireAuth, async (req, res) => {
+  app.post('/api/auth/update-my-limit', requireAuth, async (req: any, res) => {
     try {
-      const user = req.user as any;
+      const user = req.user;
       
       const { error } = await supabaseAdmin!
         .from('users')
