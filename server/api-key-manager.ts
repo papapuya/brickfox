@@ -67,7 +67,7 @@ export const apiKeyManager = new ApiKeyManager();
 
 // Hilfsfunktionen für die bestehende AI-Service
 export function getSecureOpenAIKey(): string | null {
-  return apiKeyManager.getApiKey('openai') || process.env.OPENAI_API_KEY || null;
+  return process.env.OPENAI_API_KEY || apiKeyManager.getApiKey('openai') || null;
 }
 
 export function getSecureFirecrawlKey(): string | null {
