@@ -48,6 +48,7 @@ const upload = multer({
 import { apiKeyManager } from './api-key-manager';
 import webhooksRouter from './webhooks-supabase';
 import mappingRouter from './routes-mapping';
+import { pdfParserService } from './services/pdf-parser';
 
 async function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
@@ -1351,6 +1352,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         error: error.message || 'Failed to compare products with Pixi API' 
+      });
+    }
+  });
+
+  // PDF Upload & Auto-Scrape
+  app.post('/api/pdf/upload-and-scrape', requireAuth, upload.single('pdf'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Keine PDF-Datei hochgeladen' 
+        });
+      }
+
+      const { projectId, supplierId } = req.body;
+
+      if (!projectId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Project ID erforderlich' 
+        });
+      }
+
+      console.log(`[PDF Upload] Processing PDF: ${req.file.originalname}`);
+
+      // Extract products from PDF
+      const extractedProducts = await pdfParserService.extractProductsFromPDFAdvanced(req.file.buffer);
+
+      if (extractedProducts.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Keine Produkte mit URLs im PDF gefunden' 
+        });
+      }
+
+      console.log(`[PDF Upload] Found ${extractedProducts.length} products with URLs`);
+
+      // Get supplier selectors if supplierId provided
+      let selectors = defaultSelectors;
+      if (supplierId) {
+        const supplier = await supabaseStorage.getSupplier(supplierId);
+        if (supplier?.selectors) {
+          selectors = supplier.selectors as any;
+          console.log(`[PDF Upload] Using saved selectors for supplier: ${supplier.name}`);
+        }
+      }
+
+      // Scrape each URL
+      const scrapedProducts = [];
+      const errors = [];
+
+      for (const pdfProduct of extractedProducts) {
+        if (!pdfProduct.url) {
+          errors.push({ 
+            product: pdfProduct.productName, 
+            error: 'Keine URL gefunden' 
+          });
+          continue;
+        }
+
+        try {
+          console.log(`[PDF Upload] Scraping: ${pdfProduct.url}`);
+          
+          const scrapedData = await scrapeProduct({
+            url: pdfProduct.url,
+            selectors
+          });
+
+          // Merge PDF data with scraped data
+          const mergedProduct = {
+            ...scrapedData,
+            // Override/add EK price from PDF
+            ekPrice: pdfProduct.ekPrice || scrapedData.price,
+            // Add additional PDF metadata
+            pdfArticleNumber: pdfProduct.articleNumber,
+            pdfEanCode: pdfProduct.eanCode,
+            pdfUevp: pdfProduct.uevp,
+          };
+
+          scrapedProducts.push(mergedProduct);
+        } catch (error: any) {
+          console.error(`[PDF Upload] Error scraping ${pdfProduct.url}:`, error);
+          errors.push({ 
+            product: pdfProduct.productName, 
+            url: pdfProduct.url,
+            error: error.message 
+          });
+        }
+      }
+
+      console.log(`[PDF Upload] Successfully scraped ${scrapedProducts.length}/${extractedProducts.length} products`);
+
+      res.json({
+        success: true,
+        totalExtracted: extractedProducts.length,
+        totalScraped: scrapedProducts.length,
+        products: scrapedProducts,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error: any) {
+      console.error('[PDF Upload] Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Fehler beim Verarbeiten der PDF' 
+      });
+    }
+  });
+
+  // PDF Preview - Extract URLs without scraping
+  app.post('/api/pdf/preview', requireAuth, upload.single('pdf'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Keine PDF-Datei hochgeladen' 
+        });
+      }
+
+      console.log(`[PDF Preview] Processing PDF: ${req.file.originalname}`);
+
+      const extractedProducts = await pdfParserService.extractProductsFromPDFAdvanced(req.file.buffer);
+
+      console.log(`[PDF Preview] Found ${extractedProducts.length} products with URLs`);
+
+      res.json({
+        success: true,
+        totalProducts: extractedProducts.length,
+        products: extractedProducts,
+      });
+    } catch (error: any) {
+      console.error('[PDF Preview] Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Fehler beim Verarbeiten der PDF' 
       });
     }
   });

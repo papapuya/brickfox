@@ -17,6 +17,7 @@ import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
 import URLScraper from "@/pages/url-scraper";
+import PDFAutoScraper from "@/pages/pdf-auto-scraper";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
 import CredentialsPage from "@/pages/credentials";
@@ -60,6 +61,11 @@ function Router() {
       <Route path="/url-scraper">
         <ProtectedRoute>
           <URLScraper />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/pdf-auto-scraper">
+        <ProtectedRoute>
+          <PDFAutoScraper />
         </ProtectedRoute>
       </Route>
       <Route path="/projects">

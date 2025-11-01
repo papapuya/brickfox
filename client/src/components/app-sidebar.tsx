@@ -46,6 +46,11 @@ const menuItems = [
     icon: Globe,
   },
   {
+    title: "PDF Auto-Scraper",
+    url: "/pdf-auto-scraper",
+    icon: FileSpreadsheet,
+  },
+  {
     title: "Lieferanten-Profile",
     url: "/suppliers",
     icon: Building2,
