@@ -9,14 +9,18 @@ if (!supabaseAnonKey) {
 
 // Dynamic storage adapter that respects "Remember Me" preference
 class DynamicStorage {
+  private getRememberMe(): boolean {
+    const saved = localStorage.getItem('rememberMe');
+    // Default to true if not set (matches login page default)
+    return saved === null ? true : saved === 'true';
+  }
+
   private getStorage(): Storage {
-    // Check if user has "Remember Me" enabled (stored in localStorage)
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
-    return rememberMe ? localStorage : sessionStorage;
+    return this.getRememberMe() ? localStorage : sessionStorage;
   }
 
   getItem(key: string): string | null {
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const rememberMe = this.getRememberMe();
     
     // Only read from the storage matching the current preference
     if (rememberMe) {
@@ -28,7 +32,7 @@ class DynamicStorage {
 
   setItem(key: string, value: string): void {
     const storage = this.getStorage();
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const rememberMe = this.getRememberMe();
     
     // Write to the appropriate storage
     storage.setItem(key, value);

@@ -26,7 +26,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Helper to get the correct storage based on rememberMe preference
   const getTokenStorage = () => {
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const saved = localStorage.getItem('rememberMe');
+    // Default to true if not set (matches login page default and DynamicStorage)
+    const rememberMe = saved === null ? true : saved === 'true';
     return rememberMe ? localStorage : sessionStorage;
   };
 
