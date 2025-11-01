@@ -143,7 +143,8 @@ export class PDFParserService {
         console.log(`  Price matches: ${priceMatches ? priceMatches.length : 'NONE'}`);
       }
 
-      if (articleMatch) product.articleNumber = articleMatch[0];
+      // Remove hyphens from article number (2447-0121 → 24470121)
+      if (articleMatch) product.articleNumber = articleMatch[0].replace(/-/g, '');
       if (eanMatch) product.eanCode = eanMatch[0];
       
       if (priceMatches && priceMatches.length >= 2) {
