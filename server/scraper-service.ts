@@ -309,6 +309,11 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
       || element.attr('data-brand')?.trim() 
       || '';
   }
+  
+  // Auto-detect manufacturer from URL for ANSMANN
+  if (!product.manufacturer && url.includes('pim.ansmann.de')) {
+    product.manufacturer = 'ANSMANN';
+  }
 
   // Price - Format for Brickfox: English decimal format (19.99)
   if (selectors.price) {

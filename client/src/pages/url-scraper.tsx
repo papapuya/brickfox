@@ -1744,7 +1744,6 @@ export default function URLScraper() {
                       <TableHead className="min-w-[120px]">EAN</TableHead>
                       <TableHead className="min-w-[120px]">Hersteller</TableHead>
                       <TableHead className="min-w-[80px]">Preis</TableHead>
-                      <TableHead className="min-w-[80px]">Gewicht</TableHead>
                       <TableHead className="min-w-[150px]">Kategorie</TableHead>
                       {/* ANSMANN Technical Specifications */}
                       <TableHead className="min-w-[120px]">Nominalspannung (V)</TableHead>
@@ -1804,7 +1803,6 @@ export default function URLScraper() {
                         <TableCell className="font-mono text-sm whitespace-nowrap">{product.ean || '-'}</TableCell>
                         <TableCell className="whitespace-nowrap">{product.manufacturer || '-'}</TableCell>
                         <TableCell className="font-semibold whitespace-nowrap">{product.price || '-'}</TableCell>
-                        <TableCell className="whitespace-nowrap">{product.weight || '-'}</TableCell>
                         <TableCell className="text-xs whitespace-normal break-words">{product.category || '-'}</TableCell>
                         {/* ANSMANN Technical Specifications */}
                         <TableCell className="text-sm">{product.nominalspannung || '-'}</TableCell>
