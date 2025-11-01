@@ -46,13 +46,16 @@ export default function PDFAutoScraper() {
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
 
-  const { data: projects } = useQuery({
+  const { data: projectsData } = useQuery<{ success: boolean; projects: any[] }>({
     queryKey: ['/api/projects'],
   });
 
-  const { data: suppliers } = useQuery({
+  const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
     queryKey: ['/api/suppliers'],
   });
+
+  const projects = projectsData?.projects || [];
+  const suppliers = suppliersData?.suppliers || [];
 
   const uploadWithProgress = async (file: File) => {
     const formData = new FormData();
@@ -200,7 +203,7 @@ export default function PDFAutoScraper() {
                     <SelectValue placeholder="Projekt auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.isArray(projects) && projects.map((project: any) => (
+                    {projects.map((project: any) => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
                       </SelectItem>
@@ -216,7 +219,7 @@ export default function PDFAutoScraper() {
                     <SelectValue placeholder="Lieferant auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.isArray(suppliers) && suppliers.map((supplier: any) => (
+                    {suppliers.map((supplier: any) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
                       </SelectItem>
