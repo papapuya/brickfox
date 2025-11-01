@@ -1,20 +1,13 @@
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, Loader2, CheckCircle2, XCircle, Download } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Upload, FileText, Loader2, ExternalLink, ArrowRight } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 interface PDFProduct {
   productName: string;
@@ -28,113 +21,51 @@ interface PDFProduct {
   uevp: string | null;
 }
 
-interface ScrapeResult {
+interface PDFPreviewResult {
   success: boolean;
-  totalExtracted: number;
-  totalScraped: number;
-  products: any[];
-  errors?: Array<{ product: string; url?: string; error: string }>;
+  totalProducts: number;
+  products: PDFProduct[];
 }
 
 export default function PDFAutoScraper() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedProject, setSelectedProject] = useState<string>('');
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
-  const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
+  const [extractedProducts, setExtractedProducts] = useState<PDFProduct[]>([]);
 
-  const { data: projectsData } = useQuery<{ success: boolean; projects: any[] }>({
-    queryKey: ['/api/projects'],
-  });
+  const extractMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('pdf', file);
 
-  const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
-    queryKey: ['/api/suppliers'],
-  });
+      const response = await fetch('/api/pdf/preview', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
+        },
+        body: formData,
+        credentials: 'include',
+      });
 
-  const projects = projectsData?.projects || [];
-  const suppliers = suppliersData?.suppliers || [];
-
-  const uploadWithProgress = async (file: File) => {
-    const formData = new FormData();
-    formData.append('pdf', file);
-    formData.append('projectId', selectedProject);
-    if (selectedSupplier) {
-      formData.append('supplierId', selectedSupplier);
-    }
-
-    const response = await fetch('/api/pdf/upload-and-scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
-      },
-      body: formData,
-      credentials: 'include',
-    });
-
-    if (!response.ok || !response.body) {
-      throw new Error('Upload fehlgeschlagen');
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6));
-
-          if (data.stage === 'extracting') {
-            setProgressMessage(data.message);
-            setProgress(10);
-          } else if (data.stage === 'extracted') {
-            setProgressMessage(data.message);
-            setProgress(20);
-          } else if (data.stage === 'scraping') {
-            setProgressMessage(`${data.message} - ${data.currentProduct}`);
-            setProgress(20 + (data.progress * 0.75)); // 20-95%
-          } else if (data.stage === 'complete') {
-            setProgress(100);
-            setProgressMessage(data.message);
-            setScrapeResult(data);
-            
-            toast({
-              title: 'PDF verarbeitet!',
-              description: `${data.totalScraped} von ${data.totalExtracted} Produkten erfolgreich gescraped`,
-            });
-            
-            setTimeout(() => {
-              setIsProcessing(false);
-              setProgress(0);
-              setProgressMessage('');
-            }, 1500);
-          } else if (data.stage === 'error') {
-            throw new Error(data.error || 'Fehler beim Verarbeiten');
-          }
-        }
+      if (!response.ok) {
+        throw new Error('PDF-Verarbeitung fehlgeschlagen');
       }
-    }
-  };
 
-  const uploadMutation = useMutation({
-    mutationFn: uploadWithProgress,
+      return response.json() as Promise<PDFPreviewResult>;
+    },
+    onSuccess: (data) => {
+      setExtractedProducts(data.products);
+      toast({
+        title: 'PDF analysiert',
+        description: `${data.totalProducts} Produkt-URLs erfolgreich extrahiert`,
+      });
+    },
     onError: (error: Error) => {
       toast({
         title: 'Fehler',
         description: error.message,
         variant: 'destructive',
       });
-      setIsProcessing(false);
-      setProgress(0);
-      setProgressMessage('');
     },
   });
 
@@ -150,11 +81,11 @@ export default function PDFAutoScraper() {
         return;
       }
       setSelectedFile(file);
-      setScrapeResult(null);
+      setExtractedProducts([]);
     }
   };
 
-  const handleUpload = async () => {
+  const handleExtract = () => {
     if (!selectedFile) {
       toast({
         title: 'Keine Datei ausgewählt',
@@ -164,17 +95,30 @@ export default function PDFAutoScraper() {
       return;
     }
 
-    if (!selectedProject) {
+    extractMutation.mutate(selectedFile);
+  };
+
+  const handleScrapeWithURLScraper = () => {
+    if (extractedProducts.length === 0) {
       toast({
-        title: 'Kein Projekt ausgewählt',
-        description: 'Bitte wählen Sie ein Projekt',
+        title: 'Keine Produkte',
+        description: 'Bitte extrahieren Sie zuerst Produkte aus dem PDF',
         variant: 'destructive',
       });
       return;
     }
 
-    setIsProcessing(true);
-    uploadMutation.mutate(selectedFile);
+    // Navigate to URL Scraper with product URLs
+    const urls = extractedProducts
+      .filter(p => p.url)
+      .map(p => p.url)
+      .join('\n');
+    
+    // Store URLs in sessionStorage for URL Scraper to pick up
+    sessionStorage.setItem('pdf_extracted_urls', urls);
+    sessionStorage.setItem('pdf_extracted_products', JSON.stringify(extractedProducts));
+    
+    setLocation('/url-scraper');
   };
 
   return (
@@ -182,209 +126,132 @@ export default function PDFAutoScraper() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">PDF Auto-Scraper</h1>
         <p className="text-muted-foreground">
-          Laden Sie eine Lieferanten-PDF hoch, um automatisch Produktdaten zu extrahieren und URLs zu scrapen
+          Extrahieren Sie Produkt-URLs und EK-Preise aus Lieferanten-PDFs und verarbeiten Sie diese mit dem URL-Scraper
         </p>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>PDF hochladen</CardTitle>
+            <CardTitle>1. PDF hochladen</CardTitle>
             <CardDescription>
               Lieferanten-PDF mit anklickbaren Produkt-URLs und EK-Preisen
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="project">Projekt auswählen *</Label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Projekt auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((project: any) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="supplier">Lieferant (optional)</Label>
-                <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Lieferant auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((supplier: any) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  Wenn ein Lieferant ausgewählt ist, werden dessen gespeicherte CSS-Selektoren verwendet
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pdf">PDF-Datei</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="pdf"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    disabled={isProcessing}
-                  />
-                  {selectedFile && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <FileText className="h-4 w-4" />
-                      {selectedFile.name}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <Button
-                onClick={handleUpload}
-                disabled={!selectedFile || !selectedProject || isProcessing}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verarbeite PDF...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    PDF hochladen & scrapen
-                  </>
+            <div className="space-y-2">
+              <Label htmlFor="pdf">PDF-Datei</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="pdf"
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  disabled={extractMutation.isPending}
+                />
+                {selectedFile && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <FileText className="h-4 w-4" />
+                    {selectedFile.name}
+                  </div>
                 )}
-              </Button>
+              </div>
             </div>
+
+            <Button
+              onClick={handleExtract}
+              disabled={!selectedFile || extractMutation.isPending}
+              className="w-full"
+            >
+              {extractMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  PDF wird analysiert...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  URLs & Preise extrahieren
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
 
-        {isProcessing && (
-          <Card className="border-blue-200 bg-blue-50/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                <span>Verarbeitung läuft...</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium">{progressMessage || 'Verarbeite PDF...'}</span>
-                  <span className="text-blue-600 font-semibold">{progress}%</span>
-                </div>
-                <Progress value={progress} className="w-full h-3" />
-              </div>
-              
-              {progress > 0 && (
-                <div className="text-xs text-muted-foreground bg-white/50 p-3 rounded border">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"></div>
-                    <span>Die Verarbeitung kann einige Minuten dauern...</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {scrapeResult && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ergebnisse</CardTitle>
-              <CardDescription>
-                {scrapeResult.totalScraped} von {scrapeResult.totalExtracted} Produkten erfolgreich gescraped
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{scrapeResult.totalExtracted}</div>
-                  <div className="text-sm text-muted-foreground">Extrahiert</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg bg-green-50">
-                  <div className="text-2xl font-bold text-green-600">{scrapeResult.totalScraped}</div>
-                  <div className="text-sm text-muted-foreground">Erfolgreich</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg bg-red-50">
-                  <div className="text-2xl font-bold text-red-600">
-                    {scrapeResult.errors?.length || 0}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Fehler</div>
-                </div>
-              </div>
-
-              {scrapeResult.errors && scrapeResult.errors.length > 0 && (
-                <Alert variant="destructive">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="font-semibold mb-2">Fehler beim Scrapen:</div>
-                    <ul className="list-disc list-inside space-y-1">
-                      {scrapeResult.errors.slice(0, 5).map((error, idx) => (
-                        <li key={idx} className="text-sm">
-                          {error.product}: {error.error}
-                        </li>
+        {extractedProducts.length > 0 && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>2. Extrahierte Produkte ({extractedProducts.length})</CardTitle>
+                <CardDescription>
+                  Produkt-URLs und EK-Preise aus dem PDF
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border max-h-96 overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produktname</TableHead>
+                        <TableHead>Artikel-Nr.</TableHead>
+                        <TableHead>EAN</TableHead>
+                        <TableHead>EK-Preis</TableHead>
+                        <TableHead>URL</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {extractedProducts.map((product, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{product.productName || '-'}</TableCell>
+                          <TableCell>{product.articleNumber || '-'}</TableCell>
+                          <TableCell>{product.eanCode || '-'}</TableCell>
+                          <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {product.url ? (
+                              <a 
+                                href={product.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline flex items-center gap-1"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {product.url}
+                              </a>
+                            ) : '-'}
+                          </TableCell>
+                        </TableRow>
                       ))}
-                      {scrapeResult.errors.length > 5 && (
-                        <li className="text-sm">
-                          ... und {scrapeResult.errors.length - 5} weitere Fehler
-                        </li>
-                      )}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <h3 className="font-semibold">Gescrapte Produkte:</h3>
-                <div className="max-h-96 overflow-y-auto border rounded-lg">
-                  <table className="w-full">
-                    <thead className="bg-muted sticky top-0">
-                      <tr>
-                        <th className="p-2 text-left">Produktname</th>
-                        <th className="p-2 text-left">Artikel-Nr.</th>
-                        <th className="p-2 text-left">EAN</th>
-                        <th className="p-2 text-left">EK-Preis</th>
-                        <th className="p-2 text-left">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scrapeResult.products.map((product, idx) => (
-                        <tr key={idx} className="border-t">
-                          <td className="p-2">{product.productName || '-'}</td>
-                          <td className="p-2">{product.pdfArticleNumber || product.articleNumber || '-'}</td>
-                          <td className="p-2">{product.pdfEanCode || product.ean || '-'}</td>
-                          <td className="p-2">{product.ekPrice || '-'}</td>
-                          <td className="p-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <Alert>
-                <AlertDescription>
-                  Die Produkte wurden erfolgreich in Ihr Projekt "{selectedProject}" importiert.
-                  Sie können diese nun im Projekt bearbeiten und weiterverarbeiten.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowRight className="h-5 w-5 text-blue-600" />
+                  3. Mit URL-Scraper weiterverarbeiten
+                </CardTitle>
+                <CardDescription>
+                  Nutzen Sie den URL-Scraper, um vollständige Produktdaten von den extrahierten URLs zu laden
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleScrapeWithURLScraper}
+                  className="w-full"
+                  size="lg"
+                >
+                  Zum URL-Scraper wechseln
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Die extrahierten URLs und EK-Preise werden automatisch übernommen
+                </p>
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>
