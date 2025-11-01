@@ -971,8 +971,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiModel
       );
 
+      // Extract SEO fields from product data
+      const firstData = extractedData[0] || {};
+      const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || '';
+      const manufacturer = firstData.manufacturer || firstData.Hersteller || '';
+      const category = firstData.category || firstData.kategorie || '';
+      
+      // Generate SEO Title (max 60 chars)
+      const seoTitle = productName.length > 60 
+        ? productName.substring(0, 57) + '...' 
+        : productName;
+      
+      // Generate SEO Description (extract first text from HTML or use auto-extracted description)
+      let seoDescription = '';
+      if (autoExtractedDescription) {
+        // Use auto-extracted description, limit to 160 chars
+        const plainText = autoExtractedDescription.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        seoDescription = plainText.length > 160 
+          ? plainText.substring(0, 157) + '...' 
+          : plainText;
+      } else {
+        // Fallback: Extract from HTML description
+        const plainText = description.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        const firstSentence = plainText.split('.')[0] || plainText;
+        seoDescription = firstSentence.length > 160 
+          ? firstSentence.substring(0, 157) + '...' 
+          : firstSentence;
+      }
+      
+      // Generate SEO Keywords (from category, manufacturer, product features)
+      const keywordParts = [manufacturer, category, productName].filter(Boolean);
+      const seoKeywords = keywordParts.slice(0, 5).join(', ');
+
       await trackApiUsage(req, res, () => {});
-      res.json({ success: true, description });
+      res.json({ 
+        success: true, 
+        description,
+        seoTitle,
+        seoDescription,
+        seoKeywords
+      });
     } catch (error) {
       console.error('Description generation error:', error);
       res.status(500).json({ 
