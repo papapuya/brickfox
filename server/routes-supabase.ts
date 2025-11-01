@@ -45,6 +45,7 @@ const upload = multer({
 });
 
 import { apiKeyManager } from './api-key-manager';
+import webhooksRouter from './webhooks-supabase';
 
 async function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
@@ -209,49 +210,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Registrierung fehlgeschlagen' });
       }
 
-      // CRITICAL: Use supabaseStorage (Drizzle) for Helium DB, NOT supabaseAdmin (Supabase Remote)
-      const akkushopTenant = await supabaseStorage.getTenantBySlug('akkushop');
-
-      if (!akkushopTenant) {
-        console.error('AkkuShop tenant not found in Helium DB - creating it now');
-        const newTenant = await supabaseStorage.createTenant({
-          name: 'AkkuShop',
-          slug: 'akkushop',
-          settings: {
-            default_categories: ['battery', 'charger', 'tool', 'gps', 'drone', 'camera'],
-            mediamarkt_title_format: 'Kategorie + Artikelnummer'
-          }
-        });
-        
-        if (!newTenant) {
-          return res.status(500).json({ error: 'Tenant konnte nicht erstellt werden' });
-        }
-      }
-
-      const orgId = akkushopTenant?.id || (await supabaseStorage.getTenantBySlug('akkushop'))?.id;
-
-      if (!orgId) {
-        return res.status(500).json({ error: 'Tenant-ID konnte nicht ermittelt werden' });
-      }
-
-      // Create user in Helium DB via Drizzle
-      const insertError = await supabaseStorage.createUserFromAuth({
-        id: data.user.id,
-        email: validatedData.email,
-        username: validatedData.username || validatedData.email.split('@')[0],
-        isAdmin: false,
-        tenantId: orgId,
-        role: 'member',
-        subscriptionStatus: 'trial',
-        planId: 'trial',
-        apiCallsLimit: 3000,
-        apiCallsUsed: 0,
-      });
-
-      if (insertError) {
-        console.error('Failed to create user record:', insertError);
-        return res.status(500).json({ error: 'Fehler beim Erstellen des Benutzerprofils' });
-      }
+      // User created successfully in Supabase Auth
+      // The webhook will handle creating the user record in Helium DB automatically
+      console.log(`[Register] User created in Supabase Auth: ${validatedData.email}`);
+      console.log('[Register] Webhook will sync user to Helium DB automatically');
 
       const { data: sessionData } = await supabase.auth.signInWithPassword({
         email: validatedData.email,
@@ -1197,6 +1159,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Mount webhook routes
+  app.use('/api/webhooks', webhooksRouter);
 
   const httpServer = createServer(app);
   return httpServer;
