@@ -1,5 +1,8 @@
 import { supabase, supabaseAdmin } from './supabase';
 import { encrypt, decrypt } from './encryption';
+import { db as heliumDb } from './db'; // Helium/Neon PostgreSQL client
+import { eq } from 'drizzle-orm';
+import { users as usersTable } from '@shared/schema';
 
 // Use admin client for backend operations to bypass RLS
 const db = supabaseAdmin || supabase;
@@ -88,34 +91,28 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    // CRITICAL: Use Helium/Neon DB directly (not Supabase remote DB!)
+    const users = await heliumDb.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+    const user = users[0];
 
-    const { data: user, error } = await db
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !user) return null;
+    if (!user) return null;
 
     return {
       id: user.id,
       email: user.email,
       username: user.username || undefined,
-      isAdmin: user.is_admin || false,
-      tenantId: user.tenant_id || undefined,
+      isAdmin: user.isAdmin || false,
+      tenantId: user.tenantId || undefined,
       role: user.role || 'member',
-      stripeCustomerId: user.stripe_customer_id || undefined,
-      subscriptionStatus: user.subscription_status || undefined,
-      subscriptionId: user.subscription_id || undefined,
-      planId: user.plan_id || undefined,
-      currentPeriodEnd: user.current_period_end || undefined,
-      apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 3000, // GPT-4o-mini adjustment
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd || undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 3000,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 
