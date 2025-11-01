@@ -1,15 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 
-// Use SQLite for development, PostgreSQL for production
-const isDevelopment = process.env.NODE_ENV === 'development';
-
+// Always use PostgreSQL (Supabase) - no more local SQLite
 export default defineConfig({
   out: "./migrations",
   schema: "./shared/schema.ts",
-  dialect: isDevelopment ? "sqlite" : "postgresql",
-  dbCredentials: isDevelopment ? {
-    url: "local.db",
-  } : {
+  dialect: "postgresql",
+  dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
 });

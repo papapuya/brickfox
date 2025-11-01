@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, integer, uuid, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 // Product data model for CSV enrichment
@@ -144,28 +144,28 @@ export type CreateProductInProject = z.infer<typeof createProductInProjectSchema
 export const updateProductInProjectSchema = productInProjectSchema.partial().omit({ id: true, projectId: true, createdAt: true });
 export type UpdateProductInProject = z.infer<typeof updateProductInProjectSchema>;
 
-// Drizzle database tables for SQLite
+// Drizzle database tables for PostgreSQL (Supabase)
 
-// Organizations table for multi-tenant B2B SaaS (akkushop.de, kunde2, etc.)
-export const organizations = sqliteTable("organizations", {
-  id: text("id").primaryKey(),
+// Tenants table for multi-tenant B2B SaaS (akkushop.de, kunde2, etc.)
+export const tenants = pgTable("tenants", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  settings: text("settings").notNull().default('{}'),
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+  settings: jsonb("settings").default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // Users table for authentication and subscription management
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey(),
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   username: text("username"),
-  isAdmin: integer("is_admin", { mode: 'boolean' }).default(false),
+  isAdmin: boolean("is_admin").default(false),
   
   // Multi-tenant fields
-  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   role: text("role").default('member'),
   
   // Stripe subscription fields
@@ -173,83 +173,90 @@ export const users = sqliteTable("users", {
   subscriptionStatus: text("subscription_status"), // active, canceled, past_due, trialing, incomplete
   subscriptionId: text("subscription_id"),
   planId: text("plan_id"), // starter, pro, enterprise
-  currentPeriodEnd: text("current_period_end"),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   
   // Usage tracking for API limits
   apiCallsUsed: integer("api_calls_used").default(0),
   apiCallsLimit: integer("api_calls_limit").default(500), // Default: Starter plan
   
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-export const projects = sqliteTable("projects", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+export const projects = pgTable("projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const productsInProjects = sqliteTable("products_in_projects", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+export const productsInProjects = pgTable("products_in_projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name"),
-  files: text("files"),
+  files: jsonb("files"),
   htmlCode: text("html_code"),
   previewText: text("preview_text"),
-  extractedData: text("extracted_data"),
+  extractedData: jsonb("extracted_data"),
   template: text("template"),
-  customAttributes: text("custom_attributes"),
+  customAttributes: jsonb("custom_attributes"),
   exactProductName: text("exact_product_name"),
   articleNumber: text("article_number"),
   pixiStatus: text("pixi_status"),
   pixiEan: text("pixi_ean"),
-  pixiCheckedAt: text("pixi_checked_at"),
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  pixiCheckedAt: timestamp("pixi_checked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const templates = sqliteTable("templates", {
-  id: text("id").primaryKey(),
-  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+export const templates = pgTable("templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   content: text("content").notNull(),
-  isDefault: text("is_default"),
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  isDefault: boolean("is_default"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 // Supplier profiles for web scraping
-export const suppliers = sqliteTable("suppliers", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+export const suppliers = pgTable("suppliers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   supplNr: text("suppl_nr"),
   urlPattern: text("url_pattern"),
   description: text("description"),
-  selectors: text("selectors").notNull(), // JSON string of ScraperSelectors
+  selectors: jsonb("selectors").notNull(), // JSON object of ScraperSelectors
   productLinkSelector: text("product_link_selector"),
   sessionCookies: text("session_cookies"), // Session cookies for authenticated access
   userAgent: text("user_agent"), // Custom user agent string
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+  loginUrl: text("login_url"), // URL to POST credentials to
+  loginUsernameField: text("login_username_field"), // Form field name for username
+  loginPasswordField: text("login_password_field"), // Form field name for password
+  loginUsername: text("login_username"), // Stored username
+  loginPassword: text("login_password"), // Encrypted password
+  verifiedFields: jsonb("verified_fields"), // JSON array of verified field names
+  lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // Temporary scrape session - stores scraped products until new scrape or manual clear
-export const scrapeSession = sqliteTable("scrape_session", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
-  scrapedProducts: text("scraped_products").notNull(), // JSON string of ScrapedProduct[]
-  scrapedProduct: text("scraped_product"), // JSON string of single ScrapedProduct
+export const scrapeSession = pgTable("scrape_session", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  scrapedProducts: jsonb("scraped_products").notNull(), // JSON array of ScrapedProduct[]
+  scrapedProduct: jsonb("scraped_product"), // JSON object of single ScrapedProduct
   generatedDescription: text("generated_description"),
-  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // Relations
-export const organizationsRelations = relations(organizations, ({ many }) => ({
+export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   projects: many(projects),
   products: many(productsInProjects),
@@ -259,9 +266,9 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [users.organizationId],
-    references: [organizations.id],
+  tenant: one(tenants, {
+    fields: [users.tenantId],
+    references: [tenants.id],
   }),
   projects: many(projects),
   suppliers: many(suppliers),
@@ -273,9 +280,9 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     fields: [projects.userId],
     references: [users.id],
   }),
-  organization: one(organizations, {
-    fields: [projects.organizationId],
-    references: [organizations.id],
+  tenant: one(tenants, {
+    fields: [projects.tenantId],
+    references: [tenants.id],
   }),
   products: many(productsInProjects),
 }));
@@ -285,9 +292,9 @@ export const productsInProjectsRelations = relations(productsInProjects, ({ one 
     fields: [productsInProjects.projectId],
     references: [projects.id],
   }),
-  organization: one(organizations, {
-    fields: [productsInProjects.organizationId],
-    references: [organizations.id],
+  tenant: one(tenants, {
+    fields: [productsInProjects.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -296,9 +303,9 @@ export const suppliersRelations = relations(suppliers, ({ one }) => ({
     fields: [suppliers.userId],
     references: [users.id],
   }),
-  organization: one(organizations, {
-    fields: [suppliers.organizationId],
-    references: [organizations.id],
+  tenant: one(tenants, {
+    fields: [suppliers.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -307,9 +314,9 @@ export const scrapeSessionRelations = relations(scrapeSession, ({ one }) => ({
     fields: [scrapeSession.userId],
     references: [users.id],
   }),
-  organization: one(organizations, {
-    fields: [scrapeSession.organizationId],
-    references: [organizations.id],
+  tenant: one(tenants, {
+    fields: [scrapeSession.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -389,8 +396,8 @@ export type CreateSupplier = z.infer<typeof createSupplierSchema>;
 export const updateSupplierSchema = createSupplierSchema.partial();
 export type UpdateSupplier = z.infer<typeof updateSupplierSchema>;
 
-// Organization schemas for multi-tenant B2B SaaS
-export const organizationSchema = z.object({
+// Tenant schemas for multi-tenant B2B SaaS
+export const tenantSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
@@ -399,15 +406,15 @@ export const organizationSchema = z.object({
   updatedAt: z.string(),
 });
 
-export type Organization = z.infer<typeof organizationSchema>;
+export type Tenant = z.infer<typeof tenantSchema>;
 
-export const createOrganizationSchema = z.object({
+export const createTenantSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
   slug: z.string().min(1, "Slug ist erforderlich"),
   settings: z.record(z.string(), z.any()).optional(),
 });
 
-export type CreateOrganization = z.infer<typeof createOrganizationSchema>;
+export type CreateTenant = z.infer<typeof createTenantSchema>;
 
 // User schemas for authentication
 export const userSchema = z.object({
@@ -415,7 +422,7 @@ export const userSchema = z.object({
   email: z.string().email(),
   username: z.string().optional(),
   isAdmin: z.boolean().optional().default(false),
-  organizationId: z.string().optional(),
+  tenantId: z.string().optional(),
   role: z.enum(['admin', 'member']).optional().default('member'),
   stripeCustomerId: z.string().optional(),
   subscriptionStatus: z.string().optional(),

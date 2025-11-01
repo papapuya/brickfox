@@ -1,36 +1,23 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
 import * as schema from "@shared/schema";
 
-// Use SQLite for local development, PostgreSQL for production
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Always use PostgreSQL (Supabase) - no more SQLite
+neonConfig.webSocketConstructor = ws;
 
 let db: any;
 let pool: any = null;
 
 async function initializeDatabase() {
-  if (isDevelopment) {
-    // Use SQLite for local development
-    const sqlite = new Database('local.db');
-    db = drizzle(sqlite, { schema });
-  } else {
-    // Use PostgreSQL for production (Neon)
-    const { Pool, neonConfig } = await import('@neondatabase/serverless');
-    const ws = await import("ws");
-    
-    neonConfig.webSocketConstructor = ws.default;
-
-    if (!process.env.DATABASE_URL) {
-      // Für lokale Entwicklung ohne Datenbank
-      console.log('DATABASE_URL nicht gesetzt - verwende lokalen SQLite Fallback');
-      // Erstelle eine Mock-Datenbank für lokale Entwicklung
-      pool = null as any;
-      db = null as any;
-    } else {
-      pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      db = drizzle({ client: pool, schema });
-    }
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required');
   }
+  
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  db = drizzle({ client: pool, schema });
+  
+  console.log('✅ PostgreSQL database initialized (Supabase)');
 }
 
 // Initialize database
