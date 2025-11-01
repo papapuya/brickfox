@@ -367,75 +367,138 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     const user = await this.getUserById(userId);
     if (!user) return [];
 
-    const query = supabaseAdmin
-      .from('projects')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at');
+    if (isDevelopment) {
+      // Use Helium DB in development
+      let query = heliumDb
+        .select()
+        .from(projectsTable)
+        .where(eq(projectsTable.userId, userId))
+        .orderBy(desc(projectsTable.createdAt));
 
-    if (user.tenantId) {
-      query.eq('tenant_id', user.tenantId);
+      const projects = await query;
+
+      return projects.map(p => ({
+        id: p.id,
+        name: p.name,
+        createdAt: p.createdAt!.toISOString(),
+      }));
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const query = supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at');
+
+      if (user.tenantId) {
+        query.eq('tenant_id', user.tenantId);
+      }
+
+      const { data: projects, error } = await query;
+
+      if (error || !projects) return [];
+
+      return projects.map(p => ({
+        id: p.id,
+        name: p.name,
+        createdAt: p.created_at,
+      }));
     }
-
-    const { data: projects, error } = await query;
-
-    if (error || !projects) return [];
-
-    return projects.map(p => ({
-      id: p.id,
-      name: p.name,
-      createdAt: p.created_at,
-    }));
   }
 
   async getProject(id: string, userId?: string): Promise<Project | null> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
+    if (isDevelopment) {
+      // Use Helium DB in development
+      const [project] = await heliumDb
+        .select()
+        .from(projectsTable)
+        .where(eq(projectsTable.id, id))
+        .limit(1);
+
+      if (!project) return null;
+
+      if (userId) {
+        const user = await this.getUserById(userId);
+        if (!user) {
+          console.warn(`[SECURITY] Invalid user ${userId} tried to access project ${id}`);
+          return null;
+        }
+        
+        if (!user.tenantId) {
+          console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
+          return null;
+        }
+        
+        if (!project.tenantId) {
+          console.warn(`[SECURITY CRITICAL] Project ${id} has NO tenant_id - blocking access (needs backfill)`);
+          return null;
+        }
+        
+        if (user.tenantId !== project.tenantId) {
+          console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access project ${id} (org: ${project.tenantId})`);
+          return null;
+        }
+      }
+
+      return {
+        id: project.id,
+        name: project.name,
+        createdAt: project.createdAt!.toISOString(),
+      };
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const { data: project, error } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error || !project) return null;
+
+      if (userId) {
+        const user = await this.getUserById(userId);
+        if (!user) {
+          console.warn(`[SECURITY] Invalid user ${userId} tried to access project ${id}`);
+          return null;
+        }
+        
+        if (!user.tenantId) {
+          console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
+          return null;
+        }
+        
+        if (!project.tenant_id) {
+          console.warn(`[SECURITY CRITICAL] Project ${id} has NO tenant_id - blocking access (needs backfill)`);
+          return null;
+        }
+        
+        if (user.tenantId !== project.tenant_id) {
+          console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access project ${id} (org: ${project.tenant_id})`);
+          return null;
+        }
+      }
+
+      return {
+        id: project.id,
+        name: project.name,
+        createdAt: project.created_at,
+      };
     }
-
-    const { data: project, error } = await supabaseAdmin
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !project) return null;
-
-    if (userId) {
-      const user = await this.getUserById(userId);
-      if (!user) {
-        console.warn(`[SECURITY] Invalid user ${userId} tried to access project ${id}`);
-        return null;
-      }
-      
-      if (!user.tenantId) {
-        console.warn(`[SECURITY CRITICAL] User ${userId} has NO tenant_id - blocking ALL access`);
-        return null;
-      }
-      
-      if (!project.tenant_id) {
-        console.warn(`[SECURITY CRITICAL] Project ${id} has NO tenant_id - blocking access (needs backfill)`);
-        return null;
-      }
-      
-      if (user.tenantId !== project.tenant_id) {
-        console.warn(`[SECURITY] User ${userId} (org: ${user.tenantId}) tried to access project ${id} (org: ${project.tenant_id})`);
-        return null;
-      }
-    }
-
-    return {
-      id: project.id,
-      name: project.name,
-      createdAt: project.created_at,
-    };
   }
 
   async deleteProject(id: string, userId?: string): Promise<boolean> {
@@ -460,9 +523,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createProduct(projectId: string, data: CreateProductInProject, userId?: string): Promise<ProductInProject> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     const project = await this.getProject(projectId, userId);
     if (!project) {
@@ -470,33 +531,68 @@ export class SupabaseStorage implements IStorage {
       throw new Error('Project not found or access denied');
     }
 
-    const projectData = await supabaseAdmin
-      .from('projects')
-      .select('tenant_id')
-      .eq('id', projectId)
-      .single();
+    if (isDevelopment) {
+      // Use Helium DB in development
+      const [projectData] = await heliumDb
+        .select({ tenantId: projectsTable.tenantId })
+        .from(projectsTable)
+        .where(eq(projectsTable.id, projectId))
+        .limit(1);
 
-    const { data: product, error} = await supabaseAdmin
-      .from('products_in_projects')
-      .insert({
-        project_id: projectId,
-        tenant_id: projectData.data?.tenant_id || null,
-        name: data.name,
-        files: data.files || null,
-        html_code: data.htmlCode,
-        preview_text: data.previewText,
-        extracted_data: data.extractedData || null,
-        template: data.template,
-        custom_attributes: data.customAttributes || null,
-        exact_product_name: data.exactProductName,
-        article_number: data.articleNumber,
-      })
-      .select()
-      .single();
+      const [product] = await heliumDb
+        .insert(productsInProjectsTable)
+        .values({
+          projectId,
+          tenantId: projectData?.tenantId || null,
+          name: data.name,
+          files: data.files || null,
+          htmlCode: data.htmlCode,
+          previewText: data.previewText,
+          extractedData: data.extractedData || null,
+          template: data.template,
+          customAttributes: data.customAttributes || null,
+          exactProductName: data.exactProductName,
+          articleNumber: data.articleNumber,
+        })
+        .returning();
 
-    if (error || !product) throw new Error('Failed to create product');
+      if (!product) throw new Error('Failed to create product');
 
-    return this.mapProduct(product);
+      return this.mapProduct(product);
+    } else {
+      // Use Supabase in production
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const projectData = await supabaseAdmin
+        .from('projects')
+        .select('tenant_id')
+        .eq('id', projectId)
+        .single();
+
+      const { data: product, error} = await supabaseAdmin
+        .from('products_in_projects')
+        .insert({
+          project_id: projectId,
+          tenant_id: projectData.data?.tenant_id || null,
+          name: data.name,
+          files: data.files || null,
+          html_code: data.htmlCode,
+          preview_text: data.previewText,
+          extracted_data: data.extractedData || null,
+          template: data.template,
+          custom_attributes: data.customAttributes || null,
+          exact_product_name: data.exactProductName,
+          article_number: data.articleNumber,
+        })
+        .select()
+        .single();
+
+      if (error || !product) throw new Error('Failed to create product');
+
+      return this.mapProduct(product);
+    }
   }
 
   async getProducts(projectId: string, userId?: string): Promise<ProductInProject[]> {
@@ -891,22 +987,23 @@ export class SupabaseStorage implements IStorage {
   }
 
   private mapProduct(product: any): ProductInProject {
+    // Support both snake_case (Supabase) and camelCase (Drizzle/Helium)
     return {
       id: product.id,
-      projectId: product.project_id,
+      projectId: product.projectId || product.project_id,
       name: product.name || undefined,
       files: product.files || undefined,
-      htmlCode: product.html_code || undefined,
-      previewText: product.preview_text || undefined,
-      extractedData: product.extracted_data || undefined,
+      htmlCode: product.htmlCode || product.html_code || undefined,
+      previewText: product.previewText || product.preview_text || undefined,
+      extractedData: product.extractedData || product.extracted_data || undefined,
       template: product.template || undefined,
-      customAttributes: product.custom_attributes || undefined,
-      exactProductName: product.exact_product_name || undefined,
-      articleNumber: product.article_number || undefined,
+      customAttributes: product.customAttributes || product.custom_attributes || undefined,
+      exactProductName: product.exactProductName || product.exact_product_name || undefined,
+      articleNumber: product.articleNumber || product.article_number || undefined,
       pixi_status: product.pixi_status || undefined,
       pixi_ean: product.pixi_ean || undefined,
       pixi_checked_at: product.pixi_checked_at || undefined,
-      createdAt: product.created_at,
+      createdAt: product.createdAt?.toISOString?.() || product.created_at,
     };
   }
 
