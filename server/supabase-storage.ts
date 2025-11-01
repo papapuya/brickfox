@@ -1,8 +1,8 @@
 import { supabase, supabaseAdmin } from './supabase';
 import { encrypt, decrypt } from './encryption';
 import { db as heliumDb } from './db'; // Helium/Neon PostgreSQL client
-import { eq, desc } from 'drizzle-orm';
-import { users as usersTable, tenants as tenantsTable } from '@shared/schema';
+import { eq, desc, and } from 'drizzle-orm';
+import { users as usersTable, tenants as tenantsTable, suppliers as suppliersTable } from '@shared/schema';
 
 // Use admin client for backend operations to bypass RLS
 const db = supabaseAdmin || supabase;
@@ -715,52 +715,48 @@ export class SupabaseStorage implements IStorage {
       return [];
     }
 
-    // DEBUG: First try without filter to see if ANY suppliers exist
-    const { data: allSuppliers, error: allError } = await db
-      .from('suppliers')
-      .select('*');
-    
-    console.log('[getSuppliers DEBUG] Total suppliers in DB:', allSuppliers?.length, 'Error:', allError?.message);
-    if (allSuppliers && allSuppliers.length > 0) {
-      console.log('[getSuppliers DEBUG] Sample supplier:', JSON.stringify(allSuppliers[0], null, 2));
-    }
-
-    let query = db
-      .from('suppliers')
-      .select('*');
-
-    // Multi-tenant filtering: use tenant_id if available, otherwise user_id
+    // CRITICAL: Use Helium DB with Drizzle
+    let suppliers;
     if (user.tenantId) {
       console.log('[getSuppliers] Filtering by tenant_id:', user.tenantId);
-      query = query.eq('tenant_id', user.tenantId);
+      suppliers = await heliumDb
+        .select()
+        .from(suppliersTable)
+        .where(eq(suppliersTable.tenantId, user.tenantId))
+        .orderBy(suppliersTable.name);
     } else {
       console.log('[getSuppliers] Filtering by user_id:', userId);
-      query = query.eq('user_id', userId);
+      suppliers = await heliumDb
+        .select()
+        .from(suppliersTable)
+        .where(eq(suppliersTable.userId, userId))
+        .orderBy(suppliersTable.name);
     }
 
-    query = query.order('name');
-
-    const { data: suppliers, error } = await query;
-
-    console.log('[getSuppliers] Query result:', { 
-      error: error?.message, 
-      count: suppliers?.length,
-      suppliers: suppliers?.map(s => ({ id: s.id, name: s.name }))
-    });
-
-    if (error) {
-      console.error('[getSuppliers] Error:', error);
-      return [];
-    }
+    console.log('[getSuppliers] Found suppliers:', suppliers.length);
     
-    if (!suppliers) {
-      console.log('[getSuppliers] No suppliers returned');
-      return [];
-    }
-
-    const mapped = suppliers.map(s => this.mapSupplier(s));
-    console.log('[getSuppliers] Mapped suppliers:', mapped.length);
-    return mapped;
+    return suppliers.map(s => ({
+      id: s.id,
+      userId: s.userId,
+      tenantId: s.tenantId || undefined,
+      name: s.name,
+      supplNr: s.supplNr || undefined,
+      urlPattern: s.urlPattern || undefined,
+      description: s.description || undefined,
+      selectors: s.selectors as any,
+      productLinkSelector: s.productLinkSelector || undefined,
+      sessionCookies: s.sessionCookies || undefined,
+      userAgent: s.userAgent || undefined,
+      loginUrl: s.loginUrl || undefined,
+      loginUsernameField: s.loginUsernameField || undefined,
+      loginPasswordField: s.loginPasswordField || undefined,
+      loginUsername: s.loginUsername || undefined,
+      exportMappings: s.exportMappings as any || undefined,
+      verifiedFields: s.verifiedFields || undefined,
+      lastVerifiedAt: s.lastVerifiedAt || undefined,
+      createdAt: s.createdAt!,
+      updatedAt: s.updatedAt!,
+    }));
   }
 
   async getSupplier(id: string): Promise<Supplier | null> {
