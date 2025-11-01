@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Save, TestTube, CheckCircle, AlertCircle } from "lucide-react";
 import { apiPut } from "@/lib/api";
 
-interface Supplier {
+export interface Supplier {
   id: string;
   name: string;
   supplNr?: string;

@@ -908,15 +908,34 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getSupplier(id: string): Promise<Supplier | null> {
-    const { data: supplier, error } = await db
-      .from('suppliers')
-      .select('*')
-      .eq('id', id)
-      .single();
+    // Use Helium DB with Drizzle instead of Supabase to avoid RLS issues
+    const [supplier] = await heliumDb
+      .select()
+      .from(suppliersTable)
+      .where(eq(suppliersTable.id, id))
+      .limit(1);
 
-    if (error || !supplier) return null;
+    if (!supplier) return null;
 
-    return this.mapSupplier(supplier);
+    return {
+      id: supplier.id,
+      name: supplier.name,
+      supplNr: supplier.supplNr || undefined,
+      urlPattern: supplier.urlPattern || undefined,
+      description: supplier.description || undefined,
+      selectors: supplier.selectors as any,
+      productLinkSelector: supplier.productLinkSelector || undefined,
+      sessionCookies: supplier.sessionCookies || undefined,
+      userAgent: supplier.userAgent || undefined,
+      loginUrl: supplier.loginUrl || undefined,
+      loginUsernameField: supplier.loginUsernameField || undefined,
+      loginPasswordField: supplier.loginPasswordField || undefined,
+      loginUsername: supplier.loginUsername || undefined,
+      verifiedFields: supplier.verifiedFields || undefined,
+      lastVerifiedAt: supplier.lastVerifiedAt || undefined,
+      createdAt: supplier.createdAt!,
+      updatedAt: supplier.updatedAt!,
+    };
   }
 
   async updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null> {

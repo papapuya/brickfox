@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Settings, Map, Info } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { FieldMappingEditor } from "@/components/field-mapping-editor";
-import SupplierOverviewTab from "@/components/supplier-overview-tab";
-import SupplierSelectorsTab from "@/components/supplier-selectors-tab";
+import SupplierOverviewTab, { Supplier as SupplierOverviewType } from "@/components/supplier-overview-tab";
+import SupplierSelectorsTab, { Supplier as SupplierSelectorsType } from "@/components/supplier-selectors-tab";
 
 interface Supplier {
   id: string;
