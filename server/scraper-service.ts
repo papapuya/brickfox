@@ -366,14 +366,31 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.weight = weightText;
   }
 
-  // Category
+  // Category (use .last() to get the most specific category from breadcrumb)
   if (selectors.category) {
-    const element = $(selectors.category).first();
-    let categoryText = element.text().trim() || '';
-    // Remove common breadcrumb prefixes
-    categoryText = categoryText.replace(/^Sie sind hier:\s*/i, '').trim();
-    categoryText = categoryText.replace(/^Home\s*>\s*/i, '').trim();
-    categoryText = categoryText.replace(/^Startseite\s*>\s*/i, '').trim();
+    const elements = $(selectors.category);
+    // Take the last element (most specific category) and skip "Home" / "Startseite"
+    let categoryText = '';
+    
+    if (elements.length > 0) {
+      // Try from last to first, skip common navigation items
+      for (let i = elements.length - 1; i >= 0; i--) {
+        const text = $(elements[i]).text().trim();
+        const lowerText = text.toLowerCase();
+        
+        // Skip common navigation items
+        if (lowerText && 
+            lowerText !== 'home' && 
+            lowerText !== 'startseite' &&
+            lowerText !== 'sie sind hier' &&
+            !lowerText.includes('›') &&
+            !lowerText.includes('>')) {
+          categoryText = text;
+          break;
+        }
+      }
+    }
+    
     product.category = categoryText;
   }
 
