@@ -420,6 +420,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tenant Management Endpoints (Admin only)
+  app.get('/api/admin/tenants', requireAdmin, async (req, res) => {
+    try {
+      const tenants = await supabaseStorage.getAllTenants();
+      
+      // Get stats for each tenant
+      const tenantsWithStats = await Promise.all(
+        tenants.map(async (tenant) => {
+          const stats = await supabaseStorage.getTenantStats(tenant.id);
+          return {
+            ...tenant,
+            ...stats,
+          };
+        })
+      );
+      
+      res.json({
+        success: true,
+        tenants: tenantsWithStats,
+      });
+    } catch (error) {
+      console.error('Admin tenants error:', error);
+      res.status(500).json({ error: 'Fehler beim Laden der Tenants' });
+    }
+  });
+
+  app.post('/api/admin/tenants', requireAdmin, async (req, res) => {
+    try {
+      const { name, settings } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: 'Tenant-Name erforderlich' });
+      }
+
+      const tenant = await supabaseStorage.createTenant({ name, settings });
+      const stats = await supabaseStorage.getTenantStats(tenant.id);
+      
+      res.json({
+        success: true,
+        tenant: {
+          ...tenant,
+          ...stats,
+        },
+      });
+    } catch (error: any) {
+      console.error('Create tenant error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Erstellen des Tenants' });
+    }
+  });
+
+  app.patch('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, settings } = req.body;
+      
+      const tenant = await supabaseStorage.updateTenant(id, { name, settings });
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant nicht gefunden' });
+      }
+
+      const stats = await supabaseStorage.getTenantStats(tenant.id);
+      
+      res.json({
+        success: true,
+        tenant: {
+          ...tenant,
+          ...stats,
+        },
+      });
+    } catch (error: any) {
+      console.error('Update tenant error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Aktualisieren des Tenants' });
+    }
+  });
+
+  app.delete('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await supabaseStorage.deleteTenant(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Tenant nicht gefunden' });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Delete tenant error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Löschen des Tenants' });
+    }
+  });
+
   app.get('/api/projects', requireAuth, async (req: any, res) => {
     try {
       const projects = await supabaseStorage.getProjectsByUserId(req.user.id);

@@ -14,8 +14,20 @@ import type {
   CreateSupplier,
   UpdateSupplier,
   User,
-  RegisterUser
+  RegisterUser,
+  CreateTenant,
+  UpdateTenant,
+  TenantSettings
 } from '@shared/schema';
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  settings: TenantSettings;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface IStorage {
   createUser(data: RegisterUser): Promise<User>;
@@ -930,6 +942,152 @@ export class SupabaseStorage implements IStorage {
     return {
       ...this.mapSupplier(supplier),
       loginPassword: decryptedPassword
+    };
+  }
+
+  // Tenant Management Methods
+  async getAllTenants(): Promise<Tenant[]> {
+    const { data: tenants, error } = await db
+      .from('tenants')
+      .select('*')
+      .order('created_at');
+
+    if (error || !tenants) return [];
+
+    return tenants.map(tenant => ({
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      settings: tenant.settings || {},
+      createdAt: tenant.created_at,
+      updatedAt: tenant.updated_at,
+    }));
+  }
+
+  async getTenant(id: string): Promise<Tenant | null> {
+    const { data: tenant, error } = await db
+      .from('tenants')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !tenant) return null;
+
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      settings: tenant.settings || {},
+      createdAt: tenant.created_at,
+      updatedAt: tenant.updated_at,
+    };
+  }
+
+  async createTenant(data: CreateTenant): Promise<Tenant> {
+    // Generate slug from name if not provided
+    const slug = data.slug || data.name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    // Default settings with all features enabled
+    const defaultSettings: TenantSettings = {
+      features: {
+        pixiIntegration: false,
+        sapIntegration: false,
+        urlScraper: true,
+        csvBulkImport: true,
+        aiDescriptions: true,
+      },
+      erp: {
+        type: null,
+      },
+      ...data.settings,
+    };
+
+    const { data: tenant, error } = await db
+      .from('tenants')
+      .insert({
+        name: data.name,
+        slug,
+        settings: defaultSettings,
+      })
+      .select()
+      .single();
+
+    if (error || !tenant) {
+      throw new Error(`Failed to create tenant: ${error?.message}`);
+    }
+
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      settings: tenant.settings || {},
+      createdAt: tenant.created_at,
+      updatedAt: tenant.updated_at,
+    };
+  }
+
+  async updateTenant(id: string, data: UpdateTenant): Promise<Tenant | null> {
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (data.name) updates.name = data.name;
+    if (data.settings) updates.settings = data.settings;
+
+    const { data: tenant, error } = await db
+      .from('tenants')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error || !tenant) return null;
+
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      settings: tenant.settings || {},
+      createdAt: tenant.created_at,
+      updatedAt: tenant.updated_at,
+    };
+  }
+
+  async deleteTenant(id: string): Promise<boolean> {
+    const { error } = await db
+      .from('tenants')
+      .delete()
+      .eq('id', id);
+
+    return !error;
+  }
+
+  async getTenantStats(tenantId: string): Promise<{
+    userCount: number;
+    projectCount: number;
+    supplierCount: number;
+  }> {
+    const { data: users } = await db
+      .from('users')
+      .select('id')
+      .eq('tenant_id', tenantId);
+
+    const { data: projects } = await db
+      .from('projects')
+      .select('id')
+      .eq('tenant_id', tenantId);
+
+    const { data: suppliers } = await db
+      .from('suppliers')
+      .select('id')
+      .eq('tenant_id', tenantId);
+
+    return {
+      userCount: users?.length || 0,
+      projectCount: projects?.length || 0,
+      supplierCount: suppliers?.length || 0,
     };
   }
 }

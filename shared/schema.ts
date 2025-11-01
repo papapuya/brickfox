@@ -144,6 +144,52 @@ export type CreateProductInProject = z.infer<typeof createProductInProjectSchema
 export const updateProductInProjectSchema = productInProjectSchema.partial().omit({ id: true, projectId: true, createdAt: true });
 export type UpdateProductInProject = z.infer<typeof updateProductInProjectSchema>;
 
+// Tenant Settings interface for feature flags and configurations
+export interface TenantSettings {
+  // Feature Flags
+  features?: {
+    pixiIntegration?: boolean;      // Enable Pixi ERP Comparison
+    sapIntegration?: boolean;        // Enable SAP ERP Integration
+    urlScraper?: boolean;           // Enable URL Scraper (default: true)
+    csvBulkImport?: boolean;        // Enable CSV Bulk Import (default: true)
+    aiDescriptions?: boolean;       // Enable AI Descriptions (default: true)
+  };
+  
+  // ERP Configuration
+  erp?: {
+    type?: 'pixi' | 'sap' | 'custom' | null;
+    apiUrl?: string;
+    apiKey?: string;
+    settings?: Record<string, any>;
+  };
+  
+  // Custom branding (optional)
+  branding?: {
+    logo?: string;
+    primaryColor?: string;
+    companyName?: string;
+  };
+  
+  // Other custom settings
+  [key: string]: any;
+}
+
+// Zod schema for tenant creation
+export const createTenantSchema = z.object({
+  name: z.string().min(1, 'Tenant name required'),
+  slug: z.string().optional(),
+  settings: z.any().optional(),
+});
+
+export type CreateTenant = z.infer<typeof createTenantSchema>;
+
+export const updateTenantSchema = z.object({
+  name: z.string().optional(),
+  settings: z.any().optional(),
+});
+
+export type UpdateTenant = z.infer<typeof updateTenantSchema>;
+
 // Drizzle database tables for PostgreSQL (Supabase)
 
 // Tenants table for multi-tenant B2B SaaS (akkushop.de, kunde2, etc.)
@@ -396,25 +442,7 @@ export type CreateSupplier = z.infer<typeof createSupplierSchema>;
 export const updateSupplierSchema = createSupplierSchema.partial();
 export type UpdateSupplier = z.infer<typeof updateSupplierSchema>;
 
-// Tenant schemas for multi-tenant B2B SaaS
-export const tenantSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  settings: z.record(z.string(), z.any()).optional().default({}),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-export type Tenant = z.infer<typeof tenantSchema>;
-
-export const createTenantSchema = z.object({
-  name: z.string().min(1, "Name ist erforderlich"),
-  slug: z.string().min(1, "Slug ist erforderlich"),
-  settings: z.record(z.string(), z.any()).optional(),
-});
-
-export type CreateTenant = z.infer<typeof createTenantSchema>;
+// Tenant schemas for multi-tenant B2B SaaS (definitions moved above Drizzle tables)
 
 // User schemas for authentication
 export const userSchema = z.object({
