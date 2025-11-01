@@ -1174,26 +1174,31 @@ export class SupabaseStorage implements IStorage {
    * SECURITY: Only use this internally, never expose to API responses
    */
   async getSupplierWithCredentials(id: string): Promise<Supplier | null> {
-    const { data: supplier, error } = await db
-      .from('suppliers')
-      .select('*')
-      .eq('id', id)
-      .single();
+    // Use Helium DB (development environment) - suppliers are stored there
+    const suppliers = await heliumDb
+      .select()
+      .from(suppliersTable)
+      .where(eq(suppliersTable.id, id))
+      .limit(1);
 
-    if (error || !supplier) return null;
+    const supplier = suppliers[0];
+    if (!supplier) {
+      console.log(`[getSupplierWithCredentials] No supplier found in Helium for ID: ${id}`);
+      return null;
+    }
 
     // Decrypt password for internal use
     let decryptedPassword: string | undefined = undefined;
-    if (supplier.login_password) {
+    if (supplier.loginPassword) {
       try {
-        decryptedPassword = decrypt(supplier.login_password);
+        decryptedPassword = decrypt(supplier.loginPassword);
       } catch (error) {
         console.error('[getSupplierWithCredentials] Failed to decrypt login password:', error);
       }
     }
 
     return {
-      ...this.mapSupplier(supplier),
+      ...supplier,
       loginPassword: decryptedPassword
     };
   }
