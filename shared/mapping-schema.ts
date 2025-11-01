@@ -80,25 +80,36 @@ export const mappingPresets = pgTable("mapping_presets", {
 
 /**
  * Available Brickfox CSV Fields
- * Reference data for target fields
+ * Exakte Spaltennamen wie von Brickfox erwartet
  */
 export const brickfoxFields = [
-  { key: 'Artikelnummer', label: 'Artikelnummer', required: true, type: 'string' },
-  { key: 'EAN', label: 'EAN', required: false, type: 'string' },
-  { key: 'Produktname', label: 'Produktname', required: true, type: 'string' },
-  { key: 'Beschreibung', label: 'Beschreibung', required: false, type: 'html' },
-  { key: 'Verkaufspreis', label: 'Verkaufspreis', required: false, type: 'number' },
-  { key: 'Einkaufspreis', label: 'Einkaufspreis', required: false, type: 'number' },
-  { key: 'Hersteller', label: 'Hersteller', required: false, type: 'string' },
-  { key: 'Marke', label: 'Marke', required: false, type: 'string' },
-  { key: 'Kategorie', label: 'Kategorie', required: false, type: 'string' },
-  { key: 'Gewicht', label: 'Gewicht (kg)', required: false, type: 'number' },
-  { key: 'Lagerbestand', label: 'Lagerbestand', required: false, type: 'number' },
-  { key: 'Bild-URL', label: 'Bild-URL', required: false, type: 'url' },
-  { key: 'SEO-Titel', label: 'SEO-Titel', required: false, type: 'string' },
-  { key: 'SEO-Beschreibung', label: 'SEO-Beschreibung', required: false, type: 'string' },
-  { key: 'Versandklasse', label: 'Versandklasse', required: false, type: 'string' },
-  { key: 'Status', label: 'Status', required: false, type: 'string' },
+  // Produkt-Stammdaten (p_*)
+  { key: 'p_item_number', label: 'Produkt Artikelnummer', required: true, type: 'string', category: 'Produktdaten' },
+  { key: 'p_group_path[de]', label: 'Kategoriepfad (DE)', required: false, type: 'string', category: 'Produktdaten' },
+  { key: 'p_brand', label: 'Marke', required: false, type: 'string', category: 'Produktdaten' },
+  { key: 'p_status', label: 'Produkt Status', required: false, type: 'string', category: 'Produktdaten' },
+  { key: 'p_name[de]', label: 'Produktname (DE)', required: true, type: 'string', category: 'Produktdaten' },
+  { key: 'p_tax_class', label: 'Steuerklasse', required: false, type: 'string', category: 'Produktdaten' },
+  { key: 'p_never_out_of_stock', label: 'Nie ausverkauft', required: false, type: 'boolean', category: 'Produktdaten' },
+  { key: 'p_condition', label: 'Zustand', required: false, type: 'string', category: 'Produktdaten' },
+  { key: 'p_country', label: 'Land', required: false, type: 'string', category: 'Produktdaten' },
+  { key: 'p_description[de]', label: 'Beschreibung (DE)', required: false, type: 'html', category: 'Produktdaten' },
+  
+  // Varianten-Daten (v_*)
+  { key: 'v_item_number', label: 'Varianten Artikelnummer', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_ean', label: 'EAN', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_manufacturers_item_number', label: 'Hersteller Artikelnummer', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_status', label: 'Varianten Status', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_classification', label: 'Klassifizierung', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_price[Eur]', label: 'Verkaufspreis (EUR)', required: false, type: 'number', category: 'Variantendaten' },
+  { key: 'v_delivery_time[de]', label: 'Lieferzeit (DE)', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_supplier[Eur]', label: 'Lieferant (EUR)', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_supplier_item_number', label: 'Lieferanten Artikelnummer', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_purchase_price', label: 'Einkaufspreis', required: false, type: 'number', category: 'Variantendaten' },
+  { key: 'v_never_out_of_stock[standard]', label: 'Standard nie ausverkauft', required: false, type: 'boolean', category: 'Variantendaten' },
+  { key: 'v_weight', label: 'Gewicht', required: false, type: 'number', category: 'Variantendaten' },
+  { key: 'v_customs_tariff_number', label: 'Zolltarifnummer', required: false, type: 'string', category: 'Variantendaten' },
+  { key: 'v_customs_tariff_text', label: 'Zolltarif Text', required: false, type: 'string', category: 'Variantendaten' },
 ] as const;
 
 /**
