@@ -551,12 +551,18 @@ export default function URLScraper() {
         }
       }
     }
-    // If supplier was provided via override, selectors should already be loaded by handleSupplierSelect
-    // So we just log it
+    // If supplier was provided via override, load selectors to ensure they're available
     else if (overrideSupplierId && suppliersData?.suppliers) {
       const supplier = suppliersData.suppliers.find((s: any) => s.id === overrideSupplierId);
       if (supplier) {
+        // Load selectors explicitly to ensure they're available for scraping
+        setSelectors({ ...selectors, ...supplier.selectors });
+        setProductLinkSelector(supplier.productLinkSelector || "");
+        setSessionCookies(supplier.sessionCookies || "");
+        setUserAgent(supplier.userAgent || "");
+        
         console.log(`✅ Using pre-selected supplier: ${supplier.name}`);
+        console.log(`Loaded selectors:`, supplier.selectors);
       }
     }
     
@@ -564,10 +570,24 @@ export default function URLScraper() {
 
     try {
       const products: ScrapedProduct[] = [];
-      const activeSelectors: any = {};
-      Object.entries(selectors).forEach(([key, value]) => {
-        if (value.trim()) activeSelectors[key] = value;
-      });
+      
+      // Build active selectors - use supplier selectors if available
+      let activeSelectors: any = {};
+      if (detectedSupplierId !== "__none__" && suppliersData?.suppliers) {
+        const supplier = suppliersData.suppliers.find((s: any) => s.id === detectedSupplierId);
+        if (supplier && supplier.selectors) {
+          // Use supplier selectors directly (not from state which might not be updated yet)
+          activeSelectors = { ...supplier.selectors };
+          console.log(`Using supplier selectors directly:`, activeSelectors);
+        }
+      }
+      
+      // Fallback: use selectors from state if no supplier selectors
+      if (Object.keys(activeSelectors).length === 0) {
+        Object.entries(selectors).forEach(([key, value]) => {
+          if (value.trim()) activeSelectors[key] = value;
+        });
+      }
 
       let failedCount = 0;
       for (let i = 0; i < urls.length; i++) {
