@@ -294,26 +294,26 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
                       <Button
                         key={field.key}
                         variant={isSelected ? 'default' : mappedTarget ? 'secondary' : 'outline'}
-                        className="w-full justify-start text-left h-auto py-2 px-3"
+                        className="w-full justify-start text-left h-auto py-3 px-3"
                         onClick={() => handleSourceFieldClick(field.key)}
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 mb-1">
                             {mappedTarget && <Check className="h-4 w-4 text-green-600 flex-shrink-0" />}
-                            <span className="font-medium truncate">{field.label}</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
+                            <span className="font-semibold truncate">{field.label}</span>
+                            <Badge variant="outline" className="text-xs ml-auto">
                               {field.type}
                             </Badge>
-                            {field.sampleValue && (
-                              <span className="text-xs text-muted-foreground truncate" title={`Beispiel: ${String(field.sampleValue)}`}>
-                                Beispiel: "{String(field.sampleValue).slice(0, 30)}{String(field.sampleValue).length > 30 ? '...' : ''}"
-                              </span>
-                            )}
                           </div>
+                          {field.sampleValue && (
+                            <div className="bg-gray-100 rounded px-2 py-1 mt-1">
+                              <span className="text-sm font-medium text-gray-800 break-words">
+                                {String(field.sampleValue).slice(0, 50)}{String(field.sampleValue).length > 50 ? '...' : ''}
+                              </span>
+                            </div>
+                          )}
                           {mappedTarget && (
-                            <div className="flex items-center gap-1 mt-1">
+                            <div className="flex items-center gap-1 mt-2">
                               <ArrowRight className="h-3 w-3 text-muted-foreground" />
                               <span className="text-xs text-muted-foreground">{mappedTarget}</span>
                               <Button
@@ -357,21 +357,26 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
                       <Button
                         key={field.key}
                         variant={isMapped ? 'secondary' : 'outline'}
-                        className="w-full justify-start text-left h-auto py-2 px-3"
+                        className="w-full justify-start text-left h-auto py-3 px-3"
                         onClick={() => handleTargetFieldClick(field.key)}
                         disabled={!selectedSourceField}
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 mb-1">
                             {isMapped && <Check className="h-4 w-4 text-green-600 flex-shrink-0" />}
-                            <span className="font-medium truncate">{field.label}</span>
+                            <span className="font-semibold truncate">{field.label}</span>
                             {field.required && (
                               <Badge variant="destructive" className="text-xs ml-auto">
                                 Pflicht
                               </Badge>
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1">
+                          {field.category && (
+                            <Badge variant="outline" className="text-xs mb-1 bg-blue-50 text-blue-700 border-blue-200">
+                              {field.category}
+                            </Badge>
+                          )}
+                          <div className="text-xs text-muted-foreground">
                             {field.type}
                           </div>
                         </div>
