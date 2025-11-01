@@ -171,7 +171,9 @@ export class PDFParserService {
    */
   async extractProductsFromPDFAdvanced(buffer: Buffer): Promise<PDFProduct[]> {
     try {
-      const loadingTask = pdfjsLib.getDocument({ data: buffer });
+      // Convert Buffer to Uint8Array (pdfjs-dist requirement)
+      const uint8Array = new Uint8Array(buffer);
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
       const pdfDoc = await loadingTask.promise;
       
       const products: PDFProduct[] = [];
