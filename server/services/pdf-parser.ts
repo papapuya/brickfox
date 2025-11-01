@@ -87,8 +87,21 @@ export class PDFParserService {
         });
       }
 
-      console.log(`✅ PDF Parser (Advanced): Extracted ${products.length} products`);
-      return products;
+      // Remove duplicates based on URL (same product might appear on multiple pages)
+      const uniqueProducts = products.reduce((acc, product) => {
+        if (!product.url) return acc;
+        
+        // Check if this URL already exists
+        const exists = acc.find(p => p.url === product.url);
+        if (!exists) {
+          acc.push(product);
+        }
+        
+        return acc;
+      }, [] as PDFProduct[]);
+
+      console.log(`✅ PDF Parser (Advanced): Extracted ${products.length} products (${uniqueProducts.length} unique)`);
+      return uniqueProducts;
     } catch (error) {
       console.error('❌ PDF Parser Advanced Error:', error);
       throw error;
