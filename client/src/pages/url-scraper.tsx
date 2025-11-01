@@ -160,8 +160,12 @@ export default function URLScraper() {
         const urls = pdfUrls.split('\n').filter(url => url.trim());
         const metadataMap = JSON.parse(pdfMetadataMap);
         
+        // Determine supplier ID
+        let supplierIdToUse: string | undefined = undefined;
+        
         // Use supplier from PDF-Auto-Scraper if set
         if (pdfSupplierId && pdfSupplierId !== "__none__" && suppliersData?.suppliers) {
+          supplierIdToUse = pdfSupplierId;
           setSelectedSupplierId(pdfSupplierId);
           const supplier = suppliersData.suppliers.find((s: any) => s.id === pdfSupplierId);
           if (supplier) {
@@ -179,6 +183,7 @@ export default function URLScraper() {
         else if (urls.length > 0 && suppliersData?.suppliers) {
           const detectedSupplierId = autoDetectSupplier(urls[0], suppliersData.suppliers);
           if (detectedSupplierId) {
+            supplierIdToUse = detectedSupplierId;
             setSelectedSupplierId(detectedSupplierId);
             toast({
               title: "✅ Lieferant erkannt",
@@ -197,8 +202,8 @@ export default function URLScraper() {
           description: `${urls.length} Produkt-URLs aus PDF übernommen. Scraping wird gestartet...`,
         });
         
-        // Start scraping automatically
-        handleScrapeFromPDF(urls, metadataMap);
+        // Start scraping automatically with detected supplier ID
+        handleScrapeFromPDF(urls, metadataMap, supplierIdToUse);
       } catch (error) {
         console.error('Error loading PDF data:', error);
         toast({
@@ -515,20 +520,22 @@ export default function URLScraper() {
   };
 
   // Handle scraping from PDF-extracted URLs
-  const handleScrapeFromPDF = async (urls: string[], metadataMap: Record<string, any>) => {
+  const handleScrapeFromPDF = async (urls: string[], metadataMap: Record<string, any>, overrideSupplierId?: string) => {
     setIsLoading(true);
     setScrapedProducts([]);
     setBatchProgress({ current: 0, total: urls.length, status: "Erkenne Lieferanten..." });
 
-    // WICHTIG: Auto-detect supplier BEFORE scraping starts
-    let detectedSupplierId = selectedSupplierId;
-    if (urls.length > 0 && suppliersData?.suppliers && detectedSupplierId === "__none__") {
+    // Use override supplier ID if provided, otherwise use current state
+    let detectedSupplierId = overrideSupplierId || selectedSupplierId;
+    
+    // Only auto-detect if no supplier ID was provided and current selection is "__none__"
+    if (!overrideSupplierId && urls.length > 0 && suppliersData?.suppliers && detectedSupplierId === "__none__") {
       const detected = autoDetectSupplier(urls[0], suppliersData.suppliers);
       if (detected) {
         detectedSupplierId = detected;
         setSelectedSupplierId(detected);
         
-        // Load supplier selectors
+        // Load supplier selectors (only if we just auto-detected)
         const supplier = suppliersData.suppliers.find((s: any) => s.id === detected);
         if (supplier) {
           setSelectors({ ...selectors, ...supplier.selectors });
@@ -542,6 +549,14 @@ export default function URLScraper() {
             description: `${supplier.name} wurde automatisch ausgewählt`,
           });
         }
+      }
+    }
+    // If supplier was provided via override, selectors should already be loaded by handleSupplierSelect
+    // So we just log it
+    else if (overrideSupplierId && suppliersData?.suppliers) {
+      const supplier = suppliersData.suppliers.find((s: any) => s.id === overrideSupplierId);
+      if (supplier) {
+        console.log(`✅ Using pre-selected supplier: ${supplier.name}`);
       }
     }
     
