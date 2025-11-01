@@ -591,7 +591,7 @@ export default function URLScraper() {
             selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
             userAgent: userAgent || undefined,
             cookies: sessionCookies || undefined,
-            supplierId: selectedSupplierId !== "__none__" ? selectedSupplierId : undefined
+            supplierId: detectedSupplierId !== "__none__" ? detectedSupplierId : undefined
           }) as any;
 
           if (data && data.product) {
