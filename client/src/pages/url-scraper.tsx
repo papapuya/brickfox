@@ -1499,25 +1499,25 @@ export default function URLScraper() {
                         <TableCell className="font-mono text-sm sticky left-0 bg-white z-10">{index + 1}</TableCell>
                         <TableCell className="sticky left-12 bg-white z-10">
                           {product.images && product.images.length > 0 ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-center gap-1">
                               <img 
                                 src={product.images[0]} 
                                 alt={product.productName}
-                                className="w-12 h-12 object-cover rounded border"
+                                className="w-16 h-16 object-cover rounded border"
                                 onError={(e) => {
-                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%23e5e7eb"/><text x="24" y="24" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">-</text></svg>';
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23e5e7eb"/><text x="32" y="32" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">-</text></svg>';
                                 }}
                               />
-                              <span className="text-sm font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded">
                                 {product.images.length}
                               </span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 h-12 bg-muted rounded border flex items-center justify-center text-muted-foreground text-xs">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center text-muted-foreground text-xs">
                                 -
                               </div>
-                              <span className="text-sm text-muted-foreground">0</span>
+                              <span className="text-xs text-muted-foreground">0</span>
                             </div>
                           )}
                         </TableCell>
