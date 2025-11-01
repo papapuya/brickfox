@@ -16,6 +16,7 @@ import { useLocation } from "wouter";
 import type { Project } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { apiPost } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 interface ScrapedProduct {
   articleNumber: string;
@@ -37,6 +38,7 @@ interface GeneratedContent {
 
 export default function URLScraper() {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [location, setLocation] = useLocation();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -117,8 +119,13 @@ export default function URLScraper() {
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
 
-  // Check for PDF-extracted URLs on component mount
+  // Check for PDF-extracted URLs on component mount (only when authenticated)
   useEffect(() => {
+    // Wait until user is authenticated
+    if (!isAuthenticated) {
+      return;
+    }
+
     const pdfUrls = sessionStorage.getItem('pdf_extracted_urls');
     const pdfMetadataMap = sessionStorage.getItem('pdf_url_metadata_map');
     
@@ -148,7 +155,7 @@ export default function URLScraper() {
         });
       }
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplierId(supplierId);
