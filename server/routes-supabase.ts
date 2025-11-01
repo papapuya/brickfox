@@ -147,12 +147,16 @@ async function getScrapingCookies(supplierId?: string, providedCookies?: string)
     return '';
   }
 
+  console.log(`[getScrapingCookies] Looking for supplier with ID: ${supplierId}`);
+
   // SECURITY: Fetch supplier data with decrypted credentials (internal use only)
   const supplier = await supabaseStorage.getSupplierWithCredentials(supplierId);
   if (!supplier) {
-    console.log('[getScrapingCookies] Supplier not found');
+    console.log(`[getScrapingCookies] Supplier not found for ID: ${supplierId}`);
     return '';
   }
+  
+  console.log(`[getScrapingCookies] Found supplier: ${supplier.name}`);
 
   // Check if supplier has login credentials configured
   if (!supplier.loginUrl || !supplier.loginUsernameField || !supplier.loginPasswordField || 
