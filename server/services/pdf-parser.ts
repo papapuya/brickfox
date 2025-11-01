@@ -133,6 +133,15 @@ export class PDFParserService {
       const eanMatch = rowText.match(/\b\d{13}\b/);
       const priceMatches = rowText.match(/(\d+[,\.]\d{2})\s*€/g);
 
+      // Debug: Log what we found
+      if (DEBUG_MODE || !articleMatch) {
+        console.log(`\n🔍 Row parsing:`);
+        console.log(`  Row text: ${rowText.substring(0, 150)}...`);
+        console.log(`  Article match: ${articleMatch ? articleMatch[0] : 'NONE'}`);
+        console.log(`  EAN match: ${eanMatch ? eanMatch[0] : 'NONE'}`);
+        console.log(`  Price matches: ${priceMatches ? priceMatches.length : 'NONE'}`);
+      }
+
       if (articleMatch) product.articleNumber = articleMatch[0];
       if (eanMatch) product.eanCode = eanMatch[0];
       
