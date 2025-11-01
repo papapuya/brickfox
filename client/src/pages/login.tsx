@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +15,7 @@ import { supabase } from '@/lib/supabase';
 const loginSchema = z.object({
   email: z.string().min(1, 'Benutzername oder E-Mail erforderlich'),
   password: z.string().min(1, 'Passwort erforderlich'),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -22,6 +24,12 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Load "Remember Me" preference from storage (default: true)
+  const [rememberMe, setRememberMe] = useState(() => {
+    const saved = localStorage.getItem('rememberMe');
+    return saved === null ? true : saved === 'true';
+  });
 
   const {
     register,
@@ -29,10 +37,20 @@ export default function Login() {
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      rememberMe: true,
+    },
   });
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
+      // Save "Remember Me" preference BEFORE login to ensure DynamicStorage uses it
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.setItem('rememberMe', 'false');
+      }
+      
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,7 +66,7 @@ export default function Login() {
       return res.json();
     },
     onSuccess: async (data) => {
-      // Set Supabase session properly
+      // Set Supabase session properly (DynamicStorage will use the rememberMe preference)
       if (data.session) {
         const { error } = await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -59,7 +77,13 @@ export default function Login() {
           console.error('Failed to set Supabase session:', error);
         } else {
           console.log('✅ Supabase session set successfully');
-          localStorage.setItem('supabase_token', data.session.access_token);
+          
+          // Store token in the appropriate storage AND clean up the other
+          const storage = rememberMe ? localStorage : sessionStorage;
+          const otherStorage = rememberMe ? sessionStorage : localStorage;
+          
+          storage.setItem('supabase_token', data.session.access_token);
+          otherStorage.removeItem('supabase_token'); // Prevent token resurrection
         }
       }
       
@@ -137,6 +161,21 @@ export default function Login() {
               {errors.password && (
                 <p className="text-sm text-red-500">{errors.password.message}</p>
               )}
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                disabled={isLoading}
+              />
+              <Label
+                htmlFor="rememberMe"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Angemeldet bleiben
+              </Label>
             </div>
             
             <Button type="submit" className="w-full" disabled={isLoading}>

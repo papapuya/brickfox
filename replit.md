@@ -30,7 +30,7 @@ The application employs a **modular subprompt architecture** for specialized AI 
 
 **Core Features**:
 - **Multi-Tenant Architecture**: Data isolation via `organization_id` foreign keys.
-- **User Authentication**: Supabase Auth integration.
+- **User Authentication**: Supabase Auth integration with "Remember Me" functionality. Sessions are stored in localStorage (persistent) or sessionStorage (ephemeral) based on user preference. DynamicStorage adapter ensures no token resurrection across storage types.
 - **Subscription Management**: Stripe integration for tiered access and trial mode.
 - **Usage Tracking**: Real-time API call monitoring with limit enforcement.
 - **CSV Bulk Processing**: Upload and process product data via CSV for mass AI generation.
