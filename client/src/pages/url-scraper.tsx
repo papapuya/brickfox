@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -97,6 +97,10 @@ export default function URLScraper() {
   
   // HTML Copy State
   const [copiedArticleNumber, setCopiedArticleNumber] = useState<string | null>(null);
+  
+  // Full View Dialog
+  const [showFullView, setShowFullView] = useState(false);
+  const [fullViewContent, setFullViewContent] = useState<{ title: string; seoDescription: string; keywords: string; html: string }>({ title: '', seoDescription: '', keywords: '', html: '' });
 
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -1911,8 +1915,26 @@ export default function URLScraper() {
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <div className="max-w-md whitespace-normal">
-                              {product.manufacturer}, {product.category}, {product.articleNumber}
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="line-clamp-1">{product.manufacturer}, {product.category}, {product.articleNumber}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const genContent = generatedDescriptions.get(product.articleNumber);
+                                  setFullViewContent({
+                                    title: genContent?.seoTitle || product.productName || '',
+                                    seoDescription: genContent?.seoDescription || '',
+                                    keywords: `${product.manufacturer}, ${product.category}, ${product.articleNumber}`,
+                                    html: genContent?.description || ''
+                                  });
+                                  setShowFullView(true);
+                                }}
+                                title="Vollansicht öffnen"
+                                className="shrink-0"
+                              >
+                                <Maximize2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           ) : (
                             'wird generiert...'
@@ -1920,43 +1942,34 @@ export default function URLScraper() {
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs font-mono">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <div className="flex flex-col gap-2">
-                              <div className="max-w-2xl whitespace-normal break-words text-muted-foreground text-xs">
-                                {generatedDescriptions.get(product.articleNumber)?.description || '-'}
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber)?.description || '');
-                                    setShowHtmlPreview(true);
-                                  }}
-                                  title="HTML Vorschau anzeigen"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Vorschau
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleCopyHtml(product.articleNumber)}
-                                  title="HTML kopieren"
-                                  className={copiedArticleNumber === product.articleNumber ? "text-green-600 border-green-600" : ""}
-                                >
-                                  {copiedArticleNumber === product.articleNumber ? (
-                                    <>
-                                      <Check className="w-4 h-4 mr-1" />
-                                      Kopiert!
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-4 h-4 mr-1" />
-                                      Kopieren
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
+                            <div className="flex items-center gap-2">
+                              <span className="max-w-xs truncate text-muted-foreground" title={generatedDescriptions.get(product.articleNumber)?.description}>
+                                {(generatedDescriptions.get(product.articleNumber)?.description || '').substring(0, 60) + '...'}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setHtmlPreviewContent(generatedDescriptions.get(product.articleNumber)?.description || '');
+                                  setShowHtmlPreview(true);
+                                }}
+                                title="HTML Vorschau anzeigen"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCopyHtml(product.articleNumber)}
+                                title="HTML kopieren"
+                                className={copiedArticleNumber === product.articleNumber ? "text-green-600" : ""}
+                              >
+                                {copiedArticleNumber === product.articleNumber ? (
+                                  <Check className="w-4 h-4" />
+                                ) : (
+                                  <Copy className="w-4 h-4" />
+                                )}
+                              </Button>
                             </div>
                           ) : (
                             <span className="text-muted-foreground italic">wird generiert...</span>
@@ -2121,6 +2134,75 @@ export default function URLScraper() {
                   HTML kopieren
                 </Button>
                 <Button onClick={() => setShowHtmlPreview(false)}>
+                  Schließen
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Full View Dialog */}
+        <Dialog open={showFullView} onOpenChange={setShowFullView}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Vollständige Produktinformationen</DialogTitle>
+              <DialogDescription>
+                Alle AI-generierten Inhalte im Detail
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* SEO Title */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">SEO-Titel</Label>
+                <div className="p-4 bg-muted rounded-lg border">
+                  <p className="text-sm">{fullViewContent.title}</p>
+                </div>
+              </div>
+
+              {/* SEO Description */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">SEO-Beschreibung</Label>
+                <div className="p-4 bg-muted rounded-lg border">
+                  <p className="text-sm">{fullViewContent.seoDescription}</p>
+                </div>
+              </div>
+
+              {/* Keywords */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Keywords</Label>
+                <div className="p-4 bg-muted rounded-lg border">
+                  <p className="text-sm">{fullViewContent.keywords}</p>
+                </div>
+              </div>
+
+              {/* HTML Description */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">HTML-Beschreibung</Label>
+                <div className="p-4 bg-muted rounded-lg border max-h-96 overflow-y-auto">
+                  <pre className="text-xs whitespace-pre-wrap break-words font-mono">{fullViewContent.html}</pre>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">HTML-Vorschau</Label>
+                <div className="p-6 bg-white border rounded-lg max-h-96 overflow-y-auto">
+                  <div dangerouslySetInnerHTML={{ __html: fullViewContent.html }} />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(fullViewContent.html);
+                    toast({ title: "Kopiert", description: "HTML wurde in die Zwischenablage kopiert" });
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  HTML kopieren
+                </Button>
+                <Button onClick={() => setShowFullView(false)}>
                   Schließen
                 </Button>
               </div>
