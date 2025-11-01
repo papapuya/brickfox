@@ -1,5 +1,6 @@
 export async function apiRequest(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('supabase_token');
+  // Try both localStorage and sessionStorage for token (depends on "Remember Me" setting)
+  const token = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
   
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
@@ -23,6 +24,7 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
   // Auto-logout on 401
   if (response.status === 401) {
     localStorage.removeItem('supabase_token');
+    sessionStorage.removeItem('supabase_token');
     window.location.href = '/login';
   }
   
