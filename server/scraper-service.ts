@@ -130,6 +130,44 @@ export async function performLogin(config: LoginConfig): Promise<string> {
 }
 
 /**
+ * Helper function: Convert measurement to German format (comma, no units)
+ * Examples: "250g" → "250", "1.5kg" → "1,5", "120mm" → "120"
+ */
+function formatMeasurement(text: string): string {
+  if (!text) return '';
+  
+  // Extract only numeric portion with separators (remove units)
+  const numericMatch = text.match(/[\d,.]+/);
+  if (!numericMatch) return '';
+  
+  let value = numericMatch[0];
+  
+  // Normalize to internal format (dot as decimal separator)
+  const hasComma = value.includes(',');
+  const hasDot = value.includes('.');
+  
+  if (hasComma && hasDot) {
+    const lastComma = value.lastIndexOf(',');
+    const lastDot = value.lastIndexOf('.');
+    
+    if (lastComma > lastDot) {
+      // German format: 1.234,56 → 1234.56
+      value = value.replace(/\./g, '').replace(',', '.');
+    } else {
+      // English format: 1,234.56 → 1234.56
+      value = value.replace(/,/g, '');
+    }
+  } else if (hasComma && !hasDot) {
+    // Only comma: convert to dot (e.g., 0,25 → 0.25)
+    value = value.replace(',', '.');
+  }
+  // If only dot or neither: keep as is
+  
+  // Convert to German format with comma (0.25 → 0,25)
+  return value.replace('.', ',');
+}
+
+/**
  * Scrape product data from a URL using custom CSS selectors
  * Similar to PHP DomCrawler approach
  */
@@ -340,7 +378,7 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }).get().filter(Boolean);
   }
 
-  // Weight - Format for Brickfox: English decimal format (0.25)
+  // Weight - Format for Brickfox: German format with comma, NO units (e.g., 250 or 1,5)
   if (selectors.weight) {
     const element = $(selectors.weight).first();
     let weightText = element.text().trim() || '';
@@ -354,35 +392,8 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }
     
     if (weightText) {
-      // Extract only numeric portion with separators
-      const numericMatch = weightText.match(/[\d,.]+/);
-      if (numericMatch) {
-        weightText = numericMatch[0];
-        
-        // Normalize to English format (dot as decimal separator)
-        const hasComma = weightText.includes(',');
-        const hasDot = weightText.includes('.');
-        
-        if (hasComma && hasDot) {
-          const lastComma = weightText.lastIndexOf(',');
-          const lastDot = weightText.lastIndexOf('.');
-          
-          if (lastComma > lastDot) {
-            // German format: 1.234,56 -> convert to English
-            weightText = weightText.replace(/\./g, '').replace(',', '.');
-          } else {
-            // English format: 1,234.56 -> remove commas
-            weightText = weightText.replace(/,/g, '');
-          }
-        } else if (hasComma && !hasDot) {
-          // Only comma: convert to dot (e.g. 0,25 -> 0.25)
-          weightText = weightText.replace(',', '.');
-        }
-        // If only dot or neither: keep as is
-      }
+      product.weight = formatMeasurement(weightText);
     }
-    
-    product.weight = weightText;
   }
 
   // Category (use .last() to get the most specific category from breadcrumb)
@@ -413,30 +424,30 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.category = categoryText;
   }
 
-  // Nitecore Technical Fields - extract text only
+  // Nitecore Technical Fields - extract and format measurements (German format, no units)
   if (selectors.length) {
     const element = $(selectors.length).first();
-    product.length = element.text().trim() || '';
+    product.length = formatMeasurement(element.text().trim());
   }
 
   if (selectors.bodyDiameter) {
     const element = $(selectors.bodyDiameter).first();
-    product.bodyDiameter = element.text().trim() || '';
+    product.bodyDiameter = formatMeasurement(element.text().trim());
   }
 
   if (selectors.headDiameter) {
     const element = $(selectors.headDiameter).first();
-    product.headDiameter = element.text().trim() || '';
+    product.headDiameter = formatMeasurement(element.text().trim());
   }
 
   if (selectors.weightWithoutBattery) {
     const element = $(selectors.weightWithoutBattery).first();
-    product.weightWithoutBattery = element.text().trim() || '';
+    product.weightWithoutBattery = formatMeasurement(element.text().trim());
   }
 
   if (selectors.totalWeight) {
     const element = $(selectors.totalWeight).first();
-    product.totalWeight = element.text().trim() || '';
+    product.totalWeight = formatMeasurement(element.text().trim());
   }
 
   if (selectors.powerSupply) {
@@ -456,17 +467,17 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
 
   if (selectors.spotIntensity) {
     const element = $(selectors.spotIntensity).first();
-    product.spotIntensity = element.text().trim() || '';
+    product.spotIntensity = formatMeasurement(element.text().trim());
   }
 
   if (selectors.maxLuminosity) {
     const element = $(selectors.maxLuminosity).first();
-    product.maxLuminosity = element.text().trim() || '';
+    product.maxLuminosity = formatMeasurement(element.text().trim());
   }
 
   if (selectors.maxBeamDistance) {
     const element = $(selectors.maxBeamDistance).first();
-    product.maxBeamDistance = element.text().trim() || '';
+    product.maxBeamDistance = formatMeasurement(element.text().trim());
   }
 
   // Store raw HTML for debugging
@@ -512,15 +523,16 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }
   }
 
-  // Calculate VK Price from EK Price (VK = EK × 2 × 1.19, always ending in .95)
+  // Calculate VK Price from EK Price (VK = EK × 2 × 1.19, always ending in ,95)
+  // Format: German format with comma (e.g., 91,95)
   if (product.ekPrice) {
     const ekValue = parseFloat(product.ekPrice.replace(',', '.'));
     if (!isNaN(ekValue)) {
       const vkCalculated = ekValue * 2 * 1.19;
-      // Round to .95 ending (e.g., 91.76 → 91.95)
+      // Round to ,95 ending (e.g., 91.76 → 91,95)
       const vkRounded = Math.floor(vkCalculated) + 0.95;
-      product.vkPrice = vkRounded.toFixed(2);
-      console.log(`💰 Calculated VK Price: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2)})`);
+      product.vkPrice = vkRounded.toFixed(2).replace('.', ',');  // German format
+      console.log(`💰 Calculated VK Price: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2).replace('.', ',')})`);
     }
   } else if (product.price) {
     // If price field exists, treat it as EK and calculate VK
@@ -528,10 +540,10 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     if (!isNaN(priceValue)) {
       product.ekPrice = product.price;
       const vkCalculated = priceValue * 2 * 1.19;
-      // Round to .95 ending (e.g., 91.76 → 91.95)
+      // Round to ,95 ending (e.g., 91.76 → 91,95)
       const vkRounded = Math.floor(vkCalculated) + 0.95;
-      product.vkPrice = vkRounded.toFixed(2);
-      console.log(`💰 Calculated VK Price from price field: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2)})`);
+      product.vkPrice = vkRounded.toFixed(2).replace('.', ',');  // German format
+      console.log(`💰 Calculated VK Price from price field: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2).replace('.', ',')})`);
     }
   }
 
