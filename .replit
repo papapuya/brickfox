@@ -60,6 +60,10 @@ localPort = 44933
 externalPort = 3001
 
 [[ports]]
+localPort = 45161
+externalPort = 6000
+
+[[ports]]
 localPort = 45729
 externalPort = 3000
 
@@ -75,4 +79,5 @@ PIXI_API_URL = "https://akkutools.laptopakku.eu/api/pixi/pixiItemSearch"
 PIXI_AUTH_TOKEN = "GKr7pTd-Fy6xJQb8r2nM4ks9tzdgvXNc2ZBLRw3qDPVhy_U8aaXr4LfNSweRKtqq"
 VITE_SUPABASE_URL = "https://lxemqwvdaxzeldpjmxoc.supabase.co"
 VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4ZW1xd3ZkYXh6ZWxkcGpteG9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MTM3MDgsImV4cCI6MjA3NzM4OTcwOH0.Skn1wZFzXEIbYi-CEE7VxJfL2zzkuHjAoSC6eRmM6Ts"
-DATABASE_URL = "postgresql://postgres.lxemqwvdaxzeldpjmxoc:password@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+DATABASE_URL = "postgresql://postgres:password@helium/heliumdb?sslmode=disable"
+SUPABASE_DB_PASSWORD = "Schneekoenigin1978#"

@@ -49,12 +49,19 @@ The application employs a **modular subprompt architecture** (`server/prompts/`)
 
 ## Recent Changes (Okt 2025)
 
-### Multi-Tenant Database Migration (30. Okt 2025) ✅ COMPLETED
-- **Database**: Successfully migrated Supabase Remote database to multi-tenant architecture
-- **Schema Changes**: Added `organizations` table and `organization_id` + `role` columns to all relevant tables
-- **User Setup**: Admin user (saranzerrer@icloud.com) assigned to AkkuShop organization as admin
-- **Status**: Project creation now working with full organization isolation
-- **Database**: Exclusively uses Supabase Remote (lxemqwvdaxzeldpjmxoc.supabase.co) - local Helium DB deprecated
+### Multi-Tenant Database Migration (30. Okt 2025 → 01. Nov 2025) ✅ COMPLETED
+- **Database**: Successfully migrated to full multi-tenant architecture
+- **Schema Changes**: 
+  - Renamed `organizations` → `tenants` table
+  - Renamed all `organization_id` → `tenant_id` columns across 7 tables
+  - Migrated from SQLite to PostgreSQL (UUID primary keys, JSONB, timestamps)
+- **Row-Level Security (RLS)**: 
+  - Enabled RLS on all 7 tables (tenants, users, projects, products_in_projects, suppliers, templates, scrape_session)
+  - Created 10 RLS policies with `get_tenant_id()` helper function
+  - Service role bypass for admin operations
+- **User Setup**: Admin user (saranzerrer@icloud.com) assigned to AkkuShop tenant as admin
+- **Status**: Full tenant isolation with RLS enforcement
+- **Database**: Development uses local Helium PostgreSQL (will migrate to Supabase pooler in production)
 
 ### Pixi ERP Integration
 - **New Service**: `server/services/pixi-service.ts` - Pixi API integration with 5-min caching
