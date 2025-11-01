@@ -195,12 +195,17 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   const articleSelector = (selectors as any).productCode || selectors.articleNumber;
   if (articleSelector) {
     const element = $(articleSelector).first();
-    const manufacturerNumber = element.text().trim() || element.attr('content')?.trim() || '';
+    let manufacturerNumber = element.text().trim() || element.attr('content')?.trim() || '';
     
-    // Store original manufacturer article number
+    // Remove all hyphens/dashes from manufacturer number
+    if (manufacturerNumber) {
+      manufacturerNumber = manufacturerNumber.replace(/-/g, '');
+    }
+    
+    // Store manufacturer article number (without hyphens)
     product.manufacturerArticleNumber = manufacturerNumber;
     
-    // Generate Brickfox article number: ANS + manufacturer number
+    // Generate Brickfox article number: ANS + manufacturer number (no hyphens)
     if (manufacturerNumber) {
       product.articleNumber = 'ANS' + manufacturerNumber;
       console.log(`📦 Generated Brickfox Article Number: ${product.articleNumber} (from ${manufacturerNumber})`);
