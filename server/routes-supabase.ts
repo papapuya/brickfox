@@ -18,6 +18,7 @@ import { scrapeProduct, scrapeProductList, defaultSelectors, brickfoxSelectors, 
 import { pixiService } from "./services/pixi-service";
 import { mapProductsToBrickfox, brickfoxRowsToCSV } from "./services/brickfox-mapper";
 import { enhanceProductsWithAI } from "./services/brickfox-ai-enhancer";
+import { loadMappingsForSupplier, loadMappingsForProject } from "./services/brickfox-mapping-loader";
 import Papa from "papaparse";
 import { nanoid } from "nanoid";
 import { createProjectSchema, createProductInProjectSchema, updateProductInProjectSchema } from "@shared/schema";
@@ -1151,16 +1152,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get supplier name if provided
+      // Get supplier name and load custom mappings
       let supplierName = undefined;
-      if (supplierId) {
+      let customMapping = undefined;
+      const user = await supabaseStorage.getUserById(req.user.id);
+      
+      if (supplierId && user?.tenantId) {
         const supplier = await supabaseStorage.getSupplier(supplierId);
         supplierName = supplier?.name;
+        
+        // Load custom field mappings for this supplier (URL scraper)
+        customMapping = await loadMappingsForSupplier(supplierId, user.tenantId, 'url_scraper');
+        console.log(`[Brickfox Preview] Loaded custom URL scraper mappings for supplier ${supplierId}`);
+      } else if (projectId && user?.tenantId) {
+        // Load custom field mappings for this project (CSV)
+        customMapping = await loadMappingsForProject(projectId, user.tenantId, 'csv');
+        console.log(`[Brickfox Preview] Loaded custom CSV mappings for project ${projectId}`);
       }
 
       // Transform to Brickfox format (without AI enhancement for faster preview)
       const brickfoxRows = mapProductsToBrickfox(products, {
         supplierName: supplierName || 'Unbekannt',
+        customMapping,
         enableAI: false // Disable AI for preview to speed up
       });
 
@@ -1204,11 +1217,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get supplier name if provided
+      // Get supplier name and load custom mappings
       let supplierName = undefined;
-      if (supplierId) {
+      let customMapping = undefined;
+      const user = await supabaseStorage.getUserById(req.user.id);
+      
+      if (supplierId && user?.tenantId) {
         const supplier = await supabaseStorage.getSupplier(supplierId);
         supplierName = supplier?.name;
+        
+        // Load custom field mappings for this supplier (URL scraper)
+        customMapping = await loadMappingsForSupplier(supplierId, user.tenantId, 'url_scraper');
+        console.log(`[Brickfox Export] Loaded custom URL scraper mappings for supplier ${supplierId}`);
+      } else if (projectId && user?.tenantId) {
+        // Load custom field mappings for this project (CSV)
+        customMapping = await loadMappingsForProject(projectId, user.tenantId, 'csv');
+        console.log(`[Brickfox Export] Loaded custom CSV mappings for project ${projectId}`);
       }
 
       // AI Enhancement: Generate missing fields
@@ -1250,6 +1274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Transform to Brickfox format
       const brickfoxRows = mapProductsToBrickfox(products, {
         supplierName: supplierName || 'Unbekannt',
+        customMapping,
         enableAI: true
       });
 
