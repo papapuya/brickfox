@@ -786,7 +786,7 @@ export default function URLScraper() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          extractedData: [{ extractedText: JSON.stringify(productData) }],
+          extractedData: [productData],
           customAttributes: {
             exactProductName: scrapedProduct.productName,
           },
@@ -882,7 +882,7 @@ export default function URLScraper() {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              extractedData: [{ extractedText: JSON.stringify(productData) }],
+              extractedData: [productData],
               customAttributes: {
                 exactProductName: product.productName,
               },
