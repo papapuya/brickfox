@@ -388,13 +388,31 @@ export class PDFParserService {
       
       console.log(`  ✅ Bezeichnung (Produktname): ${product.productName}`);
 
-      // Extract Liefermenge (e.g., "1 Stück", "4 Stück", "10 Stück")
-      // Patterns: "X Stück", "X St.", "X-er Pack", etc.
-      const liefermengeMatch = rowText.match(/(\d+)\s*(Stück|St\.|stück|st\.|STK|stk|STÜCK|Pack|pack)/i);
-      if (liefermengeMatch) {
-        product.liefermenge = `${liefermengeMatch[1]} Stück`;
-        console.log(`  ✅ Liefermenge: ${product.liefermenge}`);
-      } else {
+      // Extract Liefermenge with multiple patterns:
+      // - "4er" → 4 Stück
+      // - "4 Stück" → 4 Stück
+      // - "100 Karton" → 100 Stück
+      // - "10er Pack" → 10 Stück
+      const liefermengePatterns = [
+        /(\d+)\s*er\b/i,                              // "4er", "10er"
+        /(\d+)\s*-\s*er\b/i,                          // "4-er"
+        /(\d+)\s*(Stück|St\.|STK)/i,                  // "4 Stück", "4 St.", "4 STK"
+        /(\d+)\s*(Karton|Box)/i,                      // "100 Karton", "50 Box"
+        /(\d+)\s*(Pack|pack)/i,                       // "10 Pack"
+      ];
+      
+      let liefermengeFound = false;
+      for (const pattern of liefermengePatterns) {
+        const match = rowText.match(pattern);
+        if (match) {
+          product.liefermenge = `${match[1]} Stück`;
+          console.log(`  ✅ Liefermenge: ${product.liefermenge} (Pattern: ${pattern})`);
+          liefermengeFound = true;
+          break;
+        }
+      }
+      
+      if (!liefermengeFound) {
         // Default: 1 Stück if not specified
         product.liefermenge = '1 Stück';
       }
