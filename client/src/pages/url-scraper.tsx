@@ -965,7 +965,7 @@ export default function URLScraper() {
   const convertToCSV = (products: ScrapedProduct[]): string => {
     if (products.length === 0) return '';
 
-    // Fixed list of ALL expected fields (21 Nitecore selectors + base fields + AI description)
+    // Fixed list of ALL expected fields (base fields + AI description + technical fields)
     // This ensures ALL columns appear in CSV, even if fields are missing
     const orderedKeys = [
       'articleNumber',
@@ -974,7 +974,6 @@ export default function URLScraper() {
       'manufacturer',
       'price',
       'weight',
-      'category',
       'description',
       'aiDescription',
       'technicalTable',
@@ -994,7 +993,7 @@ export default function URLScraper() {
       'images'
     ];
 
-    // Create friendly header names (matching the 23 Nitecore selectors)
+    // Create friendly header names
     const headerMap: Record<string, string> = {
       articleNumber: 'Artikelnummer',
       productName: 'Produktname',
@@ -1002,7 +1001,6 @@ export default function URLScraper() {
       manufacturer: 'Hersteller',
       price: 'Preis',
       weight: 'Gewicht',
-      category: 'Kategorie',
       description: 'Beschreibung_HTML',
       aiDescription: 'AI_MediaMarkt_Beschreibung',
       technicalTable: 'Technische_Tabelle',
@@ -1225,8 +1223,7 @@ export default function URLScraper() {
             const fieldMap: { [key: string]: string } = {
               'manufacturer': 'hersteller',
               'price': 'preis',
-              'weight': 'gewicht',
-              'category': 'kategorie'
+              'weight': 'gewicht'
             };
             const mappedKey = fieldMap[key] || key;
             extractedDataArray.push({ key: mappedKey, value: String(value), type: 'text' as const });
@@ -1264,7 +1261,6 @@ export default function URLScraper() {
             product.manufacturer ? { key: 'hersteller', value: product.manufacturer, type: 'text' as const } : null,
             product.price ? { key: 'preis', value: product.price, type: 'text' as const } : null,
             product.weight ? { key: 'gewicht', value: product.weight, type: 'text' as const } : null,
-            product.category ? { key: 'kategorie', value: product.category, type: 'text' as const } : null,
           ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
 
           await apiPost(`/api/projects/${selectedProjectId}/products`, {

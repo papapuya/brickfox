@@ -34,6 +34,10 @@ export default function PDFAutoScraper() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extractedProducts, setExtractedProducts] = useState<PDFProduct[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 6;
 
   // Load suppliers
   const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
@@ -74,6 +78,7 @@ export default function PDFAutoScraper() {
     },
     onSuccess: (data) => {
       setExtractedProducts(data.products);
+      setCurrentPage(1); // Reset to first page
       toast({
         title: 'PDF analysiert',
         description: `${data.totalProducts} Produkt-URLs erfolgreich extrahiert`,
@@ -252,39 +257,84 @@ export default function PDFAutoScraper() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border max-h-96 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produktname</TableHead>
-                        <TableHead>Artikel-Nr.</TableHead>
-                        <TableHead>EAN</TableHead>
-                        <TableHead>EK-Preis</TableHead>
-                        <TableHead>URL</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {extractedProducts.filter(p => p.url).map((product, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{product.productName || '-'}</TableCell>
-                          <TableCell>{product.articleNumber || '-'}</TableCell>
-                          <TableCell>{product.eanCode || '-'}</TableCell>
-                          <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            <a 
-                              href={product.url!} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              {product.url}
-                            </a>
-                          </TableCell>
+                <div className="rounded-md border overflow-hidden">
+                  <div className="max-h-96 overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Produktname</TableHead>
+                          <TableHead>Artikel-Nr.</TableHead>
+                          <TableHead>EAN</TableHead>
+                          <TableHead>EK-Preis</TableHead>
+                          <TableHead>URL</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedProducts
+                          .filter(p => p.url)
+                          .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+                          .map((product, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{product.productName || '-'}</TableCell>
+                            <TableCell>{product.articleNumber || '-'}</TableCell>
+                            <TableCell>{product.eanCode || '-'}</TableCell>
+                            <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              <a 
+                                href={product.url!} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline flex items-center gap-1"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {product.url}
+                              </a>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {extractedProducts.filter(p => p.url).length > productsPerPage && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+                      <div className="text-sm text-muted-foreground">
+                        Zeige {((currentPage - 1) * productsPerPage) + 1} bis {Math.min(currentPage * productsPerPage, extractedProducts.filter(p => p.url).length)} von {extractedProducts.filter(p => p.url).length} Produkten
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          Zurück
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.ceil(extractedProducts.filter(p => p.url).length / productsPerPage) }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.min(Math.ceil(extractedProducts.filter(p => p.url).length / productsPerPage), currentPage + 1))}
+                          disabled={currentPage === Math.ceil(extractedProducts.filter(p => p.url).length / productsPerPage)}
+                        >
+                          Weiter
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
