@@ -173,6 +173,11 @@ export default function URLScraper() {
   // SERP Snippet Preview Dialog
   const [showSerpPreview, setShowSerpPreview] = useState(false);
   const [serpPreviewData, setSerpPreviewData] = useState<{ title: string; description: string; url: string; productName: string }>({ title: '', description: '', url: '', productName: '' });
+  
+  // Image Gallery State
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [selectedProductImages, setSelectedProductImages] = useState<{ images: string[], productName: string, articleNumber: string }>({ images: [], productName: '', articleNumber: '' });
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -2055,14 +2060,35 @@ export default function URLScraper() {
                         <TableCell className="font-mono text-sm sticky left-0 bg-white z-10">{absoluteIndex + 1}</TableCell>
                         <TableCell className="sticky left-12 bg-white z-10">
                           {product.images && product.images.length > 0 ? (
-                            <img 
-                              src={product.images[0]} 
-                              alt={product.productName}
-                              className="w-16 h-16 object-cover rounded border"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23e5e7eb"/><text x="32" y="32" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">-</text></svg>';
-                              }}
-                            />
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="relative cursor-pointer group"
+                                onClick={() => {
+                                  setSelectedProductImages({
+                                    images: product.images,
+                                    productName: product.productName,
+                                    articleNumber: product.articleNumber
+                                  });
+                                  setCurrentImageIndex(0);
+                                  setShowImageGallery(true);
+                                }}
+                              >
+                                <img 
+                                  src={product.images[0]} 
+                                  alt={product.productName}
+                                  className="w-16 h-16 object-cover rounded border group-hover:ring-2 group-hover:ring-primary transition-all"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23e5e7eb"/><text x="32" y="32" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">-</text></svg>';
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded transition-all flex items-center justify-center">
+                                  <Eye className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
+                              <span className="text-xs text-muted-foreground font-medium">
+                                {product.images.length} {product.images.length === 1 ? 'Bild' : 'Bilder'}
+                              </span>
+                            </div>
                           ) : (
                             <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center text-muted-foreground text-xs">
                               -
@@ -2836,6 +2862,109 @@ export default function URLScraper() {
                   </>
                 )}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Image Gallery Dialog */}
+        <Dialog open={showImageGallery} onOpenChange={setShowImageGallery}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedProductImages.productName}
+              </DialogTitle>
+              <DialogDescription>
+                Artikelnummer: {selectedProductImages.articleNumber} • {selectedProductImages.images.length} {selectedProductImages.images.length === 1 ? 'Bild' : 'Bilder'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Main Image Display */}
+              <div className="relative bg-muted rounded-lg overflow-hidden aspect-square flex items-center justify-center">
+                {selectedProductImages.images.length > 0 && (
+                  <img 
+                    src={selectedProductImages.images[currentImageIndex]} 
+                    alt={`${selectedProductImages.productName} - Bild ${currentImageIndex + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%23e5e7eb"/><text x="200" y="200" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="24">Bild nicht verfügbar</text></svg>';
+                    }}
+                  />
+                )}
+                
+                {/* Navigation Arrows */}
+                {selectedProductImages.images.length > 1 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      onClick={() => setCurrentImageIndex(prev => prev === 0 ? selectedProductImages.images.length - 1 : prev - 1)}
+                    >
+                      <ArrowLeft className="w-6 h-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      onClick={() => setCurrentImageIndex(prev => prev === selectedProductImages.images.length - 1 ? 0 : prev + 1)}
+                    >
+                      <Eye className="w-6 h-6 rotate-180" />
+                    </Button>
+                  </>
+                )}
+                
+                {/* Image Counter */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                  {currentImageIndex + 1} / {selectedProductImages.images.length}
+                </div>
+              </div>
+              
+              {/* Thumbnail Strip */}
+              {selectedProductImages.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {selectedProductImages.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`relative shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition-all ${
+                        idx === currentImageIndex 
+                          ? 'border-primary ring-2 ring-primary' 
+                          : 'border-muted hover:border-primary/50'
+                      }`}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Thumbnail ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="%23e5e7eb"/><text x="40" y="40" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="10">-</text></svg>';
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {/* Image URL */}
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-xs text-muted-foreground mb-1 block">Bild-URL:</Label>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs flex-1 break-all">
+                    {selectedProductImages.images[currentImageIndex]}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedProductImages.images[currentImageIndex]);
+                      toast({ title: "URL kopiert", description: "Bild-URL wurde in die Zwischenablage kopiert" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

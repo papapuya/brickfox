@@ -42,3 +42,54 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 - **Stripe**: Integrated for subscription management and payment processing.
 - **Pixi ERP API**: Used for product inventory comparison and duplicate detection.
 - **Greyhound SMTP**: E-mail sending for automated supplier requests via nodemailer (though currently facing connectivity issues from Replit).
+
+## Recent Changes
+
+### 2025-11-02: Bildergalerie für gescrapte Produkte 🖼️
+**Feature**: Interaktive Bildergalerie zum Anzeigen aller gescrapten Produktbilder in voller Größe.
+
+**Implementierung**:
+- **Klickbare Thumbnails**: Hover-Effekt mit Eye-Icon, zeigt Bildanzahl an (z.B. "3 Bilder")
+- **Vollbild-Galerie**: Dialog mit großer Bildanzeige, Navigation zwischen Bildern mit Pfeiltasten
+- **Thumbnail-Leiste**: Alle Bilder als Thumbnails unten, aktives Bild wird hervorgehoben
+- **Bild-Zähler**: "1 / 5" Anzeige für aktuelle Position
+- **URL-Kopieren**: Kopier-Button für direkte Bild-URL mit Toast-Bestätigung
+- **Error-Handling**: Fallback-Bilder bei Ladefehlern
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - Bildergalerie-Dialog und State-Management
+
+### 2025-11-02: Spaltenauswahl für CSV-Export (URL-Scraper)
+**Feature**: CSV-Export mit individueller Spaltenauswahl.
+
+**Implementierung**:
+- **Spaltenauswahl-Dialog**: Checkboxen für alle 23 Export-Felder (Artikelnummer, Produktname, EAN, technische Daten, SEO-Felder, etc.)
+- **"Alle auswählen" / "Alle abwählen"**: Schnelle Massenauswahl für alle Spalten
+- **Persistente Auswahl**: Spaltenauswahl bleibt während der Session erhalten
+- **Flexible Exports**: Nur ausgewählte Spalten werden ins CSV exportiert (z.B. nur Basis-Daten ohne SEO)
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - Spaltenauswahl-UI und Export-Logik
+
+### 2025-11-02: CSV-Bulk-Tabelle mit standardisiertem Table-Component
+**Änderung**: Vorschau-Tabelle verwendet jetzt das gleiche `Table`-Component wie alle anderen Tabellen (einheitliches CI).
+
+**Implementierung**:
+- **Table-Component**: `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` aus `@/components/ui/table`
+- **Einheitliches Design**: Hover-Effekte, Border, Spacing werden automatisch vom Component gehandhabt
+- **Sticky Headers**: Gleiche Funktionalität wie in PDF-Scraper und URL-Scraper
+
+**Betroffene Dateien**:
+- `client/src/components/bulk-description-table.tsx` - Table-Component-Migration
+
+### 2025-11-02: MediaMarkt V1 - Dynamische Produkttyp-Extraktion
+**Änderung**: Produkttyp wird dynamisch aus dem Produktnamen extrahiert (nicht hardcodiert).
+
+**Implementierung**:
+- **Dynamische Extraktion**: Findet Wörter mit Schlüsselwörtern wie "lampe", "batterie", "akku", "ladegerät"
+- **Direkt aus Produktname**: "Nitecore Chameleon CG7 - 2500 Lumen **Taschenlampe**" → extrahiert "Taschenlampe"
+- **MediaMarkt V1**: "Taschenlampe NCCG7" (Produkttyp + Modellcode, **OHNE Marke**)
+- **Flexibel**: Funktioniert mit beliebigen Produkttypen, keine hardcodierte Liste
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - `extractProductTypeFromName()` Funktion
