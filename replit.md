@@ -42,6 +42,32 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: SEO-Schwellenwerte optimiert
+**Änderung**: SERP-Snippet-Vorschau zeigt jetzt mehr Werte im grünen Bereich an.
+
+**Implementierung**:
+- **Meta Title**: Grün-Bereich erweitert von 380-580px auf **300-580px** (349px ist jetzt ✅ GRÜN)
+- **Meta Description**: Grün-Bereich erweitert von 750-1000px auf **600-1000px** (743px ist jetzt ✅ GRÜN)
+- Gelber Bereich reduziert: Title 200-300px, Description 450-600px
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - SEO-Qualitätsanalyse-Logik angepasst
+
+### 2025-11-02: ANSMANN Scraper-Fix für technische Daten
+**Problem behoben**: Nominalspannung, Nominalkapazität, max. Entladestrom und Abmessungen wurden nicht extrahiert.
+
+**Ursache**: 
+- Abmessungen-Selektor (`abmessungen`) wurde in der Datenbank gespeichert, aber **nicht vom Scraper verwendet**
+- Nur der HTML-Fallback wurde genutzt, der nicht funktionierte
+
+**Implementierung**:
+- **Abmessungen-Selektor aktiv**: `td.col.data[data-th="Abmessungen"]` wird jetzt ZUERST geprüft, dann Fallback auf HTML-Regex
+- **Debug-Logs hinzugefügt**: `🔍 Extracted Abmessungen`, `⚡ Nominalspannung`, `🔋 Nominalkapazität`, `📏 Länge × Breite × Höhe`
+- **Automatisches Parsing**: "1.5 × 1.5 × 5.1 cm" → 15mm × 15mm × 51mm
+
+**Betroffene Dateien**:
+- `server/scraper-service.ts` - Abmessungen-Extraktion verbessert mit Selektor-Unterstützung
+
 ### 2025-11-02: Brickfox-Felder für Abmessungen und Kapazität hinzugefügt
 **Problem behoben**: Technische Daten (Länge, Breite, Höhe, mAh) wurden vom Scraper extrahiert, aber nicht ins Brickfox-CSV exportiert.
 
