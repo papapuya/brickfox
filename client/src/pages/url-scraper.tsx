@@ -2368,12 +2368,12 @@ export default function URLScraper() {
                     <span className="font-medium">Zeichenanzahl: {seoPreviewContent.length} / 160</span>
                     <span className={`font-semibold ${
                       seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? 'text-green-600' :
-                      seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 'text-yellow-600' :
+                      seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 'text-green-600' :
                       seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 'text-yellow-600' :
                       'text-red-600'
                     }`}>
                       {seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? '✓ Optimal' :
-                       seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? '⚠ Akzeptabel' :
+                       seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? '✓ Akzeptabel' :
                        seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? '⚠ Etwas zu lang' :
                        seoPreviewContent.length > 175 ? '✗ Zu lang' : '✗ Zu kurz'}
                     </span>
@@ -2384,7 +2384,7 @@ export default function URLScraper() {
                     <div 
                       className={`h-full transition-all ${
                         seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? 'bg-green-500' :
-                        seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 'bg-yellow-500' :
+                        seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 'bg-green-500' :
                         seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`}
