@@ -924,6 +924,14 @@ export default function URLScraper() {
           };
 
           // WICHTIG: Alle gescrapten technischen Felder übertragen (length, bodyDiameter, led1, etc.)
+          console.log('🔍 [AI-GEN] All product fields:', Object.keys(product));
+          console.log('🔍 [AI-GEN] Nitecore fields in product object:', {
+            length: product.length,
+            led1: product.led1,
+            led2: product.led2,
+            maxLuminosity: product.maxLuminosity
+          });
+          
           const structuredData: any = {};
           Object.keys(product).forEach((key) => {
             // Überspringe Basis-Felder (die bereits in productData sind)
