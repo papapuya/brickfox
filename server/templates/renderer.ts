@@ -116,6 +116,33 @@ function buildTechnicalSpecsTable(
   return result;
 }
 
+function cleanTechnicalTable(htmlTable: string): string {
+  // Remove wrapper divs and clean up the table for left-aligned display
+  let cleaned = htmlTable;
+  
+  // Remove wrapper divs
+  cleaned = cleaned.replace(/<div[^>]*class="[^"]*additional-attributes-wrapper[^"]*"[^>]*>/gi, '');
+  cleaned = cleaned.replace(/<\/div>/gi, '');
+  
+  // Remove caption
+  cleaned = cleaned.replace(/<caption[^>]*>.*?<\/caption>/gi, '');
+  
+  // Remove all class attributes from table, tr, th, td
+  cleaned = cleaned.replace(/\s+class="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+id="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+data-th="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+scope="[^"]*"/gi, '');
+  
+  // Add left-aligned inline styles to table
+  cleaned = cleaned.replace(/<table/gi, '<table border="0" style="border-collapse: collapse; width: 100%; max-width: 600px;"');
+  
+  // Make both th and td left-aligned with proper padding
+  cleaned = cleaned.replace(/<th/gi, '<th style="padding: 4px 12px 4px 0; text-align: left; vertical-align: top; font-weight: 600;"');
+  cleaned = cleaned.replace(/<td/gi, '<td style="padding: 4px 0 4px 0; text-align: left; vertical-align: top;"');
+  
+  return cleaned.trim();
+}
+
 function renderMediaMarktLayout(data: {
   productName: string;
   narrative: string;
@@ -133,7 +160,7 @@ function renderMediaMarktLayout(data: {
   // 🎯 PRIORITY: Use original HTML table from supplier if available (1:1), otherwise build from AI specs
   const techTableHtml = data.technicalDataTable
     ? `<h4>Technische Daten:</h4>
-${data.technicalDataTable}
+${cleanTechnicalTable(data.technicalDataTable)}
 
 `
     : data.technicalSpecs.length > 0
@@ -141,7 +168,7 @@ ${data.technicalDataTable}
 <table border="0" summary="" style="border-collapse: collapse; width: 100%; max-width: 600px;">
 <tbody>
 ${data.technicalSpecs.map(spec => `<tr>
-  <td style="padding: 4px 12px 4px 0; text-align: right; vertical-align: top; font-weight: 600; white-space: nowrap;">${spec.label}</td>
+  <td style="padding: 4px 12px 4px 0; text-align: left; vertical-align: top; font-weight: 600;">${spec.label}</td>
   <td style="padding: 4px 0 4px 8px; text-align: left; vertical-align: top;">${spec.value}</td>
 </tr>`).join('\n')}
 </tbody>
