@@ -130,18 +130,13 @@ function renderMediaMarktLayout(data: {
     .map(usp => `✅ ${usp}`)
     .join('<br />\n');
 
-  // Use original HTML table if available (1:1 from supplier website)
-  const techTableHtml = data.technicalDataTable
-    ? `<h4>Technische Daten:</h4>
-${data.technicalDataTable}
-
-`
-    : data.technicalSpecs.length > 0
+  // Build technical specs table with left-aligned values
+  const techTableHtml = data.technicalSpecs.length > 0
     ? `<h4>Technische Daten:</h4>
 <table border="0" summary="" style="border-collapse: collapse; width: 100%; max-width: 600px;">
 <tbody>
 ${data.technicalSpecs.map(spec => `<tr>
-  <td style="padding: 4px 12px 4px 0; text-align: right; vertical-align: top; font-weight: 600; white-space: nowrap;">${spec.label}:</td>
+  <td style="padding: 4px 12px 4px 0; text-align: right; vertical-align: top; font-weight: 600; white-space: nowrap;">${spec.label}</td>
   <td style="padding: 4px 0 4px 8px; text-align: left; vertical-align: top;">${spec.value}</td>
 </tr>`).join('\n')}
 </tbody>

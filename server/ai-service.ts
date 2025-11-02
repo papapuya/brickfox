@@ -1195,7 +1195,7 @@ Ausgabe:
     }
     
     return {
-      seoTitle: seoTitle.length > 70 ? seoTitle.substring(0, 67) + '...' : seoTitle,
+      seoTitle: seoTitle, // AI respects 70 char limit - no forced truncation
       seoDescription
     };
     
