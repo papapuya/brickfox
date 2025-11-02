@@ -2574,8 +2574,8 @@ export default function URLScraper() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium">Meta Title</span>
                     <span className={`font-semibold ${
-                      (serpPreviewData.title.length * 8.5) >= 450 && (serpPreviewData.title.length * 8.5) <= 580 ? 'text-green-600' :
-                      (serpPreviewData.title.length * 8.5) >= 400 && (serpPreviewData.title.length * 8.5) < 450 ? 'text-yellow-600' :
+                      (serpPreviewData.title.length * 8.5) >= 380 && (serpPreviewData.title.length * 8.5) <= 580 ? 'text-green-600' :
+                      (serpPreviewData.title.length * 8.5) >= 320 && (serpPreviewData.title.length * 8.5) < 380 ? 'text-yellow-600' :
                       (serpPreviewData.title.length * 8.5) > 580 && (serpPreviewData.title.length * 8.5) <= 620 ? 'text-yellow-600' :
                       'text-red-600'
                     }`}>
@@ -2585,8 +2585,8 @@ export default function URLScraper() {
                   <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className={`h-full transition-all ${
-                        (serpPreviewData.title.length * 8.5) >= 450 && (serpPreviewData.title.length * 8.5) <= 580 ? 'bg-green-500' :
-                        (serpPreviewData.title.length * 8.5) >= 400 && (serpPreviewData.title.length * 8.5) < 450 ? 'bg-yellow-500' :
+                        (serpPreviewData.title.length * 8.5) >= 380 && (serpPreviewData.title.length * 8.5) <= 580 ? 'bg-green-500' :
+                        (serpPreviewData.title.length * 8.5) >= 320 && (serpPreviewData.title.length * 8.5) < 380 ? 'bg-yellow-500' :
                         (serpPreviewData.title.length * 8.5) > 580 && (serpPreviewData.title.length * 8.5) <= 620 ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`}
@@ -2594,9 +2594,9 @@ export default function URLScraper() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {(serpPreviewData.title.length * 8.5) >= 450 && (serpPreviewData.title.length * 8.5) <= 580 ? 
+                    {(serpPreviewData.title.length * 8.5) >= 380 && (serpPreviewData.title.length * 8.5) <= 580 ? 
                       '✓ Perfekte Länge - wird vollständig in Google angezeigt' :
-                     (serpPreviewData.title.length * 8.5) < 450 ? 
+                     (serpPreviewData.title.length * 8.5) < 380 ? 
                       '⚠ Etwas kurz - nutzen Sie mehr Platz für Keywords' :
                       '✗ Zu lang - wird in Google abgeschnitten'}
                   </p>
@@ -2607,8 +2607,8 @@ export default function URLScraper() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium">Meta Description</span>
                     <span className={`font-semibold ${
-                      (serpPreviewData.description.length * 6.3) >= 900 && (serpPreviewData.description.length * 6.3) <= 1000 ? 'text-green-600' :
-                      (serpPreviewData.description.length * 6.3) >= 800 && (serpPreviewData.description.length * 6.3) < 900 ? 'text-yellow-600' :
+                      (serpPreviewData.description.length * 6.3) >= 750 && (serpPreviewData.description.length * 6.3) <= 1000 ? 'text-green-600' :
+                      (serpPreviewData.description.length * 6.3) >= 600 && (serpPreviewData.description.length * 6.3) < 750 ? 'text-yellow-600' :
                       (serpPreviewData.description.length * 6.3) > 1000 && (serpPreviewData.description.length * 6.3) <= 1100 ? 'text-yellow-600' :
                       'text-red-600'
                     }`}>
@@ -2618,8 +2618,8 @@ export default function URLScraper() {
                   <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className={`h-full transition-all ${
-                        (serpPreviewData.description.length * 6.3) >= 900 && (serpPreviewData.description.length * 6.3) <= 1000 ? 'bg-green-500' :
-                        (serpPreviewData.description.length * 6.3) >= 800 && (serpPreviewData.description.length * 6.3) < 900 ? 'bg-yellow-500' :
+                        (serpPreviewData.description.length * 6.3) >= 750 && (serpPreviewData.description.length * 6.3) <= 1000 ? 'bg-green-500' :
+                        (serpPreviewData.description.length * 6.3) >= 600 && (serpPreviewData.description.length * 6.3) < 750 ? 'bg-yellow-500' :
                         (serpPreviewData.description.length * 6.3) > 1000 && (serpPreviewData.description.length * 6.3) <= 1100 ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`}
@@ -2627,9 +2627,9 @@ export default function URLScraper() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {(serpPreviewData.description.length * 6.3) >= 900 && (serpPreviewData.description.length * 6.3) <= 1000 ? 
+                    {(serpPreviewData.description.length * 6.3) >= 750 && (serpPreviewData.description.length * 6.3) <= 1000 ? 
                       '✓ Perfekte Länge - wird vollständig in Google angezeigt' :
-                     (serpPreviewData.description.length * 6.3) < 900 ? 
+                     (serpPreviewData.description.length * 6.3) < 750 ? 
                       '⚠ Etwas kurz - fügen Sie mehr Details hinzu' :
                       '✗ Zu lang - wird in Google gekürzt'}
                   </p>
