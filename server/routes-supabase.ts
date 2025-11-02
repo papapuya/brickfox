@@ -49,6 +49,7 @@ import { apiKeyManager } from './api-key-manager';
 import webhooksRouter from './webhooks-supabase';
 import mappingRouter from './routes-mapping';
 import { pdfParserService } from './services/pdf-parser';
+import { emailService } from './services/email-service';
 
 async function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
@@ -1444,6 +1445,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: error.message || 'Fehler beim Verarbeiten der PDF' 
+      });
+    }
+  });
+
+  // Send Email - Request URLs from supplier for products without URLs
+  app.post('/api/email/request-urls', requireAuth, async (req, res) => {
+    try {
+      const { to, subject, message, eanCodes } = req.body;
+
+      if (!to || !subject || !message || !eanCodes || !Array.isArray(eanCodes)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Fehlende Parameter: to, subject, message, eanCodes erforderlich',
+        });
+      }
+
+      console.log(`[Email Service] Sending URL request to ${to} for ${eanCodes.length} products`);
+
+      const result = await emailService.sendSupplierUrlRequest({
+        to,
+        subject,
+        message,
+        eanCodes,
+      });
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: 'E-Mail erfolgreich versendet',
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error || 'Fehler beim Senden der E-Mail',
+        });
+      }
+    } catch (error: any) {
+      console.error('[Email Service] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Fehler beim Senden der E-Mail',
       });
     }
   });
