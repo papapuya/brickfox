@@ -321,15 +321,19 @@ export class PDFParserService {
       }
       
       // Process Prices (Netto-EK)
-      // The last price in the row is typically the Netto-EK
+      // PDF has 2 prices: Netto-EK (second-to-last) and UE/VP (last)
+      // We need Netto-EK, NOT UE/VP!
       if (priceMatches && priceMatches.length >= 1) {
         // Clean prices: remove € and whitespace
         const cleanedPrices = priceMatches.map(p => p.replace(/€/g, '').trim());
         
-        // Take the last price as EK (Netto-EK)
-        product.ekPrice = cleanedPrices[cleanedPrices.length - 1];
+        // If there are 2+ prices, take the second-to-last (Netto-EK)
+        // If there's only 1 price, take it as fallback
+        product.ekPrice = cleanedPrices.length >= 2 
+          ? cleanedPrices[cleanedPrices.length - 2]  // Netto-EK (not UE/VP!)
+          : cleanedPrices[cleanedPrices.length - 1]; // Fallback for single price
         
-        console.log(`  ✅ Netto-EK: ${product.ekPrice || 'N/A'}`);
+        console.log(`  ✅ Netto-EK: ${product.ekPrice || 'N/A'} (aus ${cleanedPrices.length} Preisen)`);
       }
 
       // Extract Marke (first word is often the brand)

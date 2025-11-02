@@ -45,21 +45,26 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 
 ## Recent Changes
 
-### 2025-11-02: VK-Preisberechnung korrigiert 💰
-**Bugfix**: VK-Preisberechnung verwendet nun die korrekte Formel und rundet auf ,95.
+### 2025-11-02: PDF-Parser EK-Spalten-Fix + VK-Berechnung korrigiert 💰
+**Bugfix**: PDF-Parser liest jetzt die korrekte "Netto EK"-Spalte aus und berechnet VK korrekt.
 
-**Formel**: **VK = (EK × 2) + 19%** = **EK × 2 × 1,19** = **EK × 2,38**
+**Problem**: PDF-Parser las die **UE/VP-Spalte** (Lieferanten-Verkaufspreis) statt der **Netto-EK-Spalte**.
+- Beispiel: Netto EK = 23,96€ ✓, UE/VP = 49,99€ ✗
+- Parser nahm fälschlicherweise 49,99€ (den letzten Preis in der Zeile)
 
-**Rundung**:
-- Ergebnis wird immer auf ,95 gerundet (z.B. 9,95, 16,95, 11,95)
-- `Math.floor(vkCalculated) + 0.95` sorgt für konsistente ,95-Endung
+**Lösung**:
+- **PDF-Parser**: Nimmt jetzt den **vorletzten Preis** (Netto-EK), nicht den letzten (UE/VP)
+- **Fallback**: Bei nur einem Preis wird dieser genommen
+- **VK-Formel**: **VK = (EK × 2) + 19%** = **EK × 2 × 1,19** = **EK × 2,38**
+- **Rundung**: Ergebnis wird immer auf ,95 gerundet (z.B. 9,95, 16,95, 11,95)
 
 **Beispiele**:
+- PDF: Netto EK = 23,96€ → System: **EK = 23,96€** (unverändert) → **VK = 56,95€**
 - EK = 5,00€ → VK = 5 × 2 × 1,19 = 11,90 → **11,95€**
 - EK = 7,00€ → VK = 7 × 2 × 1,19 = 16,66 → **16,95€**
-- EK = 4,00€ → VK = 4 × 2 × 1,19 = 9,52 → **9,95€**
 
 **Betroffene Dateien**:
+- `server/services/pdf-parser.ts` - EK-Extraktion aus PDF (vorletzter statt letzter Preis)
 - `client/src/pages/url-scraper.tsx` - VK-Berechnungslogik (PDF-Import)
 - `server/scraper-service.ts` - VK-Berechnungslogik (Scraping)
 
