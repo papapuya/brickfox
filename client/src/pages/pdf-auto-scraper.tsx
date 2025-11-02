@@ -412,7 +412,6 @@ export default function PDFAutoScraper() {
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="min-w-[250px]">Produktname (Bezeichnung)</TableHead>
                                   <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
                                   <TableHead className="min-w-[130px]">EAN</TableHead>
                                   <TableHead className="min-w-[100px]">Netto-EK</TableHead>
@@ -422,7 +421,6 @@ export default function PDFAutoScraper() {
                               <TableBody>
                                 {productsWithoutURL.map((product, index) => (
                                   <TableRow key={index}>
-                                    <TableCell className="font-medium">{product.productName || '-'}</TableCell>
                                     <TableCell>{product.articleNumber || '-'}</TableCell>
                                     <TableCell>{product.eanCode || '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
