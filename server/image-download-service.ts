@@ -41,9 +41,27 @@ async function downloadImage(url: string, outputPath: string): Promise<void> {
 }
 
 /**
+ * Sanitizes article number to prevent directory traversal attacks
+ * @param articleNumber Raw article number from user input
+ * @returns Safe article number (only alphanumeric, underscore, hyphen)
+ */
+function sanitizeArticleNumber(articleNumber: string): string {
+  // Remove any characters that could cause path traversal
+  // Allow only: A-Z, a-z, 0-9, underscore, hyphen
+  const sanitized = articleNumber.replace(/[^A-Za-z0-9_-]/g, '_');
+  
+  // Prevent empty or dangerous patterns
+  if (!sanitized || sanitized === '.' || sanitized === '..') {
+    return 'unknown_product';
+  }
+  
+  return sanitized;
+}
+
+/**
  * Downloads all product images and saves them locally
  * @param imageUrls Array of image URLs to download
- * @param articleNumber Product article number (used for folder name)
+ * @param articleNumber Product article number (used for folder name) - will be sanitized
  * @returns Array of downloaded image info (original URL + local path)
  */
 export async function downloadProductImages(
@@ -54,8 +72,12 @@ export async function downloadProductImages(
     return [];
   }
 
+  // CRITICAL: Sanitize article number to prevent directory traversal attacks
+  const safeArticleNumber = sanitizeArticleNumber(articleNumber);
+  console.log(`[Image Download] Sanitized article number: "${articleNumber}" → "${safeArticleNumber}"`);
+
   // Create product-specific folder
-  const productFolder = path.join('attached_assets', 'product_images', articleNumber);
+  const productFolder = path.join('attached_assets', 'product_images', safeArticleNumber);
   await fs.mkdir(productFolder, { recursive: true });
 
   const downloadedImages: DownloadedImage[] = [];
