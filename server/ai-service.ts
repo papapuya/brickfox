@@ -957,3 +957,109 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
   }
 }
 
+/**
+ * Generate SEO-optimized Meta Title and Meta Description
+ * @param productData - Product information (name, manufacturer, specs, etc.)
+ * @param model - AI model to use (default: gpt-4o-mini)
+ * @returns Object with seoTitle and seoDescription
+ */
+export async function generateSEOMetadata(
+  productData: {
+    productName: string;
+    manufacturer?: string;
+    category?: string;
+    articleNumber?: string;
+    description?: string;
+    technicalSpecs?: string[];
+  },
+  model: string = 'gpt-4o-mini'
+): Promise<{ seoTitle: string; seoDescription: string }> {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  const { productName, manufacturer, category, articleNumber, description, technicalSpecs } = productData;
+  
+  // Build context from available data
+  const context = [
+    `Produktname: ${productName}`,
+    manufacturer && `Hersteller: ${manufacturer}`,
+    category && `Kategorie: ${category}`,
+    articleNumber && `Artikelnummer: ${articleNumber}`,
+    description && `Beschreibung: ${description.substring(0, 300)}`,
+    technicalSpecs && technicalSpecs.length > 0 && `Technische Daten: ${technicalSpecs.join(', ')}`,
+  ].filter(Boolean).join('\n');
+
+  const prompt = `Du bist ein SEO-Experte für E-Commerce. Erstelle SEO-optimierte Meta-Tags für ein Produkt.
+
+PRODUKTINFORMATIONEN:
+${context}
+
+AUFGABE:
+Erstelle zwei SEO-optimierte Texte:
+
+1. **Meta Title** (max. 580 Pixel / ca. 55-60 Zeichen):
+   - Format: "Hersteller Produktname | Hauptmerkmal | Artikelnummer"
+   - Beispiel: "Nitecore Carbon Battery | 12K Extension Kit | NC-CB12K-KIT"
+   - Nutze Pipe-Zeichen "|" zur Trennung
+   - Halte dich STRIKT an 580 Pixel (ca. 55-60 Zeichen)
+   - Priorisiere die wichtigsten Keywords am Anfang
+
+2. **Meta Description** (max. 1000 Pixel / ca. 155-160 Zeichen):
+   - Beschreibe das Produkt prägnant und verkaufsstark
+   - Beispiel: "Das Nitecore Carbon 12K Battery Kit verlängert die Laufzeit deiner Nitecore Kopflampe mit zwei 21700 Akkus (12 000 mAh) im robusten Carbongehäuse."
+   - Halte dich STRIKT an 1000 Pixel (ca. 155-160 Zeichen)
+   - Nutze Zahlen und konkrete Specs
+   - Keine Call-to-Actions wie "Jetzt kaufen"
+
+WICHTIG:
+- Sei präzise und informativ
+- Nutze deutsche Rechtschreibung
+- Keine Sonderzeichen außer Zahlen, Pipe und Bindestriche
+- Keine Anführungszeichen in den Texten
+
+AUSGABEFORMAT (JSON):
+{
+  "seoTitle": "Dein Meta Title hier",
+  "seoDescription": "Deine Meta Description hier"
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: 'Du bist ein SEO-Experte für E-Commerce mit Fokus auf optimale Meta-Tags für Google.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" }
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from AI');
+    }
+
+    const parsed = JSON.parse(content);
+    
+    return {
+      seoTitle: parsed.seoTitle || productName.substring(0, 60),
+      seoDescription: parsed.seoDescription || description?.substring(0, 160) || ''
+    };
+    
+  } catch (error) {
+    console.error('[SEO Generation Error]:', error);
+    // Fallback to simple truncation
+    return {
+      seoTitle: productName.length > 60 ? productName.substring(0, 57) + '...' : productName,
+      seoDescription: description ? (description.length > 160 ? description.substring(0, 157) + '...' : description) : ''
+    };
+  }
+}
+

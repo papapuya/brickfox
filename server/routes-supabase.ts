@@ -995,28 +995,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || '';
       const manufacturer = firstData.manufacturer || firstData.Hersteller || '';
       const category = firstData.category || firstData.kategorie || '';
+      const articleNumber = firstData.articleNumber || firstData.artikel_nr || '';
       
-      // Generate SEO Title (max 60 chars)
-      const seoTitle = productName.length > 60 
-        ? productName.substring(0, 57) + '...' 
-        : productName;
+      // Collect technical specs for SEO context
+      const technicalSpecs: string[] = [];
+      if (firstData.nominalspannung) technicalSpecs.push(`${firstData.nominalspannung}V`);
+      if (firstData.nominalkapazitaet) technicalSpecs.push(`${firstData.nominalkapazitaet}mAh`);
+      if (firstData.gewicht) technicalSpecs.push(firstData.gewicht);
       
-      // Generate SEO Description (extract first text from HTML or use auto-extracted description)
-      let seoDescription = '';
-      if (autoExtractedDescription) {
-        // Use auto-extracted description, limit to 160 chars
-        const plainText = autoExtractedDescription.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-        seoDescription = plainText.length > 160 
-          ? plainText.substring(0, 157) + '...' 
-          : plainText;
-      } else {
-        // Fallback: Extract from HTML description
-        const plainText = description.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-        const firstSentence = plainText.split('.')[0] || plainText;
-        seoDescription = firstSentence.length > 160 
-          ? firstSentence.substring(0, 157) + '...' 
-          : firstSentence;
-      }
+      // Generate AI-powered SEO metadata
+      const { generateSEOMetadata } = await import('./ai-service.js');
+      const seoMetadata = await generateSEOMetadata({
+        productName,
+        manufacturer,
+        category,
+        articleNumber,
+        description: autoExtractedDescription || description.replace(/<[^>]*>/g, '').substring(0, 300),
+        technicalSpecs
+      }, aiModel);
+      
+      const { seoTitle, seoDescription } = seoMetadata;
       
       // Generate SEO Keywords (from category, manufacturer, product features)
       const keywordParts = [manufacturer, category, productName].filter(Boolean);
