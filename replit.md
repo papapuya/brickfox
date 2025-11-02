@@ -15,6 +15,26 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-02: PDF Parser - Verbesserte Multi-Zeilen-Extraktion & Liefermenge-Patterns
+**Feature**: Erhöhte Y-Toleranz für korrekte Artikel-Nr. und EAN-Extraktion + erweiterte Liefermenge-Patterns.
+
+**Problem**: 
+- PDF-Daten (Artikel-Nr., EAN) wurden nicht erkannt, da sie auf unterschiedlichen Y-Positionen standen
+- Liefermenge wurde nicht korrekt aus "4er", "10er", "100 Karton" erkannt
+
+**Lösung**:
+- **Y-Toleranz erhöht**: 8 → 15 Pixel für Produkte MIT URL
+- **Multi-Zeilen-Gruppierung**: Produkte OHNE URL gruppieren Y-Positionen in 5er-Schritten
+- **Erweiterte Liefermenge-Patterns**:
+  - `4er` → 4 Stück
+  - `10er` → 10 Stück
+  - `100 Karton` → 100 Stück
+  - `4 Stück` → 4 Stück (bestehend)
+  - `10 Pack` → 10 Stück (bestehend)
+
+**Betroffene Dateien**:
+- `server/services/pdf-parser.ts` - Y-Toleranz und Liefermenge-Extraktion
+
 ### 2025-11-02: PDF Parser - Exakte Datenextraktion (Bezeichnung, Artikel-Nr., Netto-EK)
 **Feature**: Korrekte Extraktion der exakten PDF-Spalten als Produktdaten.
 
