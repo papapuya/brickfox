@@ -15,6 +15,23 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-02: VK-Preisberechnung & EK-Preis aus PDF
+**Feature**: Korrektur der VK-Preisberechnung und Sicherstellung, dass EK-Preis immer aus PDF gelesen wird.
+
+**Problem**: VK-Berechnung in `brickfox-mapper.ts` verwendete `Math.round()` statt `Math.floor()` + 0.95.
+
+**Lösung**:
+- **VK-Berechnung korrigiert**: `VK = floor(EK × 2 × 1.19) + 0.95` (ANSMANN-Standard)
+- **EK-Preis Priorität**: PDF-EK-Preis überschreibt IMMER gescrapte Preise
+- **Konsistente Formel**: Alle Module verwenden jetzt die gleiche VK-Berechnungsformel
+
+**Betroffene Dateien**:
+- `server/services/brickfox-mapper.ts` - VK-Berechnung korrigiert
+- `server/scraper-service.ts` - VK-Berechnung bereits korrekt
+- `client/src/pages/url-scraper.tsx` - EK aus PDF + VK-Berechnung bereits korrekt
+
+**Beispiel**: EK 38,49€ → VK = floor(38,49 × 2 × 1.19) + 0.95 = floor(91,6062) + 0.95 = **91,95€**
+
 ### 2025-11-02: PDF Parser - Produkte MIT/OHNE URL Trennung
 **Feature**: Tab-basierte UI zur Trennung von Produkten mit scrapbaren URLs vs. Metadaten ohne URL.
 

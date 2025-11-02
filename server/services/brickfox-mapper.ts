@@ -31,12 +31,12 @@ export interface BrickfoxMapperOptions {
 
 /**
  * Calculate sales price from purchase price
- * Formula: (EK * 2) + 19% MwSt
+ * Formula: floor((EK * 2) * 1.19) + 0.95 (ANSMANN formula)
  */
 function calculateSalesPrice(purchasePrice: number): number {
   const margin = purchasePrice * 2;
   const withTax = margin * 1.19;
-  return Math.round(withTax * 100) / 100; // Round to 2 decimals
+  return Math.floor(withTax) + 0.95; // Floor + 0.95 (ANSMANN standard)
 }
 
 /**
