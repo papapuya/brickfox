@@ -27,6 +27,7 @@ interface ScrapedProduct {
   price?: string;
   description?: string;
   images: string[];
+  localImagePaths?: string[]; // Lokale Bildpfade
   weight?: string;
   category?: string;
   // ANSMANN technical specifications

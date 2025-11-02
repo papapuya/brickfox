@@ -826,6 +826,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Bilder herunterladen: Alle Produktbilder lokal speichern
+      if (product.images && product.images.length > 0 && product.articleNumber) {
+        console.log(`[Image Download] Starte Download von ${product.images.length} Bildern für ${product.articleNumber}...`);
+        
+        try {
+          const { downloadProductImages } = await import('./image-download-service');
+          const downloadedImages = await downloadProductImages(product.images, product.articleNumber);
+          
+          // Add local image paths to product data
+          (product as any).localImagePaths = downloadedImages.map(img => img.localPath);
+          (product as any).downloadedImages = downloadedImages;
+          
+          console.log(`[Image Download] ✅ ${downloadedImages.length} Bilder erfolgreich heruntergeladen`);
+        } catch (error) {
+          console.error('[Image Download] ❌ Fehler beim Herunterladen der Bilder:', error);
+          // Continue ohne lokale Bilder bei Fehler
+          (product as any).localImagePaths = [];
+        }
+      } else {
+        (product as any).localImagePaths = [];
+      }
+      
       // DEBUG: Log all product fields to see what's being returned
       console.log('📦 [BACKEND] Product fields being returned:', Object.keys(product));
       console.log('📦 [BACKEND] Nitecore fields:', {
