@@ -700,13 +700,13 @@ ERSTELLE IMMER DIESE EXAKTE STRUKTUR:
 <ul>
 <li>
 <h2>PRODUKTNAME</h2>
-<p>Detaillierte Produktbeschreibung (4-5 Sätze)<br /><br />
-✓USP 1 (produktspezifisch basierend auf technischen Specs, z.B. "Hohe Energiedichte - langanhaltende Leistung")<br />
-✓USP 2 (produktspezifisch, z.B. "Thermisch stabil - sicher bei hohen Temperaturen")<br />
-✓USP 3 (produktspezifisch, z.B. "Integrierte Schutzschaltung - maximale Sicherheit")<br />
+<p>✓USP 1 (produktspezifisch basierend auf technischen Specs, z.B. "Hohe Energiedichte")<br />
+✓USP 2 (produktspezifisch, z.B. "Thermisch stabil")<br />
+✓USP 3 (produktspezifisch, z.B. "Schutzschaltung integriert")<br />
 ✓Versandkostenfrei ab 39,95€ ✓Kundenservice <span style="color: green;">☎</span>071517071010</p>
 
-KRITISCH: Die ersten 3 Bulletpoints (✓) müssen PRODUKTSPEZIFISCHE USPs sein!
+KRITISCH: KEINE langen Produktbeschreibungen! Nur kurze USP-Bulletpoints!
+Die ersten 3 Bulletpoints (✓) müssen PRODUKTSPEZIFISCHE USPs sein (kurz und prägnant)!
 Die letzten 2 USPs sind IMMER zusammen in einer Zeile: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice <span style="color: green;">☎</span>071517071010"
 
 FORMATIERUNG:
@@ -1105,24 +1105,26 @@ Eingabeparameter:
 - product_description: ${productDescription}
 
 Ziel:
-Erstelle einen prägnanten Meta-Titel mit **EXAKT 50-55 Zeichen** im akkushop.de-Stil.
+Erstelle einen prägnanten Meta-Titel mit **EXAKT 45-55 Zeichen** im akkushop.de-Stil.
 
 Struktur:
-[MARKE] [SPANNUNG] [KAPAZITÄT] [AKKUTYP] kaufen | Akkushop
+Akkupack [KONFIGURATION] [KAPAZITÄT] kaufen | Akkushop
 
 Regeln:
-1. **KRITISCH: Zielbereich 50-55 Zeichen** (optimal: 438-480 Pixel)
-2. **Technische Daten:** Marke, Spannung (z. B. "3,6 V"), Kapazität (z. B. "7800 mAh"), Akkutyp (kurz: "Li-Ion")
-3. **ENDE mit "kaufen | Akkushop"** (Branding + Conversion-Keyword)
-4. **Keine Artikelnummern:** Vermeide "Art.-Nr.", "UN-Test", "Modell", "ANS...", "Ref."
-5. **Deutsche Sprache:** Ausschließlich Deutsch
-6. **Nur Titel ausgeben** – keine Erklärungen
+1. **KRITISCH: Zielbereich 45-55 Zeichen** (optimal: 380-480 Pixel)
+2. **Produkttyp:** "Akkupack" (nicht "Batterie" wenn Kapazität vorhanden)
+3. **Konfiguration:** Wenn verfügbar (z.B. "2s2p", "4s1p"), sonst Spannung
+4. **Kapazität:** Immer angeben (z.B. "5200mah")
+5. **ENDE mit "kaufen | Akkushop"** (Branding + Conversion-Keyword)
+6. **Keine Marke:** Fokus auf Produkttyp und Specs
+7. **Deutsche Sprache:** Ausschließlich Deutsch
+8. **Nur Titel ausgeben** – keine Erklärungen
 
-Beispiel (52 Zeichen):
+Beispiel (45 Zeichen):
 Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
+product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh 2s2p"
 Ausgabe:
-ANSMANN 14,4 V 2600 mAh Li-Ion kaufen | Akkushop
+Akkupack 2s2p 5200mah kaufen | Akkushop
 
 WICHTIG: Gib NUR den Text aus, OHNE Anführungszeichen am Anfang/Ende!`;
 
@@ -1137,23 +1139,25 @@ Ziel:
 Erstelle eine prägnante Meta-Description mit **EXAKT 120-140 Zeichen** im akkushop.de-Stil.
 
 Struktur:
-[QUALITÄTSMERKMAL] ✓[VORTEIL 1] ✓[VORTEIL 2] ✓[VORTEIL 3] ✓[SERVICE]
+Hochwertiger Akkupack [KONFIGURATION] [KAPAZITÄT] ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010
 
 Regeln:
 1. **KRITISCH: Zielbereich 120-140 Zeichen** (optimal: 750-880 Pixel)
-2. **Start:** Kurze Einleitung mit Qualitätsmerkmal (z. B. "Hochwertige ANSMANN Li-Ion Batterie")
-3. **Checkmark-Liste:** Verwende ✓ für jeden Vorteil (✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice)
-4. **USPs:** Qualität, Versand, Service, Garantie, Zertifizierung
-5. **Keine Artikelnummern:** Vermeide technische Kürzel
-6. **Deutsche Sprache:** Ausschließlich Deutsch
-7. **Kein Punkt am Ende** (akkushop.de-Stil)
-8. **Nur Text ausgeben** – keine Erklärungen
+2. **Start:** "Hochwertiger Akkupack" + Konfiguration (z.B. "2s2p") + Kapazität (z.B. "5200mah")
+3. **FESTE USPs (IMMER verwenden):**
+   - ✓Qualitätsprodukte
+   - ✓Versandkostenfrei ab 39,95€
+   - ✓Kundenservice ✆071517071010
+4. **Keine variablen USPs:** Nur die 3 festen Service-USPs
+5. **Deutsche Sprache:** Ausschließlich Deutsch
+6. **Kein Punkt am Ende** (akkushop.de-Stil)
+7. **Nur Text ausgeben** – keine Erklärungen
 
 Beispiel (127 Zeichen):
 Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
+product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh 2s2p"
 Ausgabe:
-Hochwertige ANSMANN Li-Ion Batterie ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✓Schnelle Lieferung
+Hochwertiger Akkupack 2s2p 5200mah ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010
 
 WICHTIG: Gib NUR den Text aus, OHNE Anführungszeichen am Anfang/Ende!`;
 
