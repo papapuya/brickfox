@@ -1008,7 +1008,6 @@ export default function URLScraper() {
       'seoKeywords',
       'description',
       'pdfManualUrl',
-      'safetyWarnings',
       'images'
     ];
 
@@ -1036,7 +1035,6 @@ export default function URLScraper() {
       seoKeywords: 'SEO_Keywords',
       description: 'AI_Produktbeschreibung_HTML',
       pdfManualUrl: 'PDF_Bedienungsanleitung_URL',
-      safetyWarnings: 'Sicherheitshinweise',
       images: 'Bild_URLs'
     };
 

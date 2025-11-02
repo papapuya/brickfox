@@ -42,6 +42,16 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: CSV-Export bereinigt (Sicherheitshinweise-Spalte entfernt)
+**Änderung**: Spalte "Sicherheitshinweise" wurde aus dem CSV-Export entfernt.
+
+**Implementierung**:
+- **CSV-Export**: Spalte "Sicherheitshinweise" entfernt aus `orderedKeys` und `headerMap`
+- **Bilder-Spalte**: Bleibt erhalten als "Bild_URLs" mit allen gescrapten Produktbildern (JPEGs, PNGs)
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - CSV-Export-Spalten angepasst
+
 ### 2025-11-02: MediaMarkt V1/V2 Formatierung korrigiert
 **Änderung**: MediaMarkt-Titel V1 und V2 folgen jetzt den korrekten Vorgaben.
 
