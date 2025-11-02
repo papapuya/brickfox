@@ -38,3 +38,28 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 - **Supabase**: Provides PostgreSQL database, UUID primary keys, organization-based multi-tenancy, and authentication.
 - **Stripe**: Integrated for subscription management and payment processing.
 - **Pixi ERP API**: External integration for product inventory comparison and duplicate detection.
+- **Greyhound SMTP**: E-Mail-Versand für automatisierte Lieferanten-Anfragen (via nodemailer).
+
+## Recent Changes
+
+### 2025-11-02: E-Mail-Integration für Lieferanten-Anfragen (Greyhound SMTP)
+**Feature**: Automatischer E-Mail-Versand für Produkte ohne URLs mit editierbarer Vorlage.
+
+**Implementierung**:
+- **SMTP-Integration**: Greyhound SMTP-Server via nodemailer (Zugangsdaten in Replit Secrets: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM)
+- **E-Mail-Service**: `server/services/email-service.ts` für strukturierte E-Mail-Versendung
+- **API-Endpoint**: `/api/email/request-urls` für E-Mail-Versand mit EAN-Codes
+- **Frontend-Dialog**: Editierbare E-Mail-Vorlage mit Empfänger, Betreff, Nachricht und automatischem Anhängen der EAN-Codes
+- **Button "URLs anfragen"**: Im Tab "Ohne URL" - öffnet Dialog, sendet E-Mail über Greyhound SMTP
+
+**Workflow**:
+1. PDF hochladen → Produkte OHNE URL werden im Tab "Ohne URL" angezeigt
+2. Button "URLs anfragen" klicken → Dialog öffnet sich
+3. E-Mail-Vorlage editieren (Empfänger, Betreff, Nachricht anpassen)
+4. E-Mail wird mit allen EAN-Codes aus Tab "Ohne URL" versendet
+5. Lieferant erhält strukturierte Anfrage mit EAN-Liste
+
+**Betroffene Dateien**:
+- `server/services/email-service.ts` - SMTP-Service
+- `server/routes-supabase.ts` - API-Endpoint
+- `client/src/pages/pdf-auto-scraper.tsx` - Dialog-Integration
