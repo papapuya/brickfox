@@ -29,7 +29,12 @@ import {
   Search,
   Crown,
   Settings,
-  Trash2,
+  Package,
+  CheckCircle2,
+  Truck,
+  RefreshCcw,
+  Bot,
+  AlertCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +70,21 @@ interface TenantsData {
   tenants: Tenant[];
 }
 
+interface KPIsData {
+  success: boolean;
+  kpis: {
+    totalProducts: number;
+    completenessPercentage: number;
+    suppliers: {
+      active: number;
+      successful: number;
+      error: number;
+    };
+    lastPixiSync: string;
+    aiTextsToday: number;
+  };
+}
+
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -88,6 +108,20 @@ export default function AdminDashboard() {
         }
         throw new Error('Failed to load tenants');
       }
+      return res.json();
+    },
+  });
+
+  const { data: kpisData } = useQuery<KPIsData>({
+    queryKey: ['admin-kpis'],
+    queryFn: async () => {
+      const token = localStorage.getItem('supabase_token');
+      const res = await fetch('/api/admin/kpis', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to load KPIs');
       return res.json();
     },
   });
@@ -117,6 +151,7 @@ export default function AdminDashboard() {
       setIsCreateDialogOpen(false);
       setNewTenantName('');
       queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-kpis'] });
     },
     onError: (error: Error) => {
       toast({
@@ -163,7 +198,6 @@ export default function AdminDashboard() {
   });
 
   const handleOpenSettings = (tenant: Tenant) => {
-    // Defensive defaults for legacy tenants without full settings
     const defaultSettings: TenantSettings = {
       features: {
         pixiIntegration: false,
@@ -221,11 +255,8 @@ export default function AdminDashboard() {
       t.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Calculate overall stats
-  const totalTenants = tenants.length;
-  const totalUsers = tenants.reduce((sum, t) => sum + t.userCount, 0);
-  const totalProjects = tenants.reduce((sum, t) => sum + t.projectCount, 0);
-  const totalSuppliers = tenants.reduce((sum, t) => sum + t.supplierCount, 0);
+  const kpis = kpisData?.kpis;
+  const lastPixiSync = kpis?.lastPixiSync ? new Date(kpis.lastPixiSync) : null;
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
@@ -235,10 +266,10 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2 mb-2">
             <Crown className="h-8 w-8 text-amber-500" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              Kundenverwaltung
+              Admin Dashboard
             </h1>
           </div>
-          <p className="text-gray-600">Verwalten Sie alle Mandanten (Tenants) Ihrer SaaS-Plattform</p>
+          <p className="text-gray-600">Systemübersicht und Kundenverwaltung</p>
         </div>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -296,49 +327,79 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="border-indigo-100 hover:shadow-lg transition-shadow">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <Card className="border-blue-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Gesamt-Kunden</CardTitle>
-                <Building2 className="h-4 w-4 text-indigo-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Produkte im System</CardTitle>
+                <Package className="h-5 w-5 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-indigo-600">{totalTenants}</div>
-                <p className="text-xs text-gray-500 mt-1">Mandanten (Tenants)</p>
+                <div className="text-3xl font-bold text-blue-600">
+                  {kpis?.totalProducts?.toLocaleString('de-DE') || 0}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Gesamt-Produkte</p>
               </CardContent>
             </Card>
 
             <Card className="border-green-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Gesamt-User</CardTitle>
-                <Users className="h-4 w-4 text-green-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Daten vollständig</CardTitle>
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">{totalUsers}</div>
-                <p className="text-xs text-gray-500 mt-1">Über alle Kunden</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-violet-100 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Projekte (Gesamt)</CardTitle>
-                <TrendingUp className="h-4 w-4 text-violet-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-violet-600">{totalProjects}</div>
-                <p className="text-xs text-gray-500 mt-1">Über alle Kunden</p>
+                <div className="text-3xl font-bold text-green-600">
+                  {kpis?.completenessPercentage || 0}%
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Qualitätsscore</p>
               </CardContent>
             </Card>
 
             <Card className="border-amber-100 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Lieferanten (Gesamt)</CardTitle>
-                <Settings className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-sm font-medium text-gray-600">Lieferanten aktiv</CardTitle>
+                <Truck className="h-5 w-5 text-amber-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-amber-600">{totalSuppliers}</div>
-                <p className="text-xs text-gray-500 mt-1">Über alle Kunden</p>
+                <div className="text-3xl font-bold text-amber-600">{kpis?.suppliers.active || 0}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    {kpis?.suppliers.successful || 0} OK
+                  </span>
+                  {(kpis?.suppliers.error || 0) > 0 && (
+                    <span className="text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {kpis?.suppliers.error} Fehler
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-purple-100 hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">Letzter Pixi-Sync</CardTitle>
+                <RefreshCcw className="h-5 w-5 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-lg font-bold text-purple-600">
+                  {lastPixiSync ? lastPixiSync.toLocaleDateString('de-DE') : '—'}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {lastPixiSync ? lastPixiSync.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr' : 'Noch kein Sync'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-indigo-100 hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">KI-Texte heute</CardTitle>
+                <Bot className="h-5 w-5 text-indigo-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-indigo-600">{kpis?.aiTextsToday || 0}</div>
+                <p className="text-xs text-gray-500 mt-1">Generiert</p>
               </CardContent>
             </Card>
           </div>

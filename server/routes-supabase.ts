@@ -4,6 +4,13 @@ import { supabase, supabaseAdmin } from './supabase';
 import { supabaseStorage } from './supabase-storage';
 import { createAdminUser, getSupabaseUser } from './supabase-auth';
 import { registerUserSchema, loginUserSchema } from '@shared/schema';
+import { db as heliumDb } from './db';
+import { sql, eq, and, isNotNull } from 'drizzle-orm';
+import { 
+  productsInProjects as productsInProjectsTable, 
+  suppliers as suppliersTable,
+  scrapeSession as scrapeSessionTable 
+} from '@shared/schema';
 import Stripe from 'stripe';
 import { 
   createCheckoutSession, 
@@ -584,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id} = req.params;
       const success = await supabaseStorage.deleteTenant(id);
       
       if (!success) {
@@ -595,6 +602,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Delete tenant error:', error);
       res.status(500).json({ error: error.message || 'Fehler beim Löschen des Tenants' });
+    }
+  });
+
+  // Admin KPIs Dashboard Endpoint
+  app.get('/api/admin/kpis', requireAdmin, async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string | undefined;
+      
+      // Get total products (mandantenübergreifend or filtered)
+      const productsQuery = heliumDb
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productsInProjectsTable);
+      
+      if (tenantId) {
+        productsQuery.where(eq(productsInProjectsTable.tenantId, tenantId));
+      }
+      
+      const [{ count: totalProducts }] = await productsQuery;
+      
+      // Get data completeness (Produkte mit allen Pflichtfeldern)
+      const completeProductsQuery = heliumDb
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productsInProjectsTable)
+        .where(
+          and(
+            isNotNull(productsInProjectsTable.name),
+            isNotNull(productsInProjectsTable.articleNumber),
+            isNotNull(productsInProjectsTable.extractedData),
+            tenantId ? eq(productsInProjectsTable.tenantId, tenantId) : undefined
+          )
+        );
+      
+      const [{ count: completeProducts }] = await completeProductsQuery;
+      const completenessPercentage = totalProducts > 0 
+        ? Math.round((completeProducts / totalProducts) * 100) 
+        : 0;
+      
+      // Get supplier stats
+      const suppliersQuery = heliumDb
+        .select({
+          id: suppliersTable.id,
+          name: suppliersTable.name,
+          lastVerifiedAt: suppliersTable.lastVerifiedAt,
+        })
+        .from(suppliersTable);
+      
+      if (tenantId) {
+        suppliersQuery.where(eq(suppliersTable.tenantId, tenantId));
+      }
+      
+      const suppliers = await suppliersQuery;
+      const activeSuppliers = suppliers.length;
+      const successfulSuppliers = suppliers.filter(s => s.lastVerifiedAt).length;
+      const errorSuppliers = activeSuppliers - successfulSuppliers;
+      
+      // Get last Pixi sync (mock for now - you can implement real sync tracking later)
+      const lastPixiSync = new Date(); // TODO: Implement real Pixi sync tracking
+      
+      // Get AI texts generated today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const aiTextsQuery = heliumDb
+        .select({ count: sql<number>`count(*)::int` })
+        .from(scrapeSessionTable)
+        .where(
+          and(
+            isNotNull(scrapeSessionTable.generatedDescription),
+            sql`${scrapeSessionTable.createdAt} >= ${today}`,
+            tenantId ? eq(scrapeSessionTable.tenantId, tenantId) : undefined
+          )
+        );
+      
+      const [{ count: aiTextsToday }] = await aiTextsQuery;
+      
+      res.json({
+        success: true,
+        kpis: {
+          totalProducts,
+          completenessPercentage,
+          suppliers: {
+            active: activeSuppliers,
+            successful: successfulSuppliers,
+            error: errorSuppliers,
+          },
+          lastPixiSync: lastPixiSync.toISOString(),
+          aiTextsToday,
+        },
+      });
+    } catch (error: any) {
+      console.error('Admin KPIs error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Laden der KPIs' });
     }
   });
 
