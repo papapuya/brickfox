@@ -40,9 +40,30 @@ interface ScrapedProduct {
   zellenchemie?: string;
   energie?: string;
   farbe?: string;
+  // Nitecore technical specifications
+  length?: string;
+  bodyDiameter?: string;
+  headDiameter?: string;
+  weightWithoutBattery?: string;
+  totalWeight?: string;
+  powerSupply?: string;
+  led1?: string;
+  led2?: string;
+  spotIntensity?: string;
+  maxLuminosity?: string;
+  maxBeamDistance?: string;
+  manufacturerArticleNumber?: string;
   // Pricing
   ekPrice?: string;
   vkPrice?: string;
+  // Auto-extracted data
+  autoExtractedDescription?: string;
+  technicalDataTable?: string;
+  pdfManualUrl?: string;
+  safetyWarnings?: string;
+  rawHtml?: string;
+  // Special
+  [key: string]: any; // Allow dynamic fields
 }
 
 interface GeneratedContent {
