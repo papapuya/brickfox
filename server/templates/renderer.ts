@@ -138,9 +138,12 @@ ${data.technicalDataTable}
 `
     : data.technicalSpecs.length > 0
     ? `<h4>Technische Daten:</h4>
-<table border="0" summary="">
+<table border="0" summary="" style="border-collapse: collapse; width: 100%; max-width: 600px;">
 <tbody>
-${data.technicalSpecs.map(spec => `<tr><td>${spec.label}:</td><td>${spec.value}</td></tr>`).join('\n')}
+${data.technicalSpecs.map(spec => `<tr>
+  <td style="padding: 4px 12px 4px 0; text-align: right; vertical-align: top; font-weight: 600; white-space: nowrap;">${spec.label}:</td>
+  <td style="padding: 4px 0 4px 8px; text-align: left; vertical-align: top;">${spec.value}</td>
+</tr>`).join('\n')}
 </tbody>
 </table>
 
