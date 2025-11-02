@@ -150,6 +150,7 @@ export default function URLScraper() {
     { key: 'description', label: 'AI_Produktbeschreibung_HTML', enabled: true },
     { key: 'pdfManualUrl', label: 'PDF_Bedienungsanleitung_URL', enabled: false },
     { key: 'images', label: 'Bild_URLs', enabled: true },
+    { key: 'localImagePaths', label: 'Lokale_Bildpfade', enabled: true },
   ]);
   
   // SEO Title Preview Dialog
@@ -1144,6 +1145,10 @@ export default function URLScraper() {
         const value = product[key as keyof ScrapedProduct];
         
         if (key === 'images' && Array.isArray(value)) {
+          return value.join(' | ');
+        }
+        
+        if (key === 'localImagePaths' && Array.isArray(value)) {
           return value.join(' | ');
         }
         
