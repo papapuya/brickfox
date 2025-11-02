@@ -826,6 +826,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // DEBUG: Log all product fields to see what's being returned
+      console.log('📦 [BACKEND] Product fields being returned:', Object.keys(product));
+      console.log('📦 [BACKEND] Nitecore fields:', {
+        length: product.length,
+        bodyDiameter: product.bodyDiameter,
+        led1: product.led1,
+        led2: product.led2,
+        maxLuminosity: product.maxLuminosity,
+        spotIntensity: product.spotIntensity
+      });
+      
       await trackApiUsage(req, res, () => {});
       res.json({ product });
     } catch (error: any) {
