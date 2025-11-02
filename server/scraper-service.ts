@@ -735,6 +735,8 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string, url: str
   // STRATEGY: Extract the entire tab pane content, not just a single table
   const technicalDataPaneSelectors = [
     '#technical-data-516d15ca626445a38719925615405a64-pane', // Nitecore specific tab pane (FULL CONTENT)
+    '#additional', // ANSMANN: Magento "Zusatzinformation" tab containing technical data table
+    '.additional-attributes-wrapper', // ANSMANN: Wrapper for technical attributes
     '[id$="-pane"][id*="technical"]', // Match IDs ending with -pane (NOT tab buttons)
     '.tab-pane[id*="technical"]', // Tab pane with class
     '.tab-pane[id*="technische-daten"]', // German technical data pane
@@ -765,6 +767,8 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string, url: str
       'table.product-detail-properties-table',
       'table.table-striped',
       'table[border="0"]',
+      'table.data.table.additional-attributes', // ANSMANN: Technical data table class
+      '.additional-attributes', // ANSMANN: Additional attributes wrapper
     ];
 
     for (const selector of tableSelectors) {
@@ -790,11 +794,19 @@ function autoExtractProductDetails($: cheerio.CheerioAPI, html: string, url: str
       const tableHtml = $(el).html() || '';
       const tableText = $(el).text().toLowerCase();
       
-      // Check for technical keywords in German
-      const technicalKeywords = ['länge', 'gewicht', 'durchmesser', 'stromversorgung', 'leuchtmittel', 'lumen', 'leuchtweite'];
+      // Check for technical keywords in German (including ANSMANN-specific fields)
+      const technicalKeywords = [
+        'länge', 'gewicht', 'durchmesser', 'stromversorgung', 'leuchtmittel', 'lumen', 'leuchtweite',
+        'nominal-spannung', 'nominal-kapazität', 'entladestrom', 'zellenchemie', 'energie', 'breite', 'höhe',
+        'spannung', 'kapazität', 'farbe', 'produktgewicht', 'ean-code', 'artikelnummer'
+      ];
       const matchCount = technicalKeywords.filter(keyword => tableText.includes(keyword)).length;
       
-      if (matchCount >= 3) { // At least 3 technical keywords found
+      // ANSMANN tables typically have ≥5 rows with attribute-value pairs
+      const rowCount = $(el).find('tr').length;
+      const hasAttributeValueStructure = tableText.includes('ean-code') || tableText.includes('artikelnummer');
+      
+      if (matchCount >= 2 || (rowCount >= 5 && hasAttributeValueStructure)) { // Lowered threshold for ANSMANN
         result.technicalDataTable = $(el).toString();
         console.log(`Auto-extracted technical data table by keyword matching (${matchCount} keywords)`);
         return false; // Break loop
