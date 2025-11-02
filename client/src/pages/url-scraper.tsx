@@ -1130,6 +1130,12 @@ export default function URLScraper() {
     try {
       if (selectedProjectId === "new") {
         // Create new project with single product
+        // MediaMarkt V1: Produkt + Modell (Produktname)
+        const mmV1 = scrapedProduct.productName;
+        
+        // MediaMarkt V2: Nur Modellcodes (ohne ANS- Präfix)
+        const mmV2 = (scrapedProduct.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
+
         await apiPost('/api/bulk-save-to-project', {
           projectName: projectName.trim(),
           products: [{
@@ -1141,7 +1147,8 @@ export default function URLScraper() {
             preis: scrapedProduct.price || '',
             gewicht: scrapedProduct.weight || '',
             kategorie: scrapedProduct.category || '',
-            mediamarktname_v1: scrapedProduct.productName,
+            mediamarktname_v1: mmV1,
+            mediamarktname_v2: mmV2,
             seo_beschreibung: scrapedProduct.description?.substring(0, 200) || '',
             source_url: url,
           }],
@@ -1255,12 +1262,19 @@ export default function URLScraper() {
           }
         });
         
+        // MediaMarkt V1: Produkt + Modell (Produktname)
+        const mmV1 = product.productName;
+        
+        // MediaMarkt V2: Nur Modellcodes (ohne ANS- Präfix)
+        const mmV2 = (product.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
+        
         return {
           produktname: product.productName,
           artikelnummer: product.articleNumber || '',
           produktbeschreibung: generatedContent?.description || '',
           extractedData: extractedDataArray, // ALL scraped fields as array
-          mediamarktname_v1: product.productName,
+          mediamarktname_v1: mmV1,
+          mediamarktname_v2: mmV2,
           seo_beschreibung: generatedContent?.seoDescription || product.description?.substring(0, 200) || '',
           source_url: url,
         };
@@ -2290,44 +2304,6 @@ export default function URLScraper() {
                 <p className="text-lg font-semibold leading-relaxed" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                   {seoTitlePreviewContent}
                 </p>
-                
-                {/* SEO Quality Indicator */}
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">Zeichenanzahl: {seoTitlePreviewContent.length} / 70</span>
-                    <span className={`font-semibold ${
-                      seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? 'text-green-600' :
-                      seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
-                      {seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? '✓ Optimal' :
-                       seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? '⚠ Etwas zu lang' :
-                       seoTitlePreviewContent.length > 75 ? '✗ Zu lang' : '✗ Zu kurz'}
-                    </span>
-                  </div>
-                  
-                  {/* Visual Progress Bar */}
-                  <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all ${
-                        seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? 'bg-green-500' :
-                        seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ width: `${Math.min((seoTitlePreviewContent.length / 70) * 100, 100)}%` }}
-                    />
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    {seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? 
-                      '✓ Perfekte Länge für Google-Suchergebnisse' :
-                     seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 
-                      'Könnte in Suchergebnissen abgeschnitten werden' :
-                     seoTitlePreviewContent.length > 75 ? 
-                      'Wird wahrscheinlich in Suchergebnissen gekürzt' :
-                      'Zu kurz - nutzen Sie mehr relevante Keywords'}
-                  </p>
-                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button 
@@ -2359,49 +2335,6 @@ export default function URLScraper() {
             <div className="space-y-4">
               <div className="p-6 bg-muted/50 border rounded-lg">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{seoPreviewContent}</p>
-                
-                {/* SEO Quality Indicator */}
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">Zeichenanzahl: {seoPreviewContent.length} / 160</span>
-                    <span className={`font-semibold ${
-                      seoPreviewContent.length >= 100 && seoPreviewContent.length <= 160 ? 'text-green-600' :
-                      seoPreviewContent.length >= 80 && seoPreviewContent.length < 100 ? 'text-yellow-600' :
-                      seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
-                      {seoPreviewContent.length >= 100 && seoPreviewContent.length <= 160 ? '✓ Optimal' :
-                       seoPreviewContent.length >= 80 && seoPreviewContent.length < 100 ? '✓ Akzeptabel' :
-                       seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? '⚠ Etwas zu lang' :
-                       seoPreviewContent.length > 175 ? '✗ Zu lang' : '✗ Zu kurz'}
-                    </span>
-                  </div>
-                  
-                  {/* Visual Progress Bar */}
-                  <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all ${
-                        seoPreviewContent.length >= 100 && seoPreviewContent.length <= 160 ? 'bg-green-500' :
-                        seoPreviewContent.length >= 80 && seoPreviewContent.length < 100 ? 'bg-yellow-500' :
-                        seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ width: `${Math.min((seoPreviewContent.length / 160) * 100, 100)}%` }}
-                    />
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    {seoPreviewContent.length >= 100 && seoPreviewContent.length <= 160 ? 
-                      '✓ Perfekte Länge für Google Meta-Description (wird vollständig angezeigt)' :
-                     seoPreviewContent.length >= 80 && seoPreviewContent.length < 100 ? 
-                      '✓ Akzeptabel - noch gut lesbar' :
-                     seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 
-                      'Könnte in Suchergebnissen leicht gekürzt werden' :
-                     seoPreviewContent.length > 175 ? 
-                      'Wird wahrscheinlich in Suchergebnissen abgeschnitten' :
-                      'Zu kurz - fügen Sie mehr Produktinformationen hinzu'}
-                  </p>
-                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button 

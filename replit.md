@@ -42,6 +42,17 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: SERP-Snippet-Anzeige entfernt
+**Änderung**: Progress-Balken und Status-Indikatoren bei SEO-Dialogen entfernt für sauberere Darstellung.
+
+**Implementierung**:
+- **SEO Produkttitel**: Zeichenanzahl-Balken, Status-Text ("✗ Zu kurz"), und Farbcodes entfernt
+- **SEO Produktbeschreibung**: Zeichenanzahl-Balken, Status-Text, und Farbcodes entfernt
+- **Nur noch Text**: Dialoge zeigen jetzt nur noch den reinen SEO-Text ohne visuelle Qualitätsindikatoren
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - SEO Quality Indicators entfernt
+
 ### 2025-11-02: CSV-Export bereinigt (Sicherheitshinweise-Spalte entfernt)
 **Änderung**: Spalte "Sicherheitshinweise" wurde aus dem CSV-Export entfernt.
 
