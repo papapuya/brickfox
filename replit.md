@@ -45,6 +45,31 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 
 ## Recent Changes
 
+### 2025-11-02: Multi-Tenant-Registrierung mit robuster Slug-Generierung 🏢
+**Feature**: Standard B2B SaaS Registrierungsflow - jede Firma erstellt automatisch ihren eigenen Tenant bei Registrierung.
+
+**Implementierung**:
+- **Frontend**: Firmenname-Feld zur Registrierung hinzugefügt (`companyName` required)
+- **Backend**: Automatische Tenant-Erstellung bei Registrierung mit eindeutigem Slug
+- **Slug-Generierung**: Robuste Konvertierung deutscher Umlaute (ä→ae, ö→oe, ü→ue, ß→ss)
+- **Kollisionserkennung**: Automatisches Suffix bei doppelten Slugs (z.B. "mueller-gmbh" → "mueller-gmbh-2")
+- **Fallback**: Leere Slugs fallen zurück auf "company"
+- **Webhook**: Dynamische Tenant-Zuweisung aus `user_metadata.tenant_id` (statt hardcodiert AkkuShop)
+- **Admin-Logik**: Erster User eines neuen Tenants wird automatisch Admin (`isAdmin=true, role=admin`)
+- **Backward Compatibility**: Legacy-Users ohne `tenant_id` fallen zurück auf AkkuShop-Tenant
+
+**Test-Ergebnisse**:
+- ✅ "Bäcker & Köche GmbH" → slug: "baecker-koeche-gmbh"
+- ✅ "Müller GmbH" → slug: "mueller-gmbh"
+- ✅ "Müller GmbH" (Duplikat) → slug: "mueller-gmbh-2"
+
+**Betroffene Dateien**:
+- `client/src/pages/register.tsx` - Firmenname-Feld
+- `shared/schema.ts` - RegisterUserSchema erweitert
+- `server/routes-supabase.ts` - Tenant-Erstellung mit robuster Slug-Generierung
+- `server/webhooks-supabase.ts` - Dynamische tenant_id aus user_metadata
+- `server/supabase-storage.ts` - `getTenantBySlug()` Methode hinzugefügt
+
 ### 2025-11-02: PDF-Parser EK-Spalten-Fix + VK-Berechnung korrigiert 💰
 **Bugfix**: PDF-Parser liest jetzt die korrekte "Netto EK"-Spalte aus und berechnet VK korrekt.
 

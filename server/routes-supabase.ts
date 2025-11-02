@@ -205,11 +205,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate slug with proper German umlaut handling
       let tenantSlug = validatedData.companyName
         .toLowerCase()
-        .normalize('NFD') // Decompose combined characters
         .replace(/ä/g, 'ae')
         .replace(/ö/g, 'oe')
         .replace(/ü/g, 'ue')
         .replace(/ß/g, 'ss')
+        .normalize('NFD') // Decompose remaining combined characters
+        .replace(/[\u0300-\u036f]/g, '') // Remove combining diacritical marks
         .replace(/[^a-z0-9]+/g, '-') // Replace special chars with dashes
         .replace(/^-+|-+$/g, '') // Remove leading/trailing dashes
         .replace(/--+/g, '-'); // Collapse multiple dashes
