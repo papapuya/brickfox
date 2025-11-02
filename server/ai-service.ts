@@ -1089,25 +1089,26 @@ export async function generateSEOMetadata(
   const titlePrompt = `Du bist ein professioneller SEO-Experte für Produktdaten.
 
 Ziel:
-Erstelle einen suchmaschinenoptimierten SEO-Titel (max. 65 Zeichen) für ein Produkt aus dem Bereich Akkus, Batterien oder Elektronik.
+Erstelle einen suchmaschinenoptimierten SEO-Titel (max. 70 Zeichen) für ein Produkt aus dem Bereich Akkus, Batterien oder Elektronik.
 
 Eingabeparameter:
 - product_title: ${productTitle}
 - product_description: ${productDescription}
 
 Regeln:
-1. Verwende keine Artikelnummern, Seriennummern oder Testhinweise (z. B. "UN-Transporttest", "Art.-Nr.", "Modell", "Ref.", "ANS...").
-2. Betone Marke, Spannung, Kapazität und Akkutyp (z. B. "7,2 V", "5200 mAh", "Lithium-Ionen").
-3. Füge – falls sinnvoll – das Wort **„Akku" oder „Akkupack"** ein.
-4. Optional darf ein **Kauf-Intent-Wort** enthalten sein (z. B. „jetzt kaufen", „online kaufen", „ersatzakku").
-5. Verwende maximal 65 Zeichen.
-6. Antworte **nur** mit dem SEO-Titel, kein Zusatztext.
+1. **Struktur:** [MARKE] [SPANNUNG] [KAPAZITÄT] [AKKUTYP] – [KAUFRELEVANTER ZUSATZ]
+2. Verwende keine Artikelnummern, Seriennummern oder Testhinweise (z. B. "UN-Transporttest", "Art.-Nr.", "Modell", "Ref.", "ANS...").
+3. **Technische Daten vorne:** Betone Marke, Spannung, Kapazität und Akkutyp (z. B. "14,4 V", "2600 mAh", "Lithium-Ionen").
+4. **Kaufrelevanter Zusatz:** Füge nach dem Gedankenstrich (–) einen vertrauenswürdigen, wertigen Zusatz hinzu (z. B. "hohe Energie, sichere Leistung", "langlebig und zuverlässig", "hochwertige Qualität").
+5. **Keyword-Dichte:** Stelle sicher, dass alle relevanten Begriffe enthalten sind (Marke, Spannung, Kapazität, Akkutyp, Produktart).
+6. Verwende maximal 70 Zeichen (optimal für Google-Snippets).
+7. Antworte **nur** mit dem SEO-Titel, kein Zusatztext.
 
 Beispiel:
 Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh | UN-Transporttest | ANS2447304960"
+product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh | UN-Transporttest | ANS2447305040"
 Ausgabe:
-"ANSMANN 7,2 V 5200 mAh Li-Ion Akkupack – hochwertiger Ersatzakku"`;
+"ANSMANN 14,4 V 2600 mAh Lithium-Ionen Akkupack – hohe Energie, sichere Leistung"`;
 
   // SEO Description Prompt
   const descriptionPrompt = `Du bist ein professioneller SEO- und Produkttext-Experte für Akkus und Elektronikprodukte. 
@@ -1119,23 +1120,28 @@ Eingabeparameter:
 
 Ziel:
 Erstelle eine ansprechende, keyword-optimierte Produktbeschreibung mit **MAXIMAL 450 Zeichen** (≈ 1000 px Breite). 
-Die Beschreibung soll natürlich klingen, Vertrauen schaffen und die wichtigsten technischen Merkmale betonen.
+Die Beschreibung soll eine perfekte Balance zwischen technischen Details und emotionalen Kaufargumenten schaffen.
+
+Struktur (3 Sätze):
+1. **Einleitung:** Marke + Technische Daten + Hauptnutzen (z. B. "zuverlässige Energiequelle", "vielfältige Anwendungen")
+2. **Technische Details:** Konkrete Specs und Vorteile (z. B. "18650-Zellen", "hohe Energiedichte", "geringe Selbstentladung", "lange Lebensdauer")
+3. **Sicherheit/Qualität:** Schutzfunktionen und Vertrauen (z. B. "integrierte Schutzschaltung", "sicher vor Überladung und Kurzschluss")
 
 Regeln:
-1. Verwende die wichtigsten Keywords aus Titel und Beschreibung (z. B. Spannung, Kapazität, Akkutyp, Marke).
-2. Verzichte auf technische Kürzel, Artikelnummern oder interne Angaben (z. B. „UN-Transporttest", „Art.-Nr.", „Modell", „Ref.").
-3. Schreibe in ganzen, flüssigen Sätzen mit aktivem Sprachstil.
-4. Betone Qualität, Leistung, Sicherheit oder Einsatzbereiche.
+1. **Keyword-Optimierung:** Verwende die wichtigsten Keywords (Marke, Spannung, Kapazität, Akkutyp, Zellentyp wie "18650").
+2. **Technische + emotionale Balance:** Kombiniere harte Fakten mit Vertrauens- und Qualitätsaspekten.
+3. Verzichte auf technische Kürzel, Artikelnummern oder interne Angaben (z. B. „UN-Transporttest", „Art.-Nr.", „Modell", „Ref.").
+4. Schreibe in ganzen, flüssigen Sätzen mit aktivem Sprachstil.
 5. Verwende ausschließlich deutsche Sprache.
 6. **KRITISCH: Halte dich STRIKT an maximal 450 Zeichen. Schließe den Text mit einem vollständigen Satz ab, KEIN "..." am Ende.**
 7. Gib nur den finalen Beschreibungstext aus – **keine Erklärungen oder JSON-Struktur**.
 
-Beispiel (245 Zeichen):
+Beispiel (281 Zeichen):
 Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh"
+product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
 product_description: "Ideal für Anwendungen mit Li 18650-Zellen und UN 38.3 zertifiziert."
 Ausgabe:
-"Das ANSMANN Li-Ion Akkupack 7,2 V / 5200 mAh liefert starke und konstante Energie für anspruchsvolle Anwendungen. Die hochwertigen 18650-Zellen sorgen für lange Laufzeiten und höchste Sicherheit dank UN 38.3 Zertifizierung."`;
+"Das ANSMANN Lithium-Ionen Akkupack mit 14,4 V und 2600 mAh bietet eine zuverlässige Energiequelle für vielfältige Anwendungen. Die hochwertigen 18650-Zellen sorgen für hohe Energiedichte, geringe Selbstentladung und lange Lebensdauer. Dank integrierter Schutzschaltung ist das Akkupack sicher vor Überladung und Kurzschluss."`;
 
   try {
     // Generate SEO Title
@@ -1186,7 +1192,7 @@ Ausgabe:
     }
     
     return {
-      seoTitle: seoTitle.length > 65 ? seoTitle.substring(0, 62) + '...' : seoTitle,
+      seoTitle: seoTitle.length > 70 ? seoTitle.substring(0, 67) + '...' : seoTitle,
       seoDescription
     };
     
