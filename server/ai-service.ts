@@ -1110,7 +1110,9 @@ Beispiel (52 Zeichen):
 Eingabe:
 product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
 Ausgabe:
-"ANSMANN 14,4 V 2600 mAh Li-Ion kaufen | Akkushop"`;
+ANSMANN 14,4 V 2600 mAh Li-Ion kaufen | Akkushop
+
+WICHTIG: Gib NUR den Text aus, OHNE Anführungszeichen am Anfang/Ende!`;
 
   // SEO Description Prompt (akkushop.de Format)
   const descriptionPrompt = `Du bist ein professioneller SEO-Experte für Akkushop-Produktbeschreibungen.
@@ -1139,7 +1141,9 @@ Beispiel (127 Zeichen):
 Eingabe:
 product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
 Ausgabe:
-"Hochwertige ANSMANN Li-Ion Batterie ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✓Schnelle Lieferung"`;
+Hochwertige ANSMANN Li-Ion Batterie ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✓Schnelle Lieferung
+
+WICHTIG: Gib NUR den Text aus, OHNE Anführungszeichen am Anfang/Ende!`;
 
   try {
     // Generate SEO Title
@@ -1180,6 +1184,9 @@ Ausgabe:
     });
 
     let seoDescription = descriptionResponse.choices[0]?.message?.content?.trim() || description?.substring(0, 150) || '';
+    
+    // Remove surrounding quotes if AI added them
+    seoDescription = seoDescription.replace(/^["']|["']$/g, '').trim();
     
     // Remove trailing "..." if AI added it (we want complete sentences)
     seoDescription = seoDescription.replace(/\.\.\.+$/, '').trim();
