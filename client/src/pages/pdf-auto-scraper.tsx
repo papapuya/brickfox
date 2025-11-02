@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, Loader2, ExternalLink, ArrowRight } from 'lucide-react';
+import { Upload, FileText, Loader2, ExternalLink, ArrowRight, Mail } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 interface PDFProduct {
@@ -25,7 +27,9 @@ interface PDFProduct {
 interface PDFPreviewResult {
   success: boolean;
   totalProducts: number;
-  products: PDFProduct[];
+  products: PDFProduct[]; // Legacy: products with URL
+  withURL: PDFProduct[];
+  withoutURL: PDFProduct[];
 }
 
 export default function PDFAutoScraper() {
@@ -33,7 +37,9 @@ export default function PDFAutoScraper() {
   const [, setLocation] = useLocation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extractedProducts, setExtractedProducts] = useState<PDFProduct[]>([]);
+  const [productsWithoutURL, setProductsWithoutURL] = useState<PDFProduct[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
+  const [activeTab, setActiveTab] = useState<'withURL' | 'withoutURL'>('withURL');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,6 +48,7 @@ export default function PDFAutoScraper() {
   // Load extracted products from sessionStorage on mount (when returning from URL-Scraper)
   useEffect(() => {
     const savedProducts = sessionStorage.getItem('pdf_auto_scraper_extracted_products');
+    const savedProductsWithoutURL = sessionStorage.getItem('pdf_auto_scraper_products_without_url');
     const savedSupplierId = sessionStorage.getItem('pdf_auto_scraper_selected_supplier');
     
     if (savedProducts) {
@@ -50,6 +57,15 @@ export default function PDFAutoScraper() {
         setExtractedProducts(products);
       } catch (error) {
         console.error('Failed to parse saved products:', error);
+      }
+    }
+    
+    if (savedProductsWithoutURL) {
+      try {
+        const products = JSON.parse(savedProductsWithoutURL);
+        setProductsWithoutURL(products);
+      } catch (error) {
+        console.error('Failed to parse saved products without URL:', error);
       }
     }
     
@@ -96,15 +112,24 @@ export default function PDFAutoScraper() {
       return response.json() as Promise<PDFPreviewResult>;
     },
     onSuccess: (data) => {
-      setExtractedProducts(data.products);
+      setExtractedProducts(data.withURL);
+      setProductsWithoutURL(data.withoutURL);
       setCurrentPage(1); // Reset to first page
       
+      // Set default active tab based on what's available
+      if (data.withURL.length > 0) {
+        setActiveTab('withURL');
+      } else if (data.withoutURL.length > 0) {
+        setActiveTab('withoutURL');
+      }
+      
       // Save to sessionStorage so it persists when returning from URL-Scraper
-      sessionStorage.setItem('pdf_auto_scraper_extracted_products', JSON.stringify(data.products));
+      sessionStorage.setItem('pdf_auto_scraper_extracted_products', JSON.stringify(data.withURL));
+      sessionStorage.setItem('pdf_auto_scraper_products_without_url', JSON.stringify(data.withoutURL));
       
       toast({
         title: 'PDF analysiert',
-        description: `${data.totalProducts} Produkt-URLs erfolgreich extrahiert`,
+        description: `${data.totalProducts} Produkte gefunden (${data.withURL.length} mit URL, ${data.withoutURL.length} ohne URL)`,
       });
     },
     onError: (error: Error) => {
@@ -273,16 +298,29 @@ export default function PDFAutoScraper() {
           </CardContent>
         </Card>
 
-        {extractedProducts.length > 0 && (
+        {(extractedProducts.length > 0 || productsWithoutURL.length > 0) && (
           <>
             <Card>
               <CardHeader>
-                <CardTitle>2. Extrahierte Produkte mit URLs ({extractedProducts.filter(p => p.url).length})</CardTitle>
+                <CardTitle>2. Extrahierte Produkte</CardTitle>
                 <CardDescription>
-                  Diese Produkte können direkt mit dem URL-Scraper verarbeitet werden
+                  Produkte aufgeteilt nach Verfügbarkeit von URLs
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'withURL' | 'withoutURL')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="withURL" className="flex items-center gap-2">
+                      Mit URL ({extractedProducts.length})
+                      <Badge variant="secondary">{extractedProducts.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="withoutURL" className="flex items-center gap-2">
+                      Ohne URL ({productsWithoutURL.length})
+                      <Badge variant="secondary">{productsWithoutURL.length}</Badge>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="withURL" className="mt-4">
                 <div className="rounded-md border overflow-hidden">
                   <div className="max-h-96 overflow-y-auto overflow-x-auto">
                     <Table>
@@ -362,43 +400,58 @@ export default function PDFAutoScraper() {
                     </div>
                   )}
                 </div>
+                  </TabsContent>
+
+                  <TabsContent value="withoutURL" className="mt-4">
+                    {productsWithoutURL.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="rounded-md border overflow-hidden">
+                          <div className="max-h-96 overflow-y-auto overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[250px]">Produktname</TableHead>
+                                  <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
+                                  <TableHead className="min-w-[130px]">EAN</TableHead>
+                                  <TableHead className="min-w-[100px]">EK-Preis</TableHead>
+                                  <TableHead className="min-w-[100px]">UEVP</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {productsWithoutURL.map((product, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell className="font-medium">{product.productName || '-'}</TableCell>
+                                    <TableCell>{product.articleNumber || '-'}</TableCell>
+                                    <TableCell>{product.eanCode || '-'}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{product.uevp ? `${product.uevp} €` : '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 p-4 bg-orange-50 border border-orange-200 rounded-md">
+                          <Mail className="h-5 w-5 text-orange-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-orange-900">URLs erforderlich</p>
+                            <p className="text-xs text-orange-700">Kontaktieren Sie den Lieferanten, um Produkt-URLs zu erhalten</p>
+                          </div>
+                          <Button variant="outline" size="sm" className="border-orange-300">
+                            <Mail className="h-4 w-4 mr-2" />
+                            URLs anfragen
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>Keine Produkte ohne URL gefunden</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
-
-            {extractedProducts.filter(p => !p.url).length > 0 && (
-              <Card className="border-orange-200 bg-orange-50/50">
-                <CardHeader>
-                  <CardTitle className="text-orange-900">⚠️ Produkte ohne URL ({extractedProducts.filter(p => !p.url).length})</CardTitle>
-                  <CardDescription className="text-orange-700">
-                    Für diese Produkte müssen Sie den Lieferanten kontaktieren, um die Daten zu bekommen
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border border-orange-200 max-h-64 overflow-auto bg-white">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Produktname</TableHead>
-                          <TableHead>Artikel-Nr.</TableHead>
-                          <TableHead>EAN</TableHead>
-                          <TableHead>EK-Preis</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {extractedProducts.filter(p => !p.url).map((product, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{product.productName || '-'}</TableCell>
-                            <TableCell>{product.articleNumber || '-'}</TableCell>
-                            <TableCell>{product.eanCode || '-'}</TableCell>
-                            <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             <Card className="border-blue-200 bg-blue-50/50">
               <CardHeader>
