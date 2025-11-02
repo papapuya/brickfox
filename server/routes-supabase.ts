@@ -650,6 +650,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               product.hersteller ? { key: 'hersteller', value: product.hersteller, type: 'text' } : null,
               product.preis ? { key: 'preis', value: product.preis, type: 'text' } : null,
               product.gewicht ? { key: 'gewicht', value: product.gewicht, type: 'text' } : null,
+              product.laenge ? { key: 'laenge', value: product.laenge, type: 'text' } : null,
+              product.breite ? { key: 'breite', value: product.breite, type: 'text' } : null,
+              product.hoehe ? { key: 'hoehe', value: product.hoehe, type: 'text' } : null,
+              product.nominalkapazitaet ? { key: 'nominalkapazitaet', value: product.nominalkapazitaet, type: 'text' } : null,
               product.kategorie ? { key: 'kategorie', value: product.kategorie, type: 'text' } : null,
               product.source_url ? { key: 'source_url', value: product.source_url, type: 'text' } : null,
             ].filter((item): item is { key: string; value: string; type: string } => item !== null);
