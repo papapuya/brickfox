@@ -1004,7 +1004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (firstData.gewicht) technicalSpecs.push(firstData.gewicht);
       
       // Generate AI-powered SEO metadata
-      const { generateSEOMetadata } = await import('./ai-service.js');
+      const { generateSEOMetadata, generateSEOKeywords } = await import('./ai-service.js');
       const seoMetadata = await generateSEOMetadata({
         productName,
         manufacturer,
@@ -1016,9 +1016,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { seoTitle, seoDescription } = seoMetadata;
       
-      // Generate SEO Keywords (from category, manufacturer, product features)
-      const keywordParts = [manufacturer, category, productName].filter(Boolean);
-      const seoKeywords = keywordParts.slice(0, 5).join(', ');
+      // Generate AI-powered SEO Keywords (structured)
+      const descriptionText = autoExtractedDescription || description.replace(/<[^>]*>/g, '').substring(0, 500);
+      const seoKeywordsStructured = await generateSEOKeywords(
+        productName,
+        descriptionText,
+        12, // max 12 keywords per category
+        aiModel
+      );
+      
+      // Combine all keywords into a comma-separated string for backward compatibility
+      const allKeywords = [
+        ...seoKeywordsStructured.hauptkeywords,
+        ...seoKeywordsStructured.longtail_keywords,
+        ...seoKeywordsStructured.brand_keywords,
+        ...seoKeywordsStructured.intent_keywords
+      ].slice(0, 20); // Limit to top 20 keywords
+      const seoKeywords = allKeywords.join(', ');
 
       await trackApiUsage(req, res, () => {});
       res.json({ 
@@ -1026,7 +1040,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description,
         seoTitle,
         seoDescription,
-        seoKeywords
+        seoKeywords,
+        seoKeywordsStructured // Return structured keywords for advanced use
       });
     } catch (error) {
       console.error('Description generation error:', error);

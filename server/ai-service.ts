@@ -958,6 +958,107 @@ export async function processProductWithNewWorkflow(htmlOrText: string, onProgre
 }
 
 /**
+ * Generate SEO-optimized Keywords in structured categories
+ * @param productTitle - Product title
+ * @param productDescription - Product description
+ * @param maxKeywords - Maximum keywords per category (default: 12)
+ * @param model - AI model to use (default: gpt-4o-mini)
+ * @returns Structured keywords object
+ */
+export async function generateSEOKeywords(
+  productTitle: string,
+  productDescription: string,
+  maxKeywords: number = 12,
+  model: string = 'gpt-4o-mini'
+): Promise<{
+  hauptkeywords: string[];
+  longtail_keywords: string[];
+  brand_keywords: string[];
+  intent_keywords: string[];
+}> {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  const systemPrompt = `Du bist ein professioneller SEO-Keyword-Agent für Produktdaten. 
+Deine Aufgabe ist es, aus Produktinformationen gezielte Keywords für Suchmaschinen zu generieren. 
+Die Keywords sollen thematisch relevant, deutschsprachig, markenbezogen und suchintention-orientiert sein.
+
+Eingabeparameter:
+- product_title: {Produktname}
+- product_description: {Produktbeschreibung}
+- max_keywords: {Zahl der gewünschten Keywords, Standard = 12}
+
+Ausgabeformat (immer in JSON):
+{
+  "hauptkeywords": ["..."],
+  "longtail_keywords": ["..."],
+  "brand_keywords": ["..."],
+  "intent_keywords": ["..."]
+}
+
+Regeln:
+- Gib nie mehr als {max_keywords} pro Kategorie aus.
+- Verwende keine doppelten oder bedeutungsgleichen Begriffe.
+- Longtail-Keywords müssen reale Suchphrasen enthalten (z. B. „kaufen", „Test", „Erfahrungen", „beste", „akku 21700").
+- Brand-Keywords sollen den Markennamen enthalten (z. B. „Nitecore", „Nitecore Akku").
+- Intent-Keywords zielen auf Kaufabsicht oder Informationssuche.
+- Antworte nur im JSON-Format, ohne Erklärtext.`;
+
+  const prompt = systemPrompt
+    .replace('{Produktname}', productTitle)
+    .replace('{Produktbeschreibung}', productDescription)
+    .replace('{Zahl der gewünschten Keywords, Standard = 12}', maxKeywords.toString())
+    .replace('{max_keywords}', maxKeywords.toString());
+
+  const userMessage = `product_title: "${productTitle}"
+product_description: "${productDescription}"
+max_keywords: ${maxKeywords}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: prompt
+        },
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" }
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from AI');
+    }
+
+    const parsed = JSON.parse(content);
+    
+    return {
+      hauptkeywords: parsed.hauptkeywords || [],
+      longtail_keywords: parsed.longtail_keywords || [],
+      brand_keywords: parsed.brand_keywords || [],
+      intent_keywords: parsed.intent_keywords || []
+    };
+    
+  } catch (error) {
+    console.error('[SEO Keywords Generation Error]:', error);
+    // Fallback to empty arrays
+    return {
+      hauptkeywords: [],
+      longtail_keywords: [],
+      brand_keywords: [],
+      intent_keywords: []
+    };
+  }
+}
+
+/**
  * Generate SEO-optimized Meta Title and Meta Description
  * @param productData - Product information (name, manufacturer, specs, etc.)
  * @param model - AI model to use (default: gpt-4o-mini)
