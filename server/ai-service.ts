@@ -1082,84 +1082,108 @@ export async function generateSEOMetadata(
   const { productName, manufacturer, category, articleNumber, description, technicalSpecs } = productData;
   
   // Build context from available data
-  const context = [
-    `Produktname: ${productName}`,
-    manufacturer && `Hersteller: ${manufacturer}`,
-    category && `Kategorie: ${category}`,
-    articleNumber && `Artikelnummer: ${articleNumber}`,
-    description && `Beschreibung: ${description.substring(0, 300)}`,
-    technicalSpecs && technicalSpecs.length > 0 && `Technische Daten: ${technicalSpecs.join(', ')}`,
-  ].filter(Boolean).join('\n');
+  const productTitle = productName;
+  const productDescription = description || '';
 
-  const prompt = `Du bist ein SEO-Experte für E-Commerce. Erstelle SEO-optimierte Meta-Tags für ein Produkt.
+  // SEO Title Prompt
+  const titlePrompt = `Du bist ein professioneller SEO-Experte für Produktdaten.
 
-PRODUKTINFORMATIONEN:
-${context}
+Ziel:
+Erstelle einen suchmaschinenoptimierten SEO-Titel (max. 65 Zeichen) für ein Produkt aus dem Bereich Akkus, Batterien oder Elektronik.
 
-AUFGABE:
-Erstelle zwei SEO-optimierte Texte:
+Eingabeparameter:
+- product_title: ${productTitle}
+- product_description: ${productDescription}
 
-1. **Meta Title** (max. 580 Pixel / ca. 55-60 Zeichen):
-   - Format: "Hersteller Produktname | Hauptmerkmal | Artikelnummer"
-   - Beispiel: "Nitecore Carbon Battery | 12K Extension Kit | NC-CB12K-KIT"
-   - Nutze Pipe-Zeichen "|" zur Trennung
-   - Halte dich STRIKT an 580 Pixel (ca. 55-60 Zeichen)
-   - Priorisiere die wichtigsten Keywords am Anfang
+Regeln:
+1. Verwende keine Artikelnummern, Seriennummern oder Testhinweise (z. B. "UN-Transporttest", "Art.-Nr.", "Modell", "Ref.", "ANS...").
+2. Betone Marke, Spannung, Kapazität und Akkutyp (z. B. "7,2 V", "5200 mAh", "Lithium-Ionen").
+3. Füge – falls sinnvoll – das Wort **„Akku" oder „Akkupack"** ein.
+4. Optional darf ein **Kauf-Intent-Wort** enthalten sein (z. B. „jetzt kaufen", „online kaufen", „ersatzakku").
+5. Verwende maximal 65 Zeichen.
+6. Antworte **nur** mit dem SEO-Titel, kein Zusatztext.
 
-2. **Meta Description** (max. 1000 Pixel / ca. 155-160 Zeichen):
-   - Beschreibe das Produkt prägnant und verkaufsstark
-   - Beispiel: "Das Nitecore Carbon 12K Battery Kit verlängert die Laufzeit deiner Nitecore Kopflampe mit zwei 21700 Akkus (12 000 mAh) im robusten Carbongehäuse."
-   - Halte dich STRIKT an 1000 Pixel (ca. 155-160 Zeichen)
-   - Nutze Zahlen und konkrete Specs
-   - Keine Call-to-Actions wie "Jetzt kaufen"
+Beispiel:
+Eingabe:
+product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh | UN-Transporttest | ANS2447304960"
+Ausgabe:
+"ANSMANN 7,2 V 5200 mAh Li-Ion Akkupack – hochwertiger Ersatzakku"`;
 
-WICHTIG:
-- Sei präzise und informativ
-- Nutze deutsche Rechtschreibung
-- Keine Sonderzeichen außer Zahlen, Pipe und Bindestriche
-- Keine Anführungszeichen in den Texten
+  // SEO Description Prompt
+  const descriptionPrompt = `Du bist ein professioneller SEO- und Produkttext-Experte für Akkus und Elektronikprodukte. 
+Deine Aufgabe ist es, aus Produktdaten eine suchmaschinenoptimierte, verkaufsorientierte Produktbeschreibung zu erstellen.
 
-AUSGABEFORMAT (JSON):
-{
-  "seoTitle": "Dein Meta Title hier",
-  "seoDescription": "Deine Meta Description hier"
-}`;
+Eingabeparameter:
+- product_title: ${productTitle}
+- product_description: ${productDescription}
+
+Ziel:
+Erstelle eine ansprechende, keyword-optimierte Produktbeschreibung mit ca. 400–500 Zeichen Länge (≈ 1000 px Breite). 
+Die Beschreibung soll natürlich klingen, Vertrauen schaffen und die wichtigsten technischen Merkmale betonen.
+
+Regeln:
+1. Verwende die wichtigsten Keywords aus Titel und Beschreibung (z. B. Spannung, Kapazität, Akkutyp, Marke).
+2. Verzichte auf technische Kürzel, Artikelnummern oder interne Angaben (z. B. „UN-Transporttest", „Art.-Nr.", „Modell", „Ref.").
+3. Schreibe in ganzen, flüssigen Sätzen mit aktivem Sprachstil.
+4. Betone Qualität, Leistung, Sicherheit oder Einsatzbereiche.
+5. Verwende ausschließlich deutsche Sprache.
+6. Gib nur den finalen Beschreibungstext aus – **keine Erklärungen oder JSON-Struktur**.
+
+Beispiel:
+Eingabe:
+product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh"
+product_description: "Ideal für Anwendungen mit Li 18650-Zellen und UN 38.3 zertifiziert."
+Ausgabe:
+"Das ANSMANN Li-Ion Akkupack 7,2 V / 5200 mAh liefert starke und konstante Energie für anspruchsvolle Anwendungen. Die hochwertigen 18650-Zellen sorgen für lange Laufzeiten und höchste Sicherheit dank UN 38.3 Zertifizierung."`;
 
   try {
-    const response = await openai.chat.completions.create({
+    // Generate SEO Title
+    const titleResponse = await openai.chat.completions.create({
       model,
       messages: [
         {
           role: 'system',
-          content: 'Du bist ein SEO-Experte für E-Commerce mit Fokus auf optimale Meta-Tags für Google.'
+          content: 'Du bist ein professioneller SEO-Experte für Produktdaten.'
         },
         {
           role: 'user',
-          content: prompt
+          content: titlePrompt
         }
       ],
-      temperature: 0.7,
-      response_format: { type: "json_object" }
+      temperature: 0.7
     });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from AI');
-    }
+    const seoTitle = titleResponse.choices[0]?.message?.content?.trim() || productName.substring(0, 65);
 
-    const parsed = JSON.parse(content);
+    // Generate SEO Description
+    const descriptionResponse = await openai.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: 'Du bist ein professioneller SEO- und Produkttext-Experte für Akkus und Elektronikprodukte.'
+        },
+        {
+          role: 'user',
+          content: descriptionPrompt
+        }
+      ],
+      temperature: 0.7
+    });
+
+    const seoDescription = descriptionResponse.choices[0]?.message?.content?.trim() || description?.substring(0, 400) || '';
     
     return {
-      seoTitle: parsed.seoTitle || productName.substring(0, 60),
-      seoDescription: parsed.seoDescription || description?.substring(0, 160) || ''
+      seoTitle: seoTitle.length > 65 ? seoTitle.substring(0, 62) + '...' : seoTitle,
+      seoDescription: seoDescription.length > 500 ? seoDescription.substring(0, 497) + '...' : seoDescription
     };
     
   } catch (error) {
     console.error('[SEO Generation Error]:', error);
     // Fallback to simple truncation
     return {
-      seoTitle: productName.length > 60 ? productName.substring(0, 57) + '...' : productName,
-      seoDescription: description ? (description.length > 160 ? description.substring(0, 157) + '...' : description) : ''
+      seoTitle: productName.length > 65 ? productName.substring(0, 62) + '...' : productName,
+      seoDescription: description ? (description.length > 400 ? description.substring(0, 397) + '...' : description) : ''
     };
   }
 }
