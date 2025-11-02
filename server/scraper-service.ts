@@ -514,17 +514,23 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   // ANSMANN Technical Fields - extract and format measurements (German format, no units)
   if ((selectors as any).nominalspannung) {
     const element = $((selectors as any).nominalspannung).first();
-    (product as any).nominalspannung = formatMeasurement(element.text().trim());
+    const rawValue = element.text().trim();
+    (product as any).nominalspannung = formatMeasurement(rawValue);
+    if (rawValue) console.log(`⚡ Extracted Nominalspannung: ${rawValue} → ${(product as any).nominalspannung}`);
   }
 
   if ((selectors as any).nominalkapazitaet) {
     const element = $((selectors as any).nominalkapazitaet).first();
-    (product as any).nominalkapazitaet = formatMeasurement(element.text().trim());
+    const rawValue = element.text().trim();
+    (product as any).nominalkapazitaet = formatMeasurement(rawValue);
+    if (rawValue) console.log(`🔋 Extracted Nominalkapazität: ${rawValue} → ${(product as any).nominalkapazitaet}`);
   }
 
   if ((selectors as any).maxEntladestrom) {
     const element = $((selectors as any).maxEntladestrom).first();
-    (product as any).maxEntladestrom = formatMeasurement(element.text().trim());
+    const rawValue = element.text().trim();
+    (product as any).maxEntladestrom = formatMeasurement(rawValue);
+    if (rawValue) console.log(`⚡ Extracted max. Entladestrom: ${rawValue} → ${(product as any).maxEntladestrom}`);
   }
   
   // Fallback: Extract max. Entladestrom from description if not found via selector
@@ -572,9 +578,28 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   }
 
   // ANSMANN: Extract Abmessungen (Dimensions) and split into Länge, Breite, Höhe
-  // Format: "Abmessungen: 70×37.5×37.5 mm" or "7 × 18 × 18 cm" or "70×37,5×37,5 mm"
+  // Format: "1.5 × 1.5 × 5.1 cm" or "70×37.5×37.5 mm" or "70×37,5×37,5 mm je Zelle"
   if (!(product as any).laenge || !(product as any).breite || !(product as any).hoehe) {
-    const abmessungenMatch = html.match(/abmessungen[:\s]+([\d.,]+)\s*[×x]\s*([\d.,]+)\s*[×x]\s*([\d.,]+)\s*(mm|cm)/i);
+    let abmessungenText = '';
+    
+    // First try: Use abmessungen selector if available
+    if ((selectors as any).abmessungen) {
+      const element = $((selectors as any).abmessungen).first();
+      abmessungenText = element.text().trim();
+      console.log(`🔍 Extracted Abmessungen via selector: "${abmessungenText}"`);
+    }
+    
+    // Fallback: Search in HTML if selector didn't work
+    if (!abmessungenText) {
+      const abmessungenHtmlMatch = html.match(/abmessungen[:\s]+([\d.,]+)\s*[×x]\s*([\d.,]+)\s*[×x]\s*([\d.,]+)\s*(mm|cm)/i);
+      if (abmessungenHtmlMatch) {
+        abmessungenText = abmessungenHtmlMatch[0];
+        console.log(`🔍 Extracted Abmessungen from HTML: "${abmessungenText}"`);
+      }
+    }
+    
+    // Parse the extracted text (from selector or HTML)
+    const abmessungenMatch = abmessungenText.match(/([\d.,]+)\s*[×x]\s*([\d.,]+)\s*[×x]\s*([\d.,]+)\s*(mm|cm)/i);
     if (abmessungenMatch) {
       // Normalize numbers: handle both German (,) and English (.) decimal separators
       const normalizeNumber = (num: string): string => {
