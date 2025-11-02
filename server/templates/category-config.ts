@@ -234,18 +234,30 @@ export const PRODUCT_CATEGORIES: Record<string, ProductCategoryConfig> = {
 };
 
 export function detectCategory(productData: any): string {
-  // Support both snake_case (CSV) and camelCase (URL Scraper)
+  // Support both snake_case (CSV/PDF) and camelCase (URL Scraper)
   const searchText = [
     productData.product_name || productData.productName || '',
     productData.short_intro || productData.shortIntro || '',
     productData.description || '',
     productData.extractedText || '',
     JSON.stringify(productData.bullets || []),
-    // WICHTIG: Auch technische Felder prüfen für bessere Erkennung
+    // WICHTIG: ALLE technischen Felder prüfen (snake_case + camelCase)
+    // Taschenlampen-Felder
     productData.led1 || '',
     productData.led2 || '',
-    productData.maxLuminosity || '',
-    productData.spotIntensity || '',
+    productData.maxLuminosity || productData.max_luminosity || '',
+    productData.spotIntensity || productData.spot_intensity || '',
+    productData.maxBeamDistance || productData.max_beam_distance || '',
+    productData.powerSupply || productData.power_supply || '',
+    // Batterie/Akku-Felder
+    productData.nominalspannung || productData.nominalSpannung || '',
+    productData.nominalkapazitaet || productData.nominalKapazitaet || '',
+    productData.zellenchemie || productData.zellenChemie || '',
+    productData.energie || '',
+    // Abmessungen
+    productData.laenge || productData.length || '',
+    productData.breite || productData.width || '',
+    productData.hoehe || productData.height || '',
   ].join(' ').toLowerCase();
 
   let bestCategory = 'battery';
