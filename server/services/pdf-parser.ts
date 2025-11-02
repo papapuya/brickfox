@@ -128,28 +128,62 @@ export class PDFParserService {
         uevp: null,
       };
 
-      // Extract structured data using regex
-      // Support both formats: XXXX-XXXX-XX (10 digits) and XXXX-XXXX (8 digits)
-      const articleMatch = rowText.match(/\b\d{4}-\d{4}(?:-\d{2})?\b/);
+      // Extract structured data using IMPROVED regex patterns
+      // Article Number Patterns:
+      // - XXXX-XXXX-XX (10 digits with dashes)
+      // - XXXX-XXXX (8 digits with dashes)
+      // - XXXXXXXX (8 digits without dashes)
+      // - XXXXXXXXXX (10 digits without dashes)
+      const articleMatch = rowText.match(/\b\d{4}-\d{4}(?:-\d{2})?\b/) || 
+                          rowText.match(/\b\d{8,10}\b/);
+      
+      // EAN Patterns:
+      // - 13 digits (standard EAN-13)
+      // - Can be anywhere in the text
       const eanMatch = rowText.match(/\b\d{13}\b/);
-      const priceMatches = rowText.match(/(\d+[,\.]\d{2})\s*€/g);
+      
+      // Price Patterns (FLEXIBLE):
+      // - XX,XX € or XX.XX €
+      // - XX,XX or XX.XX (without € symbol)
+      // - With or without spaces
+      const priceMatches = rowText.match(/(\d+[,\.]\d{2})\s*€?/g);
 
-      // Debug: Log what we found
-      if (DEBUG_MODE || !articleMatch) {
+      // Debug: Log what we found (always log if nothing found)
+      if (DEBUG_MODE || !articleMatch || !eanMatch || !priceMatches) {
         console.log(`\n🔍 Row parsing:`);
-        console.log(`  Row text: ${rowText.substring(0, 150)}...`);
+        console.log(`  Row text: ${rowText.substring(0, 200)}...`);
         console.log(`  Article match: ${articleMatch ? articleMatch[0] : 'NONE'}`);
         console.log(`  EAN match: ${eanMatch ? eanMatch[0] : 'NONE'}`);
-        console.log(`  Price matches: ${priceMatches ? priceMatches.length : 'NONE'}`);
+        console.log(`  Price matches: ${priceMatches ? priceMatches.join(', ') : 'NONE'}`);
       }
 
-      // Remove hyphens from article number (2447-0121 → 24470121)
-      if (articleMatch) product.articleNumber = articleMatch[0].replace(/-/g, '');
-      if (eanMatch) product.eanCode = eanMatch[0];
+      // Process Article Number: Remove hyphens and spaces (2447-0121 → 24470121)
+      if (articleMatch) {
+        product.articleNumber = articleMatch[0].replace(/[-\s]/g, '');
+        console.log(`  ✅ Article: ${product.articleNumber}`);
+      }
       
-      if (priceMatches && priceMatches.length >= 2) {
-        product.ekPrice = priceMatches[priceMatches.length - 2].replace('€', '').trim();
-        product.uevp = priceMatches[priceMatches.length - 1].replace('€', '').trim();
+      // Process EAN Code
+      if (eanMatch) {
+        product.eanCode = eanMatch[0];
+        console.log(`  ✅ EAN: ${product.eanCode}`);
+      }
+      
+      // Process Prices (EK and UEVP)
+      if (priceMatches && priceMatches.length >= 1) {
+        // Clean prices: remove € and whitespace
+        const cleanedPrices = priceMatches.map(p => p.replace(/€/g, '').trim());
+        
+        if (cleanedPrices.length >= 2) {
+          // If 2+ prices found: last 2 are likely EK and UEVP
+          product.ekPrice = cleanedPrices[cleanedPrices.length - 2];
+          product.uevp = cleanedPrices[cleanedPrices.length - 1];
+        } else if (cleanedPrices.length === 1) {
+          // If only 1 price found: assume it's EK
+          product.ekPrice = cleanedPrices[0];
+        }
+        
+        console.log(`  ✅ EK: ${product.ekPrice || 'N/A'}, UEVP: ${product.uevp || 'N/A'}`);
       }
 
       // Extract product name from URL
