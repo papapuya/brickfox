@@ -258,15 +258,15 @@ export default function PDFAutoScraper() {
               </CardHeader>
               <CardContent>
                 <div className="rounded-md border overflow-hidden">
-                  <div className="max-h-96 overflow-auto">
+                  <div className="max-h-96 overflow-y-auto overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Produktname</TableHead>
-                          <TableHead>Artikel-Nr.</TableHead>
-                          <TableHead>EAN</TableHead>
-                          <TableHead>EK-Preis</TableHead>
-                          <TableHead>URL</TableHead>
+                          <TableHead className="min-w-[250px]">Produktname</TableHead>
+                          <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
+                          <TableHead className="min-w-[130px]">EAN</TableHead>
+                          <TableHead className="min-w-[100px]">EK-Preis</TableHead>
+                          <TableHead className="min-w-[400px]">URL</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -278,16 +278,16 @@ export default function PDFAutoScraper() {
                             <TableCell className="font-medium">{product.productName || '-'}</TableCell>
                             <TableCell>{product.articleNumber || '-'}</TableCell>
                             <TableCell>{product.eanCode || '-'}</TableCell>
-                            <TableCell>{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
-                            <TableCell className="max-w-xs truncate">
+                            <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                            <TableCell>
                               <a 
                                 href={product.url!} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:underline flex items-center gap-1"
                               >
-                                <ExternalLink className="h-3 w-3" />
-                                {product.url}
+                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                <span className="break-all">{product.url}</span>
                               </a>
                             </TableCell>
                           </TableRow>
