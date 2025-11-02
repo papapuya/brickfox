@@ -234,12 +234,18 @@ export const PRODUCT_CATEGORIES: Record<string, ProductCategoryConfig> = {
 };
 
 export function detectCategory(productData: any): string {
+  // Support both snake_case (CSV) and camelCase (URL Scraper)
   const searchText = [
-    productData.product_name || '',
-    productData.short_intro || '',
+    productData.product_name || productData.productName || '',
+    productData.short_intro || productData.shortIntro || '',
     productData.description || '',
     productData.extractedText || '',
     JSON.stringify(productData.bullets || []),
+    // WICHTIG: Auch technische Felder prüfen für bessere Erkennung
+    productData.led1 || '',
+    productData.led2 || '',
+    productData.maxLuminosity || '',
+    productData.spotIntensity || '',
   ].join(' ').toLowerCase();
 
   let bestCategory = 'battery';
