@@ -49,6 +49,27 @@ The application employs a modular subprompt architecture for specialized AI task
 
 ## Recent Changes
 
+### 2025-11-02: Kontaktformular mit E-Mail-Versand 📧
+**Feature**: Professionelles Kontaktformular mit direktem E-Mail-Versand an Admin.
+
+**Implementierung**:
+- **Kontakt-Seite**: `/contact` mit Formular (Name, Firma, E-Mail, Telefon, Nachricht)
+- **Backend-Endpoint**: `/api/contact` sendet E-Mails via SMTP (Greyhound)
+- **Success-Screen**: Bestätigungsseite nach erfolgreichem Versand
+- **Navigation**: Link in Landing-Page Header zu Kontaktformular
+
+**Design-Highlights**:
+- Zweispaltiges Layout: Formular links, Info-Karten rechts
+- Gradient-Button (Blue→Purple→Pink) für "Nachricht senden"
+- Info-Karte mit Demo-Anfordern Button
+- Zurück-Button oben links
+
+**Betroffene Dateien**:
+- `client/src/pages/contact.tsx` - Neue Kontakt-Seite mit Formular
+- `client/src/App.tsx` - Route `/contact` hinzugefügt
+- `client/src/pages/landing.tsx` - Link zu Kontakt-Seite
+- `server/routes-supabase.ts` - `/api/contact` Endpoint mit E-Mail-Versand
+
 ### 2025-11-02: Pricing-Seite – Allgemeine Features ohne Vendor-Lock-In 🎯
 **Änderung**: Features auf Pricing-Seite allgemeiner formuliert für breitere Anwendbarkeit.
 

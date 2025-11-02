@@ -53,10 +53,10 @@ const upload = multer({
 });
 
 import { apiKeyManager } from './api-key-manager';
+import { emailService } from './services/email-service';
 import webhooksRouter from './webhooks-supabase';
 import mappingRouter from './routes-mapping';
 import { pdfParserService } from './services/pdf-parser';
-import { emailService } from './services/email-service';
 
 async function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
@@ -200,6 +200,64 @@ async function getScrapingCookies(supplierId?: string, providedCookies?: string)
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Contact Form Endpoint
+  app.post('/api/contact', async (req, res) => {
+    try {
+      const { name, company, email, phone, message } = req.body;
+
+      if (!name || !email || !message) {
+        return res.status(400).json({ error: 'Name, E-Mail und Nachricht sind erforderlich' });
+      }
+
+      // Send email to support/admin
+      const smtpFrom = process.env.SMTP_FROM || 'noreply@pimpilot.com';
+      const adminEmail = process.env.SMTP_USER; // Admin gets the contact form
+
+      if (!adminEmail) {
+        console.warn('⚠️ SMTP_USER not configured, cannot send contact form email');
+        return res.status(500).json({ error: 'E-Mail-Service nicht konfiguriert' });
+      }
+
+      // Prepare email body
+      const emailBody = `
+Neue Kontaktanfrage von PIMPilot Website
+==========================================
+
+Name: ${name}
+${company ? `Firma: ${company}` : ''}
+E-Mail: ${email}
+${phone ? `Telefon: ${phone}` : ''}
+
+Nachricht:
+${message}
+
+==========================================
+Gesendet am: ${new Date().toLocaleString('de-DE')}
+`;
+
+      // Use the email service's transporter directly
+      const transporter = (emailService as any).transporter;
+      
+      if (!transporter) {
+        return res.status(500).json({ error: 'E-Mail-Service nicht verfügbar' });
+      }
+
+      await transporter.sendMail({
+        from: smtpFrom,
+        to: adminEmail,
+        replyTo: email,
+        subject: `PIMPilot Kontaktanfrage von ${name}`,
+        text: emailBody,
+      });
+
+      console.log(`✅ Contact form submitted by ${name} (${email})`);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('❌ Contact form error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Senden der Nachricht' });
+    }
+  });
+
   app.post('/api/auth/register', async (req, res) => {
     try {
       const validatedData = registerUserSchema.parse(req.body);

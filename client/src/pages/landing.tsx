@@ -66,9 +66,11 @@ export default function Landing() {
                 Über uns
               </a>
               
-              <a href="#" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
-                Kontakt
-              </a>
+              <Link href="/contact">
+                <span className="text-gray-700 hover:text-indigo-600 font-medium transition-colors cursor-pointer">
+                  Kontakt
+                </span>
+              </Link>
             </nav>
 
             {/* Auth Buttons */}

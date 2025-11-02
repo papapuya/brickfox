@@ -27,6 +27,7 @@ import PixiComparePage from "@/pages/pixi-compare";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Pricing from "@/pages/pricing";
+import Contact from "@/pages/contact";
 import Success from "@/pages/success";
 import Account from "@/pages/account";
 import NotFound from "@/pages/not-found";
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/contact" component={Contact} />
       <Route path="/success" component={Success} />
       <Route path="/" component={Landing} />
       
