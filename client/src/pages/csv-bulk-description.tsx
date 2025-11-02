@@ -445,14 +445,14 @@ export default function CSVBulkDescription() {
     try {
       if (selectedProjectId === "new") {
         // Neues Projekt erstellen
-        const data = await apiRequest('POST', '/api/bulk-save-to-project', {
+        await apiRequest('POST', '/api/bulk-save-to-project', {
           projectName: projectName.trim(),
           products: bulkProducts,
         });
         
         toast({
           title: "Projekt gespeichert",
-          description: `${data.productCount} Produkte wurden erfolgreich in "${projectName}" gespeichert`,
+          description: `${bulkProducts.length} Produkte wurden erfolgreich in "${projectName}" gespeichert`,
         });
       } else {
         // Zu bestehendem Projekt hinzufügen

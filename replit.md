@@ -1,7 +1,7 @@
 # PIMPilot - Produktmanagement SaaS
 
 ## Overview
-PIMPilot is a multi-tenant B2B SaaS platform for automating AI-powered product description and PIM metadata generation from supplier data. It processes product data, primarily via CSV uploads, for multiple business customers with data isolation. The platform uses OpenAI GPT-4o-mini for text generation and a custom Cheerio-based web scraper. Key capabilities include multi-tenant architecture, secure authentication, Stripe-based subscription management, real-time API call monitoring, dynamic AI prompting, and a category-based template system.
+PIMPilot is a multi-tenant B2B SaaS platform designed to automate AI-powered product description and PIM metadata generation from supplier data. It primarily processes product data via CSV uploads for multiple business customers, ensuring strict data isolation. The platform leverages OpenAI's GPT-4o-mini for text generation and a custom Cheerio-based web scraper. Its core capabilities include a robust multi-tenant architecture, secure authentication, Stripe-based subscription management, real-time API call monitoring, dynamic AI prompting, and a sophisticated category-based template system. The project aims to streamline product information management and enhance e-commerce content creation.
 
 ## User Preferences
 Keine spezifischen Präferenzen dokumentiert.
@@ -17,193 +17,28 @@ Keine spezifischen Präferenzen dokumentiert.
 - **Authentication**: Supabase Auth (JWT-based)
 
 ### System Design
-The application utilizes a modular subprompt architecture for specialized AI tasks, orchestrated by a central component. A category-based template system employs a 3-layer approach (Category Configuration, AI Generator, Template Renderer) to support automatic category recognition and dynamic AI prompt adaptation. Multi-tenancy is enforced server-side using `organization_id` foreign keys, ensuring data isolation.
+The application employs a modular subprompt architecture for specialized AI tasks, centrally orchestrated. A 3-layer category-based template system (Category Configuration, AI Generator, Template Renderer) facilitates automatic category recognition and dynamic AI prompt adaptation. Multi-tenancy is enforced server-side using `organization_id` foreign keys to ensure data isolation.
 
-**Core Features**:
-- **Multi-Tenant Architecture**: Data isolation via `organization_id` foreign keys.
-- **User Authentication**: Supabase Auth integration with "Remember Me" functionality, storing sessions in localStorage or sessionStorage.
-- **Subscription Management**: Stripe integration for tiered access and trial mode.
+**Key Features**:
+- **Multi-Tenant Architecture**: Ensures data isolation per organization.
+- **User Authentication**: Supabase Auth with session management.
+- **Subscription Management**: Stripe integration for tiered access and trials.
 - **Usage Tracking**: Real-time API call monitoring with limit enforcement.
-- **CSV Bulk Processing**: Upload and process product data via CSV for mass AI generation.
-- **URL Web Scraper**: Custom Cheerio-based scraper with configurable CSS selectors, intelligent auto-recognition, tables parser, multi-URL scraping, automatic login, and session cookie capture.
-- **AI Generation**: Automated product descriptions using OpenAI GPT-4o-mini, with dynamic, product-specific prompts. Includes AI-powered image analysis for automatic color detection.
-- **Project Management**: Save and organize generated products into projects.
+- **CSV Bulk Processing**: Upload and process product data for mass AI generation.
+- **URL Web Scraper**: Custom Cheerio-based scraper with configurable CSS selectors, intelligent auto-recognition, table parsing, multi-URL scraping, automatic login, and session cookie capture.
+- **AI Generation**: Automated product descriptions using OpenAI GPT-4o-mini, including AI-powered image analysis for color detection.
+- **Project Management**: Organize generated products into projects.
 - **Supplier Profiles**: Manage multiple suppliers with saved selectors.
-- **Pixi ERP Integration**: Automated product comparison with Pixi ERP system to identify new vs. existing products, with CSV upload, intelligent matching, and CSV export functionality.
-- **CSS Selector Verification System**: Comprehensive workflow for testing and verifying supplier-specific CSS selectors with visual feedback and persistence.
-- **Field Mapping Tool**: Visual Click-to-Connect interface for mapping scraped data fields or CSV columns to Brickfox CSV export fields. Supports automatic field detection, custom transformations, and reusable mapping presets, with tenant-isolated storage and API endpoints.
+- **Pixi ERP Integration**: Automated product comparison with Pixi ERP for identifying new vs. existing products, with intelligent matching and CSV export.
+- **CSS Selector Verification System**: Workflow for testing and verifying supplier-specific CSS selectors with visual feedback.
+- **Field Mapping Tool**: Visual Click-to-Connect interface for mapping scraped data or CSV columns to Brickfox CSV export fields, supporting custom transformations and reusable presets.
+
+### UI/UX Decisions
+The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailwind CSS for a modern and responsive user experience. Standardized `Table`-components ensure consistent design and functionality across the platform, including features like sticky headers and hover effects.
 
 ## External Dependencies
 - **OpenAI API**: For AI-driven text generation (GPT-4o-mini) and image analysis (GPT-4o-mini Vision).
-- **Supabase**: Provides PostgreSQL database, UUID primary keys, organization-based multi-tenancy, and authentication.
+- **Supabase**: Provides PostgreSQL database, multi-tenancy support, and authentication services.
 - **Stripe**: Integrated for subscription management and payment processing.
-- **Pixi ERP API**: External integration for product inventory comparison and duplicate detection.
-- **Greyhound SMTP**: E-Mail-Versand für automatisierte Lieferanten-Anfragen (via nodemailer).
-
-## Recent Changes
-
-### 2025-11-02: URL-Scraper - Technische Daten vollständig an AI übertragen
-**Problem behoben**: AI generierte keine Beschreibungen für gescrapte Produkte (Taschenlampen, etc.), weil technische Daten nicht übertragen wurden.
-
-**Ursache**: 
-- Der Scraper extrahierte technische Daten wie `length`, `bodyDiameter`, `led1`, `led2`, `maxLuminosity`, `spotIntensity`, etc.
-- Aber nur 8 Basis-Felder (productName, ean, manufacturer, price, weight, category, description, articleNumber) wurden an die AI geschickt
-- Die AI hatte keine technischen Daten für die Generierung
-
-**Implementierung**:
-- **Frontend** (`url-scraper.tsx`): Sendet jetzt ALLE gescrapten Felder als `structuredData` an die API
-- **Backend** (`routes-supabase.ts`): Empfängt `structuredData` und übergibt es an `generateProductDescription`
-- **Technische Daten**: Werden jetzt 1:1 von `tech-spec-parser.ts` extrahiert und in AI-Beschreibung integriert
-
-**Betroffene Dateien**:
-- `client/src/pages/url-scraper.tsx` - `generateWithTimeout()` sendet jetzt `structuredData`
-- `server/routes-supabase.ts` - `/api/generate-description` empfängt und verarbeitet `structuredData`
-
-### 2025-11-02: MediaMarkt V1/V2 im URL-Scraper korrigiert
-**Änderung**: MediaMarkt V1/V2 Titel werden jetzt auch im URL-Scraper korrekt generiert (war vorher nur im CSV-Bulk aktiv).
-
-**Implementierung**:
-- **MediaMarkt V1**: Produktname (z.B. "Nitecore Chameleon CG7 - 2500 Lumen Weißlicht, 540 Lumen grünes Licht")
-- **MediaMarkt V2**: Modellcodes ohne Herstellerpräfix (z.B. "NCCG7" statt "ANSNCCG7")
-- **Beide Workflows**: URL-Scraper und CSV-Bulk verwenden jetzt dieselbe Logik
-
-**Betroffene Dateien**:
-- `client/src/pages/url-scraper.tsx` - MediaMarkt V1/V2 Generierung für Single-Produkt und Batch-Speicherung
-
-### 2025-11-02: SERP-Snippet-Anzeige entfernt
-**Änderung**: Progress-Balken und Status-Indikatoren bei SEO-Dialogen entfernt für sauberere Darstellung.
-
-**Implementierung**:
-- **SEO Produkttitel**: Zeichenanzahl-Balken, Status-Text ("✗ Zu kurz"), und Farbcodes entfernt
-- **SEO Produktbeschreibung**: Zeichenanzahl-Balken, Status-Text, und Farbcodes entfernt
-- **Nur noch Text**: Dialoge zeigen jetzt nur noch den reinen SEO-Text ohne visuelle Qualitätsindikatoren
-
-**Betroffene Dateien**:
-- `client/src/pages/url-scraper.tsx` - SEO Quality Indicators entfernt
-
-### 2025-11-02: CSV-Export bereinigt (Sicherheitshinweise-Spalte entfernt)
-**Änderung**: Spalte "Sicherheitshinweise" wurde aus dem CSV-Export entfernt.
-
-**Implementierung**:
-- **CSV-Export**: Spalte "Sicherheitshinweise" entfernt aus `orderedKeys` und `headerMap`
-- **Bilder-Spalte**: Bleibt erhalten als "Bild_URLs" mit allen gescrapten Produktbildern (JPEGs, PNGs)
-
-**Betroffene Dateien**:
-- `client/src/pages/url-scraper.tsx` - CSV-Export-Spalten angepasst
-
-### 2025-11-02: MediaMarkt V1/V2 Formatierung korrigiert
-**Änderung**: MediaMarkt-Titel V1 und V2 folgen jetzt den korrekten Vorgaben.
-
-**Implementierung**:
-- **MediaMarkt V1**: Zeigt nur "Produkt + Modell" (z.B. "Akkupack Mignon AA / LR6"), keine weiteren Informationen
-- **MediaMarkt V2**: Zeigt nur Modellcodes (Großbuchstaben und Zahlen), Herstellerpräfixe wie "ANS-" werden automatisch entfernt
-
-**Vorher**:
-- V1: "Kategorie + Artikelnummer" (z.B. "Werkzeugakku 2607336705")
-- V2: Komplette Artikelnummer mit Präfix
-
-**Nachher**:
-- V1: "Akkupack Mignon AA / LR6" (nur Produkt + Modell)
-- V2: "1522-0017" (nur Modellcode ohne ANS-Präfix)
-
-**Betroffene Dateien**:
-- `client/src/pages/csv-bulk-description.tsx` - MediaMarkt-Titel-Generierung angepasst
-
-### 2025-11-02: Technische Tabelle linksbündig formatiert
-**Änderung**: Technische Tabelle in Produktbeschreibung ist jetzt vollständig linksbündig.
-
-**Implementierung**:
-- **Bereinigungsfunktion**: `cleanTechnicalTable()` entfernt CSS-Klassen, IDs, Wrapper-Divs und Caption
-- **Beide Spalten linksbündig**: Feldname (fett) und Wert (normal) sind linksbündig formatiert
-- **Inline-Styles**: Tabelle erhält `text-align: left` für saubere Darstellung
-
-**Betroffene Dateien**:
-- `server/templates/renderer.ts` - Tabellenformatierung optimiert
-
-### 2025-11-02: SEO Produktbeschreibung-Schwellenwerte angepasst
-**Änderung**: SEO Produktbeschreibung zeigt jetzt mehr Werte im grünen Bereich an.
-
-**Implementierung**:
-- **Grün-Bereich**: 100-160 Zeichen (vorher: 120-160)
-- **Gelb-Bereich**: 80-100 Zeichen
-- 113 Zeichen ist jetzt ✅ **GRÜN** (vorher: ❌ ROT)
-
-**Betroffene Dateien**:
-- `client/src/pages/url-scraper.tsx` - SEO-Qualitätsanalyse angepasst
-
-### 2025-11-02: Technische Tabelle 1:1 vom Lieferanten übernehmen
-**Problem behoben**: Produktbeschreibungs-Vorschau zeigte nur 4 Zeilen (vereinfachte AI-Tabelle), nicht die vollständige technische Tabelle von der ANSMANN-Website.
-
-**Ursache**: 
-- `technicalDataTable` wurde vom Scraper extrahiert (z.B. `#additional` mit 2227 chars)
-- Aber der Renderer verwendete die **AI-generierte Tabelle** (vereinfacht) anstatt der **originalen HTML-Tabelle** (1:1)
-
-**Implementierung**:
-- **Priorität geändert**: `renderer.ts` prüft jetzt ZUERST, ob `technicalDataTable` vorhanden ist
-- **Falls ja**: Originale Tabelle wird 1:1 übernommen (alle Felder von der ANSMANN-Website)
-- **Falls nein**: AI-generierte Tabelle wird als Fallback verwendet
-
-**Betroffene Dateien**:
-- `server/templates/renderer.ts` - Rendering-Logik angepasst für 1:1 Tabellenübernahme
-
-### 2025-11-02: SEO-Schwellenwerte optimiert
-**Änderung**: SERP-Snippet-Vorschau zeigt jetzt mehr Werte im grünen Bereich an.
-
-**Implementierung**:
-- **Meta Title**: Grün-Bereich erweitert von 380-580px auf **300-580px** (349px ist jetzt ✅ GRÜN)
-- **Meta Description**: Grün-Bereich erweitert von 750-1000px auf **600-1000px** (743px ist jetzt ✅ GRÜN)
-- Gelber Bereich reduziert: Title 200-300px, Description 450-600px
-
-**Betroffene Dateien**:
-- `client/src/pages/url-scraper.tsx` - SEO-Qualitätsanalyse-Logik angepasst
-
-### 2025-11-02: ANSMANN Scraper-Fix für technische Daten
-**Problem behoben**: Nominalspannung, Nominalkapazität, max. Entladestrom und Abmessungen wurden nicht extrahiert.
-
-**Ursache**: 
-- Abmessungen-Selektor (`abmessungen`) wurde in der Datenbank gespeichert, aber **nicht vom Scraper verwendet**
-- Nur der HTML-Fallback wurde genutzt, der nicht funktionierte
-
-**Implementierung**:
-- **Abmessungen-Selektor aktiv**: `td.col.data[data-th="Abmessungen"]` wird jetzt ZUERST geprüft, dann Fallback auf HTML-Regex
-- **Debug-Logs hinzugefügt**: `🔍 Extracted Abmessungen`, `⚡ Nominalspannung`, `🔋 Nominalkapazität`, `📏 Länge × Breite × Höhe`
-- **Automatisches Parsing**: "1.5 × 1.5 × 5.1 cm" → 15mm × 15mm × 51mm
-
-**Betroffene Dateien**:
-- `server/scraper-service.ts` - Abmessungen-Extraktion verbessert mit Selektor-Unterstützung
-
-### 2025-11-02: Brickfox-Felder für Abmessungen und Kapazität hinzugefügt
-**Problem behoben**: Technische Daten (Länge, Breite, Höhe, mAh) wurden vom Scraper extrahiert, aber nicht ins Brickfox-CSV exportiert.
-
-**Implementierung**:
-- **Neue Brickfox-Felder**: `v_length`, `v_width`, `v_height`, `v_capacity_mah` in `shared/brickfox-schema.ts`
-- **Default-Mapping erweitert**: Automatisches Mapping von gescrapten Feldern (laenge, breite, hoehe, nominalkapazitaet) zu Brickfox-Spalten
-- **Datentyp**: Alle Felder als `number` (Länge/Breite/Höhe in mm, Kapazität in mAh)
-
-**Betroffene Dateien**:
-- `shared/brickfox-schema.ts` - Schema erweitert mit 4 neuen Feldern
-
-### 2025-11-02: E-Mail-Integration für Lieferanten-Anfragen (Greyhound SMTP)
-**Feature**: Automatischer E-Mail-Versand für Produkte ohne URLs mit editierbarer Vorlage.
-
-**Implementierung**:
-- **SMTP-Integration**: Greyhound SMTP-Server via nodemailer (Zugangsdaten in Replit Secrets: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM)
-- **Timeout-Optimierung**: SMTP-Timeout von 120s auf 30s reduziert, Frontend-Timeout von 35s hinzugefügt
-- **E-Mail-Service**: `server/services/email-service.ts` für strukturierte E-Mail-Versendung
-- **API-Endpoint**: `/api/email/request-urls` für E-Mail-Versand mit EAN-Codes
-- **Frontend-Dialog**: Editierbare E-Mail-Vorlage mit Empfänger, Betreff, Nachricht und automatischem Anhängen der EAN-Codes
-- **Button "URLs anfragen"**: Im Tab "Ohne URL" - öffnet Dialog, sendet E-Mail über Greyhound SMTP
-
-**Status**: ⚠️ Greyhound SMTP-Server derzeit nicht von Replit aus erreichbar (Connection Timeout). Alternative: Resend, SendGrid oder Gmail Integration verfügbar.
-
-**Workflow**:
-1. PDF hochladen → Produkte OHNE URL werden im Tab "Ohne URL" angezeigt
-2. Button "URLs anfragen" klicken → Dialog öffnet sich
-3. E-Mail-Vorlage editieren (Empfänger, Betreff, Nachricht anpassen)
-4. E-Mail wird mit allen EAN-Codes aus Tab "Ohne URL" versendet
-5. Lieferant erhält strukturierte Anfrage mit EAN-Liste
-
-**Betroffene Dateien**:
-- `server/services/email-service.ts` - SMTP-Service mit Timeout-Optimierung
-- `server/routes-supabase.ts` - API-Endpoint
-- `client/src/pages/pdf-auto-scraper.tsx` - Dialog-Integration mit Frontend-Timeout
+- **Pixi ERP API**: Used for product inventory comparison and duplicate detection.
+- **Greyhound SMTP**: E-mail sending for automated supplier requests via nodemailer (though currently facing connectivity issues from Replit).

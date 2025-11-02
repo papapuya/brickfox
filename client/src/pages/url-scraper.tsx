@@ -123,6 +123,34 @@ export default function URLScraper() {
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState("");
   
+  // CSV Export Column Selection
+  const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const [exportColumns, setExportColumns] = useState([
+    { key: 'articleNumber', label: 'Artikelnummer', enabled: true },
+    { key: 'productName', label: 'Produktname', enabled: true },
+    { key: 'ean', label: 'EAN', enabled: true },
+    { key: 'manufacturer', label: 'Hersteller', enabled: true },
+    { key: 'ekPrice', label: 'EK_Preis', enabled: true },
+    { key: 'vkPrice', label: 'VK_Preis', enabled: true },
+    { key: 'nominalspannung', label: 'Nominalspannung_V', enabled: true },
+    { key: 'nominalkapazitaet', label: 'Nominalkapazität_mAh', enabled: true },
+    { key: 'maxEntladestrom', label: 'Max_Entladestrom_A', enabled: true },
+    { key: 'laenge', label: 'Länge_mm', enabled: true },
+    { key: 'breite', label: 'Breite_mm', enabled: true },
+    { key: 'hoehe', label: 'Höhe_mm', enabled: true },
+    { key: 'gewicht', label: 'Gewicht_g', enabled: true },
+    { key: 'zellenchemie', label: 'Zellenchemie', enabled: true },
+    { key: 'energie', label: 'Energie_Wh', enabled: true },
+    { key: 'farbe', label: 'Farbe', enabled: true },
+    { key: 'category', label: 'Kategorie', enabled: true },
+    { key: 'seoTitle', label: 'SEO_Titel', enabled: true },
+    { key: 'seoDescription', label: 'SEO_Beschreibung', enabled: true },
+    { key: 'seoKeywords', label: 'SEO_Keywords', enabled: false },
+    { key: 'description', label: 'AI_Produktbeschreibung_HTML', enabled: true },
+    { key: 'pdfManualUrl', label: 'PDF_Bedienungsanleitung_URL', enabled: false },
+    { key: 'images', label: 'Bild_URLs', enabled: true },
+  ]);
+  
   // SEO Title Preview Dialog
   const [showSeoTitlePreview, setShowSeoTitlePreview] = useState(false);
   const [seoTitlePreviewContent, setSeoTitlePreviewContent] = useState("");
@@ -1065,65 +1093,24 @@ export default function URLScraper() {
     }
   };
 
+  // Toggle column selection
+  const toggleColumn = (key: string) => {
+    setExportColumns(prev => 
+      prev.map(col => col.key === key ? { ...col, enabled: !col.enabled } : col)
+    );
+  };
+
+  const toggleAllColumns = (enabled: boolean) => {
+    setExportColumns(prev => prev.map(col => ({ ...col, enabled })));
+  };
+
   const convertToCSV = (products: ScrapedProduct[]): string => {
     if (products.length === 0) return '';
 
-    // Fixed list of ALL expected fields (base fields + AI description + ANSMANN technical fields)
-    // This ensures ALL columns appear in CSV, even if fields are missing
-    const orderedKeys = [
-      'articleNumber',
-      'productName',
-      'ean',
-      'manufacturer',
-      'ekPrice',
-      'vkPrice',
-      'nominalspannung',
-      'nominalkapazitaet',
-      'maxEntladestrom',
-      'laenge',
-      'breite',
-      'hoehe',
-      'gewicht',
-      'zellenchemie',
-      'energie',
-      'farbe',
-      'category',
-      'seoTitle',
-      'seoDescription',
-      'seoKeywords',
-      'description',
-      'pdfManualUrl',
-      'images'
-    ];
-
-    // Create friendly header names (ANSMANN fields)
-    const headerMap: Record<string, string> = {
-      articleNumber: 'Artikelnummer',
-      productName: 'Produktname',
-      ean: 'EAN',
-      manufacturer: 'Hersteller',
-      ekPrice: 'EK_Preis',
-      vkPrice: 'VK_Preis',
-      nominalspannung: 'Nominalspannung_V',
-      nominalkapazitaet: 'Nominalkapazität_mAh',
-      maxEntladestrom: 'Max_Entladestrom_A',
-      laenge: 'Länge_mm',
-      breite: 'Breite_mm',
-      hoehe: 'Höhe_mm',
-      gewicht: 'Gewicht_g',
-      zellenchemie: 'Zellenchemie',
-      energie: 'Energie_Wh',
-      farbe: 'Farbe',
-      category: 'Kategorie',
-      seoTitle: 'SEO_Titel',
-      seoDescription: 'SEO_Beschreibung',
-      seoKeywords: 'SEO_Keywords',
-      description: 'AI_Produktbeschreibung_HTML',
-      pdfManualUrl: 'PDF_Bedienungsanleitung_URL',
-      images: 'Bild_URLs'
-    };
-
-    const headers = orderedKeys.map(key => headerMap[key] || key);
+    // Use only enabled columns from exportColumns
+    const selectedColumns = exportColumns.filter(col => col.enabled);
+    const orderedKeys = selectedColumns.map(col => col.key);
+    const headers = selectedColumns.map(col => col.label);
 
     // CSV Rows - keep HTML in description, escape quotes properly
     // Fill missing fields with empty strings
@@ -1936,12 +1923,62 @@ export default function URLScraper() {
                   <Save className="w-4 h-4 mr-2" />
                   Als Projekt speichern
                 </Button>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setShowColumnSelector(!showColumnSelector)}
+                >
+                  <Settings2 className="w-4 h-4 mr-2" />
+                  Spalten auswählen
+                </Button>
                 <Button onClick={downloadCSV} variant="outline">
                   <Download className="w-4 h-4 mr-2" />
-                  Als CSV herunterladen
+                  CSV Exportieren
                 </Button>
               </div>
             </div>
+
+            {/* CSV Column Selector */}
+            {showColumnSelector && (
+              <div className="mt-4 mb-4 p-4 bg-muted/30 rounded-lg border">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold">Spalten für Export auswählen</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleAllColumns(true)}
+                    >
+                      Alle auswählen
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleAllColumns(false)}
+                    >
+                      Alle abwählen
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {exportColumns.map(col => (
+                    <div key={col.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`col-${col.key}`}
+                        checked={col.enabled}
+                        onCheckedChange={() => toggleColumn(col.key)}
+                      />
+                      <Label
+                        htmlFor={`col-${col.key}`}
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        {col.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {/* AI Generation Progress Bar */}
             {isGeneratingBatch && (
