@@ -45,6 +45,22 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 
 ## Recent Changes
 
+### 2025-11-02: Automatischer Bilder-Download beim Scraping 📥
+**Feature**: Alle Produktbilder werden beim Scraping automatisch heruntergeladen und lokal gespeichert.
+
+**Implementierung**:
+- **Image-Download-Service**: Lädt alle Bilder eines Produkts herunter (Array-Loop für mehrere URLs)
+- **Lokale Speicherung**: Bilder werden in `attached_assets/product_images/{Artikelnummer}/` gespeichert
+- **Dateinamen**: `bild_1.jpg`, `bild_2.jpg`, etc. (automatische Erkennung der Dateiendung)
+- **Sicherheit**: Artikelnummer wird sanitiert, um Directory Traversal Attacken zu verhindern (Whitelist: `[A-Za-z0-9_-]`)
+- **CSV-Export**: Neue Spalte "Lokale_Bildpfade" mit allen lokalen Pfaden (zusätzlich zu Bild_URLs)
+- **Error-Handling**: Fortsetzung auch bei fehlgeschlagenen Downloads einzelner Bilder
+
+**Betroffene Dateien**:
+- `server/image-download-service.ts` - Download-Service mit Sicherheits-Sanitierung
+- `server/routes-supabase.ts` - Automatischer Download nach Scraping
+- `client/src/pages/url-scraper.tsx` - Empfang und Export von `localImagePaths`
+
 ### 2025-11-02: Bildergalerie für gescrapte Produkte 🖼️
 **Feature**: Interaktive Bildergalerie zum Anzeigen aller gescrapten Produktbilder in voller Größe.
 
