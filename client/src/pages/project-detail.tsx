@@ -37,6 +37,10 @@ export default function ProjectDetail() {
   const [isBrickfoxPreviewOpen, setIsBrickfoxPreviewOpen] = useState(false);
   const [brickfoxPreviewData, setBrickfoxPreviewData] = useState<any[]>([]);
   const [brickfoxLoading, setBrickfoxLoading] = useState(false);
+  
+  // Pagination for product table
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 6;
 
   const defaultColumns: ExportColumn[] = [
     { id: 'name', label: 'Produktname', field: 'name', enabled: true },
@@ -550,7 +554,9 @@ export default function ProjectDetail() {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {products.map((product) => {
+                        {products
+                          .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+                          .map((product) => {
                           const extractedData = product.extractedData || [];
                           const customAttrs = product.customAttributes || [];
                           
@@ -636,6 +642,46 @@ export default function ProjectDetail() {
                       </tbody>
                     </table>
                   </div>
+                  
+                  {/* Pagination Controls */}
+                  {products.length > productsPerPage && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+                      <div className="text-sm text-muted-foreground">
+                        Zeige {((currentPage - 1) * productsPerPage) + 1} bis {Math.min(currentPage * productsPerPage, products.length)} von {products.length} Produkten
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          Zurück
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.ceil(products.length / productsPerPage) }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / productsPerPage), currentPage + 1))}
+                          disabled={currentPage === Math.ceil(products.length / productsPerPage)}
+                        >
+                          Weiter
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

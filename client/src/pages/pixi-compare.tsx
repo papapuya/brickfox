@@ -61,6 +61,10 @@ export default function PixiComparePage() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [saving, setSaving] = useState(false);
+  
+  // Pagination for results table
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 6;
 
   useEffect(() => {
     if (activeTab === 'project') {
@@ -566,7 +570,9 @@ export default function PixiComparePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {result.products.map((product, idx) => (
+                      {result.products
+                        .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+                        .map((product, idx) => (
                         <TableRow key={idx}>
                           <TableCell>
                             <Badge
@@ -601,6 +607,46 @@ export default function PixiComparePage() {
                     </TableBody>
                   </Table>
                 </div>
+                
+                {/* Pagination Controls */}
+                {result.products.length > productsPerPage && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+                    <div className="text-sm text-muted-foreground">
+                      Zeige {((currentPage - 1) * productsPerPage) + 1} bis {Math.min(currentPage * productsPerPage, result.products.length)} von {result.products.length} Produkten
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Zurück
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.ceil(result.products.length / productsPerPage) }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(Math.ceil(result.products.length / productsPerPage), currentPage + 1))}
+                        disabled={currentPage === Math.ceil(result.products.length / productsPerPage)}
+                      >
+                        Weiter
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>

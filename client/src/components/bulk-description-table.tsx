@@ -30,7 +30,7 @@ interface BulkDescriptionTableProps {
 
 export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml }: BulkDescriptionTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const itemsPerPage = 6;
 
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -178,35 +178,45 @@ export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml 
           </tbody>
         </table>
       </div>
-      <div className="p-4 border-t bg-muted/30 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Zeige <span className="font-medium text-foreground">{startIndex + 1}-{Math.min(endIndex, products.length)}</span> von <span className="font-medium text-foreground">{products.length}</span> Produkten
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToPreviousPage}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Zurück
-          </Button>
-          <div className="text-sm text-muted-foreground px-4">
-            Seite <span className="font-medium text-foreground">{currentPage}</span> von <span className="font-medium text-foreground">{totalPages}</span>
+      {/* Pagination Controls */}
+      {products.length > itemsPerPage && (
+        <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+          <div className="text-sm text-muted-foreground">
+            Zeige {startIndex + 1} bis {Math.min(endIndex, products.length)} von {products.length} Produkten
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToNextPage}
-            disabled={currentPage === totalPages}
-          >
-            Weiter
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+            >
+              Zurück
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+            >
+              Weiter
+            </Button>
+          </div>
         </div>
-        <div className="w-32"></div>
-      </div>
+      )}
     </Card>
   );
 }

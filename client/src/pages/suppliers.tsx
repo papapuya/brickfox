@@ -56,6 +56,10 @@ export default function Suppliers() {
   const [testingField, setTestingField] = useState<string | null>(null);
   const [testUrl, setTestUrl] = useState<string>("");
   const { toast } = useToast();
+  
+  // Pagination for suppliers table
+  const [currentPage, setCurrentPage] = useState(1);
+  const suppliersPerPage = 6;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -335,6 +339,7 @@ export default function Suppliers() {
             </Button>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -346,7 +351,9 @@ export default function Suppliers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {suppliers.map((supplier) => (
+              {suppliers
+                .slice((currentPage - 1) * suppliersPerPage, currentPage * suppliersPerPage)
+                .map((supplier) => (
                 <TableRow 
                   key={supplier.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -394,6 +401,48 @@ export default function Suppliers() {
               ))}
             </TableBody>
           </Table>
+          
+          
+          {/* Pagination Controls */}
+          {suppliers.length > suppliersPerPage && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 mt-4">
+              <div className="text-sm text-muted-foreground">
+                Zeige {((currentPage - 1) * suppliersPerPage) + 1} bis {Math.min(currentPage * suppliersPerPage, suppliers.length)} von {suppliers.length} Lieferanten
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Zurück
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.ceil(suppliers.length / suppliersPerPage) }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(Math.ceil(suppliers.length / suppliersPerPage), currentPage + 1))}
+                  disabled={currentPage === Math.ceil(suppliers.length / suppliersPerPage)}
+                >
+                  Weiter
+                </Button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </Card>
 
