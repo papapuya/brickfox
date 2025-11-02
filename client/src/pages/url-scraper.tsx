@@ -1216,19 +1216,24 @@ export default function URLScraper() {
       if (selectedProjectId === "new") {
         // Create new project with single product
         
-        // Helper: Get German product type from categoryId
-        const getProductType = (categoryId?: string): string => {
-          switch (categoryId) {
-            case 'flashlight': return 'Taschenlampe';
-            case 'headlamp': return 'Stirnlampe';
-            case 'battery': return 'Batterie';
-            case 'charger': return 'Ladegerät';
-            default: return 'Produkt';
+        // Helper: Extract product type word directly from product name
+        const extractProductTypeFromName = (productName: string): string => {
+          const words = productName.split(/[\s-]+/);
+          // Find product type keywords (usually nouns ending in common patterns)
+          const productTypeKeywords = ['lampe', 'batterie', 'akku', 'ladegerät', 'ladestation', 'charger', 'pack'];
+          
+          for (const word of words) {
+            const lowerWord = word.toLowerCase();
+            if (productTypeKeywords.some(keyword => lowerWord.includes(keyword))) {
+              // Return the capitalized word as found in product name
+              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }
           }
+          return 'Produkt';
         };
         
-        // MediaMarkt V1: Produkttyp + Modellcode (z.B. "Taschenlampe NCCG7") - OHNE Marke!
-        const productType = getProductType(singleProductAiData?.categoryId);
+        // MediaMarkt V1: Produkttyp (aus Produktname) + Modellcode (z.B. "Taschenlampe NCCG7") - OHNE Marke!
+        const productType = extractProductTypeFromName(scrapedProduct.productName);
         const modelCode = (scrapedProduct.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
         const mmV1 = modelCode ? `${productType} ${modelCode}` : productType;
         
@@ -1361,19 +1366,24 @@ export default function URLScraper() {
           }
         });
         
-        // Helper: Get German product type from categoryId
-        const getProductType = (categoryId?: string): string => {
-          switch (categoryId) {
-            case 'flashlight': return 'Taschenlampe';
-            case 'headlamp': return 'Stirnlampe';
-            case 'battery': return 'Batterie';
-            case 'charger': return 'Ladegerät';
-            default: return 'Produkt';
+        // Helper: Extract product type word directly from product name
+        const extractProductTypeFromName = (productName: string): string => {
+          const words = productName.split(/[\s-]+/);
+          // Find product type keywords (usually nouns ending in common patterns)
+          const productTypeKeywords = ['lampe', 'batterie', 'akku', 'ladegerät', 'ladestation', 'charger', 'pack'];
+          
+          for (const word of words) {
+            const lowerWord = word.toLowerCase();
+            if (productTypeKeywords.some(keyword => lowerWord.includes(keyword))) {
+              // Return the capitalized word as found in product name
+              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }
           }
+          return 'Produkt';
         };
         
-        // MediaMarkt V1: Produkttyp + Modellcode (z.B. "Taschenlampe NCCG7") - OHNE Marke!
-        const productType = getProductType(generatedContent?.categoryId);
+        // MediaMarkt V1: Produkttyp (aus Produktname) + Modellcode (z.B. "Taschenlampe NCCG7") - OHNE Marke!
+        const productType = extractProductTypeFromName(product.productName);
         const modelCode = (product.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
         const mmV1 = modelCode ? `${productType} ${modelCode}` : productType;
         
