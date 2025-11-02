@@ -959,7 +959,13 @@ export default function URLScraper() {
             }
           });
           
-          console.log(`📦 Strukturierte Daten für ${product.productName}:`, structuredData);
+          console.log(`📦 Strukturierte Daten (${Object.keys(structuredData).length} Felder):`, Object.keys(structuredData));
+          console.log(`📦 Nitecore-Felder in structuredData:`, {
+            length: structuredData.length,
+            led1: structuredData.led1,
+            led2: structuredData.led2,
+            maxLuminosity: structuredData.maxLuminosity
+          });
 
           const token = localStorage.getItem('supabase_token');
           const response = await fetch('/api/generate-description', {

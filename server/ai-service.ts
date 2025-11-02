@@ -278,6 +278,7 @@ export async function generateProductDescription(
     exactProductName?: string;
     articleNumber?: string;
     customAttributes?: Array<{key: string, value: string, type: string}>;
+    structuredData?: Record<string, any>; // WICHTIG: Strukturierte Daten (length, led1, led2, etc.)
     technicalDataTable?: string; // Original HTML table from supplier
     safetyWarnings?: string; // 1:1 safety warnings from supplier
     pdfManualUrl?: string; // PDF manual URL
@@ -301,17 +302,31 @@ export async function generateProductDescription(
   const firstData = extractedData[0] || {};
   const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || '';
   
-  const categoryId = detectCategory(firstData);
+  // WICHTIG: Strukturierte Daten (length, led1, led2, maxLuminosity, etc.) mit productData zusammenführen
+  const enrichedProductData = {
+    ...firstData,
+    ...(customAttributes?.structuredData || {})  // Technische Felder hinzufügen
+  };
+  
+  console.log('📦 [AI-SERVICE] Enriched product data fields:', Object.keys(enrichedProductData));
+  console.log('📦 [AI-SERVICE] Nitecore fields:', {
+    length: enrichedProductData.length,
+    led1: enrichedProductData.led1,
+    led2: enrichedProductData.led2,
+    maxLuminosity: enrichedProductData.maxLuminosity
+  });
+  
+  const categoryId = detectCategory(enrichedProductData);
   const categoryConfig = getCategoryConfig(categoryId);
   
   console.log(`Detected category: ${categoryId} (${categoryConfig.name})`);
 
   const copy = await generateProductCopy(
-    firstData,
+    enrichedProductData,  // WICHTIG: Angereicherte Daten übergeben!
     categoryConfig,
     currentApiKey,
     currentBaseUrl,
-    model // Pass model to AI generator
+    model  // Pass model to AI generator
   );
 
   const html = renderProductHtml({

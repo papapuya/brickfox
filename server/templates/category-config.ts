@@ -25,6 +25,44 @@ export interface ProductCategoryConfig {
 }
 
 export const PRODUCT_CATEGORIES: Record<string, ProductCategoryConfig> = {
+  flashlight: {
+    id: 'flashlight',
+    name: 'Taschenlampe',
+    description: 'LED-Taschenlampen und Stirnlampen',
+    keywords: ['taschenlampe', 'flashlight', 'torch', 'lampe', 'lumen', 'led', 'licht', 'leuchtweite', 'chameleon', 'nitecore', 'stirnlampe', 'headlamp'],
+    technicalFields: [
+      { key: 'led1', label: 'LED Weißlicht', required: false },
+      { key: 'led2', label: 'LED Farblicht', required: false },
+      { key: 'maxLuminosity', label: 'Max. Helligkeit', unit: 'Lumen', required: true, fallback: 'Nicht angegeben' },
+      { key: 'spotIntensity', label: 'Spot-Intensität', unit: 'cd', required: false },
+      { key: 'maxBeamDistance', label: 'Max. Leuchtweite', unit: 'm', required: false },
+      { key: 'powerSupply', label: 'Stromversorgung', required: false },
+      { key: 'length', label: 'Länge', unit: 'mm', required: false },
+      { key: 'bodyDiameter', label: 'Körperdurchmesser', unit: 'mm', required: false },
+      { key: 'headDiameter', label: 'Kopfdurchmesser', unit: 'mm', required: false },
+      { key: 'weightWithoutBattery', label: 'Gewicht ohne Akku', unit: 'g', required: false },
+      { key: 'waterResistance', label: 'Wasserdichtigkeit', required: false },
+      { key: 'impactResistance', label: 'Stoßfestigkeit', required: false },
+    ],
+    uspTemplates: [
+      'Extrem leistungsstark - ideal für Outdoor, Camping und professionellen Einsatz',
+      'Mehrfarbige LEDs - vielseitig einsetzbar für verschiedene Anwendungen',
+      'Robustes Aluminiumgehäuse - stoßfest und wetterfest',
+      'Lange Leuchtdauer - dank effizienter LED-Technologie',
+      'Mehrere Leuchtmodi - anpassbar an jede Situation',
+      'Kompakt und handlich - perfekt für unterwegs',
+      'Wiederaufladbar - umweltfreundlich und kosteneffizient',
+    ],
+    safetyNotice: '⚠️ Nicht direkt in die Augen leuchten. Vor Wasser schützen (außer bei wasserdichten Modellen). Akkus nur mit geeigneten Ladegeräten laden. Von Kindern fernhalten.',
+    productHighlights: [
+      'Hochwertige LED-Technologie für maximale Helligkeit',
+      'Langlebiges Aluminiumgehäuse für jahrelangen Einsatz',
+      'Vielseitige Leuchtmodi für jeden Einsatzzweck',
+      'Kompakte Bauweise - ideal für unterwegs',
+      'Hervorragendes Preis-Leistungs-Verhältnis',
+    ],
+  },
+
   battery: {
     id: 'battery',
     name: 'Akku/Batterie',
