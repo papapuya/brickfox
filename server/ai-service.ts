@@ -1118,7 +1118,7 @@ Eingabeparameter:
 - product_description: ${productDescription}
 
 Ziel:
-Erstelle eine ansprechende, keyword-optimierte Produktbeschreibung mit ca. 400–500 Zeichen Länge (≈ 1000 px Breite). 
+Erstelle eine ansprechende, keyword-optimierte Produktbeschreibung mit **MAXIMAL 450 Zeichen** (≈ 1000 px Breite). 
 Die Beschreibung soll natürlich klingen, Vertrauen schaffen und die wichtigsten technischen Merkmale betonen.
 
 Regeln:
@@ -1127,9 +1127,10 @@ Regeln:
 3. Schreibe in ganzen, flüssigen Sätzen mit aktivem Sprachstil.
 4. Betone Qualität, Leistung, Sicherheit oder Einsatzbereiche.
 5. Verwende ausschließlich deutsche Sprache.
-6. Gib nur den finalen Beschreibungstext aus – **keine Erklärungen oder JSON-Struktur**.
+6. **KRITISCH: Halte dich STRIKT an maximal 450 Zeichen. Schließe den Text mit einem vollständigen Satz ab, KEIN "..." am Ende.**
+7. Gib nur den finalen Beschreibungstext aus – **keine Erklärungen oder JSON-Struktur**.
 
-Beispiel:
+Beispiel (245 Zeichen):
 Eingabe:
 product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh"
 product_description: "Ideal für Anwendungen mit Li 18650-Zellen und UN 38.3 zertifiziert."
@@ -1171,11 +1172,22 @@ Ausgabe:
       temperature: 0.7
     });
 
-    const seoDescription = descriptionResponse.choices[0]?.message?.content?.trim() || description?.substring(0, 400) || '';
+    let seoDescription = descriptionResponse.choices[0]?.message?.content?.trim() || description?.substring(0, 400) || '';
+    
+    // Remove trailing "..." if AI added it (we want complete sentences)
+    seoDescription = seoDescription.replace(/\.\.\.+$/, '').trim();
+    
+    // Only truncate if AI ignored the limit (emergency fallback)
+    if (seoDescription.length > 450) {
+      // Find last complete sentence before 450 chars
+      const truncated = seoDescription.substring(0, 447);
+      const lastPeriod = truncated.lastIndexOf('.');
+      seoDescription = lastPeriod > 200 ? truncated.substring(0, lastPeriod + 1) : truncated + '...';
+    }
     
     return {
       seoTitle: seoTitle.length > 65 ? seoTitle.substring(0, 62) + '...' : seoTitle,
-      seoDescription: seoDescription.length > 500 ? seoDescription.substring(0, 497) + '...' : seoDescription
+      seoDescription
     };
     
   } catch (error) {
