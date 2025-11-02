@@ -49,6 +49,7 @@ interface GeneratedContent {
   description: string;
   seoTitle: string;
   seoDescription: string;
+  seoKeywords?: string;
 }
 
 export default function URLScraper() {
@@ -99,9 +100,17 @@ export default function URLScraper() {
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState("");
   
+  // SEO Title Preview Dialog
+  const [showSeoTitlePreview, setShowSeoTitlePreview] = useState(false);
+  const [seoTitlePreviewContent, setSeoTitlePreviewContent] = useState("");
+  
   // SEO Description Preview Dialog
   const [showSeoPreview, setShowSeoPreview] = useState(false);
   const [seoPreviewContent, setSeoPreviewContent] = useState("");
+  
+  // SEO Keywords Preview Dialog
+  const [showKeywordsPreview, setShowKeywordsPreview] = useState(false);
+  const [keywordsPreviewContent, setKeywordsPreviewContent] = useState("");
   
   // HTML Copy State
   const [copiedArticleNumber, setCopiedArticleNumber] = useState<string | null>(null);
@@ -926,11 +935,12 @@ export default function URLScraper() {
           const product = batch[batchIndex];
           if (result.status === 'fulfilled') {
             const data = result.value as any;
-            // Store complete response with description, seoTitle, seoDescription
+            // Store complete response with description, seoTitle, seoDescription, seoKeywords
             newDescriptions.set(product.articleNumber, {
               description: data.description || '',
               seoTitle: data.seoTitle || '',
-              seoDescription: data.seoDescription || ''
+              seoDescription: data.seoDescription || '',
+              seoKeywords: data.seoKeywords || ''
             });
             successCount++;
           } else {
@@ -1910,8 +1920,22 @@ export default function URLScraper() {
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <div className="max-w-md whitespace-normal">
-                              {generatedDescriptions.get(product.articleNumber)?.seoTitle || product.productName || '-'}
+                            <div className="flex items-center gap-2">
+                              <div className="max-w-md whitespace-normal">
+                                {generatedDescriptions.get(product.articleNumber)?.seoTitle || product.productName || '-'}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSeoTitlePreviewContent(generatedDescriptions.get(product.articleNumber)?.seoTitle || '');
+                                  setShowSeoTitlePreview(true);
+                                }}
+                                title="Vollständigen SEO-Titel anzeigen"
+                                className="shrink-0"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
                             </div>
                           ) : (
                             <span className="italic text-muted-foreground">wird generiert...</span>
@@ -1943,25 +1967,37 @@ export default function URLScraper() {
                         <TableCell className="bg-primary/5 text-xs italic text-muted-foreground">
                           {generatedDescriptions.has(product.articleNumber) ? (
                             <div className="flex items-center justify-between gap-2">
-                              <span className="line-clamp-1">{product.manufacturer}, {product.category}, {product.articleNumber}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const genContent = generatedDescriptions.get(product.articleNumber);
-                                  setFullViewContent({
-                                    title: genContent?.seoTitle || product.productName || '',
-                                    seoDescription: genContent?.seoDescription || '',
-                                    keywords: `${product.manufacturer}, ${product.category}, ${product.articleNumber}`,
-                                    html: genContent?.description || ''
-                                  });
-                                  setShowFullView(true);
-                                }}
-                                title="Vollansicht öffnen"
-                                className="shrink-0"
-                              >
-                                <Maximize2 className="w-4 h-4" />
-                              </Button>
+                              <span className="line-clamp-1">{generatedDescriptions.get(product.articleNumber)?.seoKeywords || `${product.manufacturer}, ${product.category}, ${product.articleNumber}`}</span>
+                              <div className="flex gap-1 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setKeywordsPreviewContent(generatedDescriptions.get(product.articleNumber)?.seoKeywords || '');
+                                    setShowKeywordsPreview(true);
+                                  }}
+                                  title="Vollständige Keywords anzeigen"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const genContent = generatedDescriptions.get(product.articleNumber);
+                                    setFullViewContent({
+                                      title: genContent?.seoTitle || product.productName || '',
+                                      seoDescription: genContent?.seoDescription || '',
+                                      keywords: genContent?.seoKeywords || `${product.manufacturer}, ${product.category}, ${product.articleNumber}`,
+                                      html: genContent?.description || ''
+                                    });
+                                    setShowFullView(true);
+                                  }}
+                                  title="Vollansicht öffnen"
+                                >
+                                  <Maximize2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             'wird generiert...'
@@ -2209,6 +2245,38 @@ export default function URLScraper() {
           </DialogContent>
         </Dialog>
 
+        {/* SEO Title Preview Dialog */}
+        <Dialog open={showSeoTitlePreview} onOpenChange={setShowSeoTitlePreview}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>SEO Produkttitel</DialogTitle>
+              <DialogDescription>
+                Vollständiger SEO-optimierter Titel für Suchmaschinen (max. 70 Zeichen)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-6 bg-muted/50 border rounded-lg overflow-y-auto" style={{ maxHeight: '60vh' }}>
+                <p className="text-base font-semibold leading-relaxed whitespace-pre-wrap">{seoTitlePreviewContent}</p>
+                <p className="text-xs text-muted-foreground mt-2">Zeichenanzahl: {seoTitlePreviewContent.length}/70</p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(seoTitlePreviewContent);
+                    toast({ title: "Kopiert", description: "SEO-Titel wurde in die Zwischenablage kopiert" });
+                  }}
+                >
+                  Text kopieren
+                </Button>
+                <Button onClick={() => setShowSeoTitlePreview(false)}>
+                  Schließen
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* SEO Description Preview Dialog */}
         <Dialog open={showSeoPreview} onOpenChange={setShowSeoPreview}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -2233,6 +2301,37 @@ export default function URLScraper() {
                   Text kopieren
                 </Button>
                 <Button onClick={() => setShowSeoPreview(false)}>
+                  Schließen
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* SEO Keywords Preview Dialog */}
+        <Dialog open={showKeywordsPreview} onOpenChange={setShowKeywordsPreview}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>SEO Keywords</DialogTitle>
+              <DialogDescription>
+                AI-generierte Keywords für optimale Suchmaschinenoptimierung
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-6 bg-muted/50 border rounded-lg overflow-y-auto" style={{ maxHeight: '60vh' }}>
+                <p className="text-sm leading-relaxed">{keywordsPreviewContent}</p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(keywordsPreviewContent);
+                    toast({ title: "Kopiert", description: "Keywords wurden in die Zwischenablage kopiert" });
+                  }}
+                >
+                  Text kopieren
+                </Button>
+                <Button onClick={() => setShowKeywordsPreview(false)}>
                   Schließen
                 </Button>
               </div>
