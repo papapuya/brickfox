@@ -118,6 +118,10 @@ export default function URLScraper() {
   // Full View Dialog
   const [showFullView, setShowFullView] = useState(false);
   const [fullViewContent, setFullViewContent] = useState<{ title: string; seoDescription: string; keywords: string; html: string }>({ title: '', seoDescription: '', keywords: '', html: '' });
+  
+  // SERP Snippet Preview Dialog
+  const [showSerpPreview, setShowSerpPreview] = useState(false);
+  const [serpPreviewData, setSerpPreviewData] = useState<{ title: string; description: string; url: string; productName: string }>({ title: '', description: '', url: '', productName: '' });
 
   // Load existing projects
   const { data: projectsData } = useQuery<{ success: boolean; projects: Project[] }>({
@@ -1994,6 +1998,26 @@ export default function URLScraper() {
                                   size="sm"
                                   onClick={() => {
                                     const genContent = generatedDescriptions.get(product.articleNumber);
+                                    setSerpPreviewData({
+                                      title: genContent?.seoTitle || product.productName || '',
+                                      description: genContent?.seoDescription || '',
+                                      url: product.articleNumber || '',
+                                      productName: product.productName || ''
+                                    });
+                                    setShowSerpPreview(true);
+                                  }}
+                                  title="SERP Snippet Vorschau (Google-Ansicht)"
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                                  </svg>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const genContent = generatedDescriptions.get(product.articleNumber);
                                     setFullViewContent({
                                       title: genContent?.seoTitle || product.productName || '',
                                       seoDescription: genContent?.seoDescription || '',
@@ -2497,6 +2521,134 @@ export default function URLScraper() {
                   HTML kopieren
                 </Button>
                 <Button onClick={() => setShowFullView(false)}>
+                  Schließen
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* SERP Snippet Preview Dialog */}
+        <Dialog open={showSerpPreview} onOpenChange={setShowSerpPreview}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>SERP Snippet Vorschau</DialogTitle>
+              <DialogDescription>
+                So würde Ihr Produkt in Google-Suchergebnissen erscheinen
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              
+              {/* Google SERP Preview */}
+              <div className="p-6 bg-white border rounded-lg">
+                <div className="space-y-2">
+                  {/* URL Breadcrumb */}
+                  <div className="flex items-center gap-1 text-sm text-gray-700">
+                    <span className="font-normal">www.ihr-shop.de</span>
+                    <span>›</span>
+                    <span className="truncate max-w-md">{serpPreviewData.productName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}</span>
+                  </div>
+                  
+                  {/* Meta Title */}
+                  <div>
+                    <h3 className="text-xl text-blue-600 hover:underline cursor-pointer font-normal leading-snug">
+                      {serpPreviewData.title || 'SEO Titel wird hier angezeigt...'}
+                    </h3>
+                  </div>
+                  
+                  {/* Meta Description */}
+                  <div>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {serpPreviewData.description || 'SEO Beschreibung wird hier angezeigt...'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEO Quality Metrics */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm">SEO-Qualitätsanalyse</h4>
+                
+                {/* Meta Title Metrics */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">Meta Title</span>
+                    <span className={`font-semibold ${
+                      (serpPreviewData.title.length * 8.5) >= 450 && (serpPreviewData.title.length * 8.5) <= 580 ? 'text-green-600' :
+                      (serpPreviewData.title.length * 8.5) >= 400 && (serpPreviewData.title.length * 8.5) < 450 ? 'text-yellow-600' :
+                      (serpPreviewData.title.length * 8.5) > 580 && (serpPreviewData.title.length * 8.5) <= 620 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {Math.round(serpPreviewData.title.length * 8.5)} / 580 pixels
+                    </span>
+                  </div>
+                  <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all ${
+                        (serpPreviewData.title.length * 8.5) >= 450 && (serpPreviewData.title.length * 8.5) <= 580 ? 'bg-green-500' :
+                        (serpPreviewData.title.length * 8.5) >= 400 && (serpPreviewData.title.length * 8.5) < 450 ? 'bg-yellow-500' :
+                        (serpPreviewData.title.length * 8.5) > 580 && (serpPreviewData.title.length * 8.5) <= 620 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${Math.min((serpPreviewData.title.length * 8.5 / 580) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {(serpPreviewData.title.length * 8.5) >= 450 && (serpPreviewData.title.length * 8.5) <= 580 ? 
+                      '✓ Perfekte Länge - wird vollständig in Google angezeigt' :
+                     (serpPreviewData.title.length * 8.5) < 450 ? 
+                      '⚠ Etwas kurz - nutzen Sie mehr Platz für Keywords' :
+                      '✗ Zu lang - wird in Google abgeschnitten'}
+                  </p>
+                </div>
+
+                {/* Meta Description Metrics */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">Meta Description</span>
+                    <span className={`font-semibold ${
+                      (serpPreviewData.description.length * 6.3) >= 900 && (serpPreviewData.description.length * 6.3) <= 1000 ? 'text-green-600' :
+                      (serpPreviewData.description.length * 6.3) >= 800 && (serpPreviewData.description.length * 6.3) < 900 ? 'text-yellow-600' :
+                      (serpPreviewData.description.length * 6.3) > 1000 && (serpPreviewData.description.length * 6.3) <= 1100 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {Math.round(serpPreviewData.description.length * 6.3)} / 1000 pixels
+                    </span>
+                  </div>
+                  <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all ${
+                        (serpPreviewData.description.length * 6.3) >= 900 && (serpPreviewData.description.length * 6.3) <= 1000 ? 'bg-green-500' :
+                        (serpPreviewData.description.length * 6.3) >= 800 && (serpPreviewData.description.length * 6.3) < 900 ? 'bg-yellow-500' :
+                        (serpPreviewData.description.length * 6.3) > 1000 && (serpPreviewData.description.length * 6.3) <= 1100 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${Math.min((serpPreviewData.description.length * 6.3 / 1000) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {(serpPreviewData.description.length * 6.3) >= 900 && (serpPreviewData.description.length * 6.3) <= 1000 ? 
+                      '✓ Perfekte Länge - wird vollständig in Google angezeigt' :
+                     (serpPreviewData.description.length * 6.3) < 900 ? 
+                      '⚠ Etwas kurz - fügen Sie mehr Details hinzu' :
+                      '✗ Zu lang - wird in Google gekürzt'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4 border-t">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const copyText = `Meta Title: ${serpPreviewData.title}\n\nMeta Description: ${serpPreviewData.description}`;
+                    navigator.clipboard.writeText(copyText);
+                    toast({ title: "Kopiert", description: "SERP-Daten wurden in die Zwischenablage kopiert" });
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  SERP-Daten kopieren
+                </Button>
+                <Button onClick={() => setShowSerpPreview(false)}>
                   Schließen
                 </Button>
               </div>
