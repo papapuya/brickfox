@@ -90,6 +90,13 @@ Vielen Dank im Voraus!`);
     }
   }, []);
 
+  // Auto-save selected supplier to sessionStorage whenever it changes
+  useEffect(() => {
+    if (selectedSupplierId) {
+      sessionStorage.setItem('pdf_auto_scraper_selected_supplier', selectedSupplierId);
+    }
+  }, [selectedSupplierId]);
+
   // Load suppliers
   const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
     queryKey: ['/api/suppliers'],
