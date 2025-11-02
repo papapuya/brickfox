@@ -2256,7 +2256,7 @@ export default function URLScraper() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="p-6 bg-muted/50 border rounded-lg overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                <p className="text-base font-semibold leading-relaxed whitespace-pre-wrap">{seoTitlePreviewContent}</p>
+                <p className="text-base font-semibold leading-relaxed whitespace-normal break-words">{seoTitlePreviewContent}</p>
                 <p className="text-xs text-muted-foreground mt-2">Zeichenanzahl: {seoTitlePreviewContent.length}/70</p>
               </div>
               <div className="flex gap-2 justify-end">

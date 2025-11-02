@@ -1160,7 +1160,10 @@ Ausgabe:
       temperature: 0.7
     });
 
-    const seoTitle = titleResponse.choices[0]?.message?.content?.trim() || productName.substring(0, 65);
+    let seoTitle = titleResponse.choices[0]?.message?.content?.trim() || productName.substring(0, 65);
+    
+    // Remove surrounding quotes if AI added them
+    seoTitle = seoTitle.replace(/^["']|["']$/g, '').trim();
 
     // Generate SEO Description
     const descriptionResponse = await openai.chat.completions.create({
