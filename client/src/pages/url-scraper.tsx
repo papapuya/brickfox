@@ -2256,7 +2256,7 @@ export default function URLScraper() {
 
         {/* SEO Title Preview Dialog */}
         <Dialog open={showSeoTitlePreview} onOpenChange={setShowSeoTitlePreview}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>SEO Produkttitel</DialogTitle>
               <DialogDescription>
@@ -2264,9 +2264,11 @@ export default function URLScraper() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="p-6 bg-muted/50 border rounded-lg overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                <p className="text-base font-semibold leading-relaxed whitespace-normal break-words">{seoTitlePreviewContent}</p>
-                <p className="text-xs text-muted-foreground mt-2">Zeichenanzahl: {seoTitlePreviewContent.length}/70</p>
+              <div className="p-6 bg-muted/50 border rounded-lg">
+                <p className="text-lg font-semibold leading-relaxed" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                  {seoTitlePreviewContent}
+                </p>
+                <p className="text-xs text-muted-foreground mt-3">Zeichenanzahl: {seoTitlePreviewContent.length}/70</p>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button 
