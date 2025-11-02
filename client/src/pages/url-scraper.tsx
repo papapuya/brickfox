@@ -71,6 +71,7 @@ interface GeneratedContent {
   seoTitle: string;
   seoDescription: string;
   seoKeywords?: string;
+  categoryId?: string;
 }
 
 export default function URLScraper() {
@@ -82,6 +83,7 @@ export default function URLScraper() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [scrapedProduct, setScrapedProduct] = useState<ScrapedProduct | null>(null);
   const [generatedDescription, setGeneratedDescription] = useState<string>("");
+  const [singleProductAiData, setSingleProductAiData] = useState<GeneratedContent | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showBulkSaveDialog, setShowBulkSaveDialog] = useState(false);
@@ -875,6 +877,15 @@ export default function URLScraper() {
       const data = await response.json();
       setGeneratedDescription(data.description || '');
       
+      // Store complete AI data including categoryId
+      setSingleProductAiData({
+        description: data.description || '',
+        seoTitle: data.seoTitle || '',
+        seoDescription: data.seoDescription || '',
+        seoKeywords: data.seoKeywords || '',
+        categoryId: data.categoryId || ''
+      });
+      
       // Update scrapedProduct with generated description
       if (scrapedProduct) {
         setScrapedProduct({
@@ -1012,12 +1023,13 @@ export default function URLScraper() {
           const product = batch[batchIndex];
           if (result.status === 'fulfilled') {
             const data = result.value as any;
-            // Store complete response with description, seoTitle, seoDescription, seoKeywords
+            // Store complete response with description, seoTitle, seoDescription, seoKeywords, categoryId
             newDescriptions.set(product.articleNumber, {
               description: data.description || '',
               seoTitle: data.seoTitle || '',
               seoDescription: data.seoDescription || '',
-              seoKeywords: data.seoKeywords || ''
+              seoKeywords: data.seoKeywords || '',
+              categoryId: data.categoryId || '' // Store detected category
             });
             successCount++;
           } else {
@@ -1203,11 +1215,25 @@ export default function URLScraper() {
     try {
       if (selectedProjectId === "new") {
         // Create new project with single product
-        // MediaMarkt V1: Produkt + Modell (Produktname)
-        const mmV1 = scrapedProduct.productName;
+        
+        // Helper: Get German product type from categoryId
+        const getProductType = (categoryId?: string): string => {
+          switch (categoryId) {
+            case 'flashlight': return 'Taschenlampe';
+            case 'headlamp': return 'Stirnlampe';
+            case 'battery': return 'Batterie';
+            case 'charger': return 'Ladegerät';
+            default: return 'Produkt';
+          }
+        };
+        
+        // MediaMarkt V1: Produkttyp + Modellcode (z.B. "Taschenlampe NCCG7") - OHNE Marke!
+        const productType = getProductType(singleProductAiData?.categoryId);
+        const modelCode = (scrapedProduct.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
+        const mmV1 = modelCode ? `${productType} ${modelCode}` : productType;
         
         // MediaMarkt V2: Nur Modellcodes (ohne ANS- Präfix)
-        const mmV2 = (scrapedProduct.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
+        const mmV2 = modelCode;
 
         await apiPost('/api/bulk-save-to-project', {
           projectName: projectName.trim(),
@@ -1335,11 +1361,24 @@ export default function URLScraper() {
           }
         });
         
-        // MediaMarkt V1: Produkt + Modell (Produktname)
-        const mmV1 = product.productName;
+        // Helper: Get German product type from categoryId
+        const getProductType = (categoryId?: string): string => {
+          switch (categoryId) {
+            case 'flashlight': return 'Taschenlampe';
+            case 'headlamp': return 'Stirnlampe';
+            case 'battery': return 'Batterie';
+            case 'charger': return 'Ladegerät';
+            default: return 'Produkt';
+          }
+        };
+        
+        // MediaMarkt V1: Produkttyp + Modellcode (z.B. "Taschenlampe NCCG7") - OHNE Marke!
+        const productType = getProductType(generatedContent?.categoryId);
+        const modelCode = (product.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
+        const mmV1 = modelCode ? `${productType} ${modelCode}` : productType;
         
         // MediaMarkt V2: Nur Modellcodes (ohne ANS- Präfix)
-        const mmV2 = (product.articleNumber || '').replace(/^[A-Z]+-/, '').trim();
+        const mmV2 = modelCode;
         
         return {
           produktname: product.productName,
