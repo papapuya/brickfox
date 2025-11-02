@@ -45,6 +45,27 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 
 ## Recent Changes
 
+### 2025-11-02: Moderne Pricing-Seite mit Gradient-Design 🎨
+**Feature**: Professionelle 2-Spalten Pricing-Seite mit PIMPilot-spezifischen Features.
+
+**Implementierung**:
+- **2-Tarife-System**: Professional (für Start-Ups/KMUs) + Enterprise (für große Unternehmen)
+- **Gradient-Design**: Enterprise-Karte mit blau→lila Hintergrund-Gradient
+- **Gradient-Button**: Enterprise CTA mit blau→lila→pink Gradient (wie Vorlage)
+- **PIMPilot-Features**: CSV Bulk-Import, URL Scraper, AI-Produktbeschreibungen, PDF Auto-Scraper, Pixi ERP-Integration, MediaMarkt-Formatierung
+- **Responsive Design**: 2-Spalten auf Desktop, gestapelt auf Mobile
+- **Professional-Features**: Bis zu 500 Produkte/Monat, Lieferanten-Verwaltung, Brickfox CSV-Export
+- **Enterprise-Features**: Unbegrenzte Produktgenerierung, PDF Auto-Scraper, Pixi-Integration, persönlicher Support
+
+**Design-Highlights**:
+- Professional: Weiße Karte mit blauen Akzenten, einfacher blauer Button
+- Enterprise: Gradient-Background (blue-50 → purple-50), lila/pink Akzente, Gradient-Button
+- Moderne Checkmarks mit farblich passenden Icons
+- Shadow-Effekte und Hover-Transitions für professionellen Look
+
+**Betroffene Dateien**:
+- `client/src/pages/pricing.tsx` - Komplett neu gestaltet mit modernem 2-Spalten-Layout
+
 ### 2025-11-02: Multi-Tenant-Registrierung mit robuster Slug-Generierung 🏢
 **Feature**: Standard B2B SaaS Registrierungsflow - jede Firma erstellt automatisch ihren eigenen Tenant bei Registrierung.
 
