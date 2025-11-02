@@ -99,6 +99,10 @@ export default function URLScraper() {
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [htmlPreviewContent, setHtmlPreviewContent] = useState("");
   
+  // SEO Description Preview Dialog
+  const [showSeoPreview, setShowSeoPreview] = useState(false);
+  const [seoPreviewContent, setSeoPreviewContent] = useState("");
+  
   // HTML Copy State
   const [copiedArticleNumber, setCopiedArticleNumber] = useState<string | null>(null);
   
@@ -1898,8 +1902,22 @@ export default function URLScraper() {
                         </TableCell>
                         <TableCell className="bg-primary/5 text-xs">
                           {generatedDescriptions.has(product.articleNumber) ? (
-                            <div className="max-w-md whitespace-normal">
-                              {generatedDescriptions.get(product.articleNumber)?.seoDescription || '-'}
+                            <div className="flex items-center gap-2">
+                              <div className="max-w-md whitespace-normal line-clamp-3">
+                                {generatedDescriptions.get(product.articleNumber)?.seoDescription || '-'}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSeoPreviewContent(generatedDescriptions.get(product.articleNumber)?.seoDescription || '');
+                                  setShowSeoPreview(true);
+                                }}
+                                title="Vollständige SEO-Beschreibung anzeigen"
+                                className="shrink-0"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
                             </div>
                           ) : (
                             <span className="italic text-muted-foreground">wird generiert...</span>
@@ -2167,6 +2185,37 @@ export default function URLScraper() {
                   HTML kopieren
                 </Button>
                 <Button onClick={() => setShowHtmlPreview(false)}>
+                  Schließen
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* SEO Description Preview Dialog */}
+        <Dialog open={showSeoPreview} onOpenChange={setShowSeoPreview}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>SEO Produktbeschreibung</DialogTitle>
+              <DialogDescription>
+                Vollständige SEO-optimierte Beschreibung für Suchmaschinen
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-6 bg-muted/50 border rounded-lg overflow-y-auto" style={{ maxHeight: '60vh' }}>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{seoPreviewContent}</p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(seoPreviewContent);
+                    toast({ title: "Kopiert", description: "SEO-Beschreibung wurde in die Zwischenablage kopiert" });
+                  }}
+                >
+                  Text kopieren
+                </Button>
+                <Button onClick={() => setShowSeoPreview(false)}>
                   Schließen
                 </Button>
               </div>
