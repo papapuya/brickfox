@@ -15,6 +15,25 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-02: PDF Parser - Produkte MIT/OHNE URL Trennung
+**Feature**: Tab-basierte UI zur Trennung von Produkten mit scrapbaren URLs vs. Metadaten ohne URL.
+
+**Problem**: PDF-Parser hat sowohl Produkte mit URLs (sofort verarbeitbar) als auch Produkte ohne URLs (nur Metadaten) extrahiert, aber beide in einer Liste gemischt dargestellt.
+
+**Lösung**:
+- **Backend**: `PDFParseResult` erweitert um `withURL[]` und `withoutURL[]` Arrays
+- **Frontend**: Tab-System mit zwei separaten Ansichten
+  - Tab "Mit URL": Produkte die direkt per Auto-Scraper verarbeitet werden können
+  - Tab "Ohne URL": Produkte ohne URL + Hinweis zur Lieferanten-Kontaktierung
+- **Badge-System**: Zeigt Anzahl pro Kategorie in Tab-Headern
+- **Call-to-Action**: "URLs anfragen" Button für manuelle Nachfrage beim Lieferanten (geplant: E-Mail-Automation)
+
+**Betroffene Dateien**:
+- `client/src/pages/pdf-auto-scraper.tsx` - Tab-UI, Badge-System, separierte Tabellen
+- `server/services/pdf-parser.ts` - Rückgabe von zwei separaten Produktlisten
+
+**Nächster Schritt**: E-Mail-Integration (Resend/SendGrid) für automatisierte Lieferanten-Anfragen bei Produkten ohne URL.
+
 ### 2025-11-02: AI-Bildanalyse für automatische Farbextraktion
 **Feature**: OpenAI Vision API Integration zur automatischen Erkennung der Produktfarbe aus Bildern.
 
