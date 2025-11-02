@@ -704,15 +704,15 @@ ERSTELLE IMMER DIESE EXAKTE STRUKTUR:
 ✓USP 1 (produktspezifisch basierend auf technischen Specs, z.B. "Hohe Energiedichte - langanhaltende Leistung")<br />
 ✓USP 2 (produktspezifisch, z.B. "Thermisch stabil - sicher bei hohen Temperaturen")<br />
 ✓USP 3 (produktspezifisch, z.B. "Integrierte Schutzschaltung - maximale Sicherheit")<br />
-✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010</p>
+✓Versandkostenfrei ab 39,95€ ✓Kundenservice <span style="color: green;">☎</span>071517071010</p>
 
 KRITISCH: Die ersten 3 Bulletpoints (✓) müssen PRODUKTSPEZIFISCHE USPs sein!
-Die letzten 2 USPs sind IMMER zusammen in einer Zeile: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010"
+Die letzten 2 USPs sind IMMER zusammen in einer Zeile: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice <span style="color: green;">☎</span>071517071010"
 
 FORMATIERUNG:
 - Verwende ✓ (nicht ✅)
 - KEIN Leerzeichen zwischen ✓ und Text
-- Telefonnummer mit ✆ Symbol direkt nach "Kundenservice"
+- Telefonnummer mit grünem ☎ Symbol: <span style="color: green;">☎</span>071517071010
 
 PRODUKTSPEZIFISCHE USPs (wähle aus technischen Specs):
 ✓ Akkupack mit mehreren Zellen → "Hohe Energiedichte - langanhaltende Leistung"
@@ -771,7 +771,7 @@ WICHTIGE REGELN:
 6. Überschriften OHNE Icons (nur Text)
 7. Verwende ✓ (nicht ✅) für USPs in <p> Elementen
 8. KEIN Leerzeichen zwischen ✓ und Text
-9. Letzte Zeile IMMER: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010"
+9. Letzte Zeile IMMER: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice <span style="color: green;">☎</span>071517071010"
 10. Abmessungen Format: "L×B×H mm" (z.B. "57×20×69 mm") - NICHT "572069 mm"
 9. Gewicht immer in Gramm (g)
 10. Verwende IMMER die Werte aus technicalSpecs.size für Abmessungen, NICHT aus bullets
