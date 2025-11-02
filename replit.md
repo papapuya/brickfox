@@ -46,3 +46,55 @@ The application employs a modular subprompt architecture for specialized AI task
 - **Stripe**: Integrated for subscription management and payment processing.
 - **Pixi ERP API**: Used for product inventory comparison and duplicate detection.
 - **Greyhound SMTP**: E-mail sending for automated supplier requests via nodemailer.
+
+## Recent Changes
+
+### 2025-11-02: Pricing-Seite – Allgemeine Features ohne Vendor-Lock-In 🎯
+**Änderung**: Features auf Pricing-Seite allgemeiner formuliert für breitere Anwendbarkeit.
+
+**Was wurde geändert:**
+- ❌ "Brickfox CSV-Export" → ✅ "CSV-Export mit Field-Mapping – Flexibles Export-System"
+- ❌ "Pixi ERP-Integration" → ✅ "ERP-Integration – Duplikat-Erkennung & Abgleich"
+- ➕ Zurück-Button oben links mit Pfeil-Icon
+- ✅ Buttons auf gleicher Höhe durch Flexbox-Layout
+
+**Begründung**: Spezifische Vendor-Namen (Brickfox, Pixi) schränken die wahrgenommene Flexibilität der Plattform ein. Allgemeine Formulierungen zeigen, dass PIMPilot mit verschiedenen Systemen funktioniert.
+
+### 2025-11-02: Admin-Dashboard mit KPIs und Systemübersicht 📊
+**Feature**: Professionelles Admin-Dashboard mit Echtzeit-KPIs und Detailübersicht.
+
+**Implementierung**:
+- **5 Hauptmetriken (KPI-Header)**:
+  - 🧾 Produkte im System (mandantenübergreifend)
+  - ✅ Datenvollständigkeit (% der Produkte mit Pflichtfeldern)
+  - 📦 Lieferanten aktiv (Gesamt, erfolgreich, Fehler)
+  - ⚙️ Letzter Pixi-Sync (Zeitstempel)
+  - 🤖 KI-Texte heute generiert
+- **Backend-Endpoint**: `/api/admin/kpis` mit Echtzeit-Datenabfrage
+- **Mandanten-Übersicht**: Tabelle mit allen Kunden, User-Anzahl, Projekte, Lieferanten
+- **Feature-Flags**: Individuelle Feature-Freischaltung pro Kunde (Pixi, SAP, Scraper, CSV, AI)
+
+**Design-Highlights**:
+- 5 KPI-Cards mit farbigen Icons (Blau, Grün, Orange, Lila, Indigo)
+- Hover-Effekte und Shadow-Transitions für professionellen Look
+- Status-Indikatoren für Lieferanten (OK/Fehler mit Icons)
+- Responsive Grid-Layout für KPIs (5 Spalten auf Desktop)
+
+**Betroffene Dateien**:
+- `client/src/pages/admin-dashboard.tsx` - Komplett neu gestaltet mit KPIs
+- `server/routes-supabase.ts` - `/api/admin/kpis` Endpoint hinzugefügt
+
+### 2025-11-02: Moderne Pricing-Seite mit Gradient-Design 🎨
+**Feature**: Professionelle 2-Spalten Pricing-Seite mit allgemeinen PIM-Features.
+
+**Implementierung**:
+- **2-Tarife-System**: Professional (für Start-Ups/KMUs) + Enterprise (für große Unternehmen)
+- **Gradient-Buttons**: Blue→Purple→Pink Gradient, Buttons auf gleicher Höhe
+- **Feature-Listen**: Allgemeine Features ohne spezifische Vendor-Lock-Ins
+- **Call-to-Action**: "Demo anfordern" leitet zu Registrierung weiter
+
+**Design-Highlights**:
+- Zweispaltiges Grid-Layout mit Cards (Flexbox für einheitliche Button-Höhe)
+- Enterprise-Tarif mit blauem Rahmen und Gradient-Hintergrund
+- Farbcodierte Checkmarks (Professional: Blau, Enterprise: Lila)
+- Responsive Design für Desktop und Mobile

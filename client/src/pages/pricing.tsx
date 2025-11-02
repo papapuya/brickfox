@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, ArrowLeft } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export default function Pricing() {
@@ -13,6 +13,17 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4">
       <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Zurück
+          </Button>
+        </div>
+        
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             Der passende Tarif für deinen Erfolg
@@ -62,7 +73,9 @@ export default function Pricing() {
                 </div>
                 <div className="flex items-start">
                   <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">Brickfox CSV-Export mit Field-Mapping</span>
+                  <span className="text-gray-700">
+                    <span className="text-blue-600 font-medium">CSV-Export mit Field-Mapping</span> – Flexibles Export-System
+                  </span>
                 </div>
                 <div className="flex items-start">
                   <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
@@ -110,7 +123,7 @@ export default function Pricing() {
                 <div className="flex items-start">
                   <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
                   <span className="text-gray-800">
-                    <span className="text-purple-600 font-medium">Pixi ERP-Integration</span> – Duplikat-Erkennung & Abgleich
+                    <span className="text-purple-600 font-medium">ERP-Integration</span> – Duplikat-Erkennung & Abgleich
                   </span>
                 </div>
                 <div className="flex items-start">
