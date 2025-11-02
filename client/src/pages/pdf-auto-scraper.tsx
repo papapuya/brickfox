@@ -160,21 +160,35 @@ Vielen Dank im Voraus!`);
   // Email Mutation - Send URL request to supplier
   const emailMutation = useMutation({
     mutationFn: async (params: { to: string; subject: string; message: string; eanCodes: string[] }) => {
-      const response = await fetch('/api/email/request-urls', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
-        },
-        body: JSON.stringify(params),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'E-Mail konnte nicht gesendet werden');
+      try {
+        const response = await fetch('/api/email/request-urls', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
+          },
+          body: JSON.stringify(params),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'E-Mail konnte nicht gesendet werden');
+        }
+
+        return response.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('SMTP-Server antwortet nicht (Timeout). Bitte prüfen Sie die Server-Einstellungen.');
+        }
+        throw error;
       }
-
-      return response.json();
     },
     onSuccess: () => {
       toast({

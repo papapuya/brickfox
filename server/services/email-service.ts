@@ -33,6 +33,9 @@ class EmailService {
         user: smtpUser,
         pass: smtpPass,
       },
+      connectionTimeout: 30000, // 30 seconds (default: 120s)
+      greetingTimeout: 30000, // 30 seconds
+      socketTimeout: 45000, // 45 seconds for actual sending
     });
 
     console.log(`✅ Email Service initialized: ${smtpHost}:${smtpPort}`);
