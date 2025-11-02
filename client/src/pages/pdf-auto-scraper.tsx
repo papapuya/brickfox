@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Loader2, ExternalLink, ArrowRight, Mail } from 'lucide-react';
 import { useLocation } from 'wouter';
@@ -40,6 +42,20 @@ export default function PDFAutoScraper() {
   const [productsWithoutURL, setProductsWithoutURL] = useState<PDFProduct[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("__none__");
   const [activeTab, setActiveTab] = useState<'withURL' | 'withoutURL'>('withURL');
+  
+  // Email Dialog State
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailSubject, setEmailSubject] = useState('Anfrage: Produkt-URLs für EAN-Codes');
+  const [emailMessage, setEmailMessage] = useState(`Sehr geehrte Damen und Herren,
+
+wir benötigen für folgende Produkte (EAN-Codes) die entsprechenden Produkt-URLs:
+
+[Die EAN-Codes werden automatisch unten angefügt]
+
+Bitte senden Sie uns die URLs zu den aufgelisteten EAN-Codes.
+
+Vielen Dank im Voraus!`);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -140,6 +156,74 @@ export default function PDFAutoScraper() {
       });
     },
   });
+
+  // Email Mutation - Send URL request to supplier
+  const emailMutation = useMutation({
+    mutationFn: async (params: { to: string; subject: string; message: string; eanCodes: string[] }) => {
+      const response = await fetch('/api/email/request-urls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')}`,
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'E-Mail konnte nicht gesendet werden');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'E-Mail gesendet',
+        description: 'Die Anfrage wurde erfolgreich an den Lieferanten gesendet',
+      });
+      setIsEmailDialogOpen(false);
+      setEmailTo('');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Fehler beim Senden',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSendEmail = () => {
+    if (!emailTo || !emailSubject || !emailMessage) {
+      toast({
+        title: 'Fehlende Eingaben',
+        description: 'Bitte füllen Sie alle Felder aus',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Extract EAN codes from products without URL
+    const eanCodes = productsWithoutURL
+      .map(p => p.eanCode)
+      .filter(Boolean) as string[];
+
+    if (eanCodes.length === 0) {
+      toast({
+        title: 'Keine EAN-Codes',
+        description: 'Keine EAN-Codes zum Senden verfügbar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    emailMutation.mutate({
+      to: emailTo,
+      subject: emailSubject,
+      message: emailMessage,
+      eanCodes,
+    });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -437,10 +521,80 @@ export default function PDFAutoScraper() {
                             <p className="text-sm font-medium text-orange-900">URLs erforderlich</p>
                             <p className="text-xs text-orange-700">Kontaktieren Sie den Lieferanten, um Produkt-URLs zu erhalten</p>
                           </div>
-                          <Button variant="outline" size="sm" className="border-orange-300">
-                            <Mail className="h-4 w-4 mr-2" />
-                            URLs anfragen
-                          </Button>
+                          <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="border-orange-300">
+                                <Mail className="h-4 w-4 mr-2" />
+                                URLs anfragen
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>E-Mail an Lieferanten senden</DialogTitle>
+                                <DialogDescription>
+                                  Senden Sie eine Anfrage mit den EAN-Codes an Ihren Lieferanten
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="email-to">Empfänger-E-Mail *</Label>
+                                  <Input
+                                    id="email-to"
+                                    type="email"
+                                    placeholder="lieferant@beispiel.de"
+                                    value={emailTo}
+                                    onChange={(e) => setEmailTo(e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="email-subject">Betreff *</Label>
+                                  <Input
+                                    id="email-subject"
+                                    value={emailSubject}
+                                    onChange={(e) => setEmailSubject(e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="email-message">Nachricht *</Label>
+                                  <Textarea
+                                    id="email-message"
+                                    rows={8}
+                                    value={emailMessage}
+                                    onChange={(e) => setEmailMessage(e.target.value)}
+                                    className="font-mono text-sm"
+                                  />
+                                  <p className="text-xs text-muted-foreground">
+                                    💡 Die EAN-Codes ({productsWithoutURL.filter(p => p.eanCode).length} Stück) werden automatisch am Ende der E-Mail angefügt
+                                  </p>
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setIsEmailDialogOpen(false)}
+                                  disabled={emailMutation.isPending}
+                                >
+                                  Abbrechen
+                                </Button>
+                                <Button
+                                  onClick={handleSendEmail}
+                                  disabled={emailMutation.isPending}
+                                >
+                                  {emailMutation.isPending ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Wird gesendet...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Mail className="mr-2 h-4 w-4" />
+                                      E-Mail senden
+                                    </>
+                                  )}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                     ) : (
