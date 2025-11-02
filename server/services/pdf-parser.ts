@@ -13,9 +13,153 @@ interface PDFProduct {
   marke: string | null;
   ve: string | null;
   uevp: string | null;
+  kategorie?: string | null;
+  bezeichnung?: string | null;
+}
+
+export interface PDFParseResult {
+  withURL: PDFProduct[];
+  withoutURL: PDFProduct[];
+  totalProducts: number;
 }
 
 export class PDFParserService {
+  /**
+   * Extract ALL products from PDF: WITH URL and WITHOUT URL
+   * Returns separated lists for different workflows
+   */
+  async extractProductsWithSeparation(buffer: Buffer): Promise<PDFParseResult> {
+    try {
+      const uint8Array = new Uint8Array(buffer);
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+      const pdfDoc = await loadingTask.promise;
+      
+      const productsWithURL: PDFProduct[] = [];
+      const productsWithoutURL: PDFProduct[] = [];
+      const numPages = pdfDoc.numPages;
+
+      console.log(`📄 PDF Parser (Separation Mode): Processing ${numPages} pages...`);
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        
+        const textContent = await page.getTextContent();
+        const annotations = await page.getAnnotations();
+        const textItems = textContent.items as TextItem[];
+
+        // Extract links with their bounding boxes
+        const links = annotations
+          .filter((anno: any) => anno.subtype === 'Link' && anno.url)
+          .map((anno: any) => ({
+            url: anno.url,
+            rect: anno.rect,
+            y: anno.rect[1],
+            x: anno.rect[0],
+          }));
+
+        console.log(`📄 Page ${pageNum}: Found ${links.length} products with URLs`);
+
+        // Track processed Y positions to avoid duplicate parsing
+        const processedYPositions = new Set<number>();
+
+        // 1. PRODUCTS WITH URL
+        links.forEach((link) => {
+          const rowYMin = link.y - 8;
+          const rowYMax = link.y + 8;
+
+          const rowTextItems = textItems.filter((item) => {
+            const itemY = item.transform[5];
+            return itemY >= rowYMin && itemY <= rowYMax;
+          });
+
+          rowTextItems.sort((a, b) => a.transform[4] - b.transform[4]);
+          const rowText = rowTextItems.map(item => item.str).join(' ');
+
+          const product = this.parseProductRow(rowText, link.url);
+          if (product && this.isValidProduct(product)) {
+            productsWithURL.push(product);
+            processedYPositions.add(Math.round(link.y));
+          }
+        });
+
+        // 2. PRODUCTS WITHOUT URL (pure table rows)
+        // Group text items by Y position to find table rows
+        const textByRow = new Map<number, TextItem[]>();
+        
+        textItems.forEach((item) => {
+          const y = Math.round(item.transform[5]);
+          if (!textByRow.has(y)) {
+            textByRow.set(y, []);
+          }
+          textByRow.get(y)!.push(item);
+        });
+
+        // Process rows that weren't already processed (no URL)
+        textByRow.forEach((items, y) => {
+          if (!processedYPositions.has(y)) {
+            items.sort((a, b) => a.transform[4] - b.transform[4]);
+            const rowText = items.map(item => item.str).join(' ');
+
+            // Only parse rows that look like product data
+            if (this.looksLikeProductRow(rowText)) {
+              const product = this.parseProductRow(rowText, null);
+              if (product && product.articleNumber && product.eanCode) {
+                productsWithoutURL.push(product);
+              }
+            }
+          }
+        });
+      }
+
+      // Remove duplicates
+      const uniqueWithURL = this.removeDuplicates(productsWithURL, true);
+      const uniqueWithoutURL = this.removeDuplicates(productsWithoutURL, false);
+
+      console.log(`✅ Products WITH URL: ${uniqueWithURL.length}`);
+      console.log(`✅ Products WITHOUT URL: ${uniqueWithoutURL.length}`);
+
+      return {
+        withURL: uniqueWithURL,
+        withoutURL: uniqueWithoutURL,
+        totalProducts: uniqueWithURL.length + uniqueWithoutURL.length
+      };
+    } catch (error) {
+      console.error('❌ PDF Parser Separation Error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if a text row looks like product data
+   */
+  private looksLikeProductRow(rowText: string): boolean {
+    // Must have article number pattern
+    const hasArticle = /\b\d{4}-\d{4}(?:-\d{2})?\b/.test(rowText) || /\b\d{8,10}\b/.test(rowText);
+    // Must have EAN pattern
+    const hasEAN = /\b\d{13}\b/.test(rowText);
+    // Should have price pattern
+    const hasPrice = /\d+[,\.]\d{2}/.test(rowText);
+    
+    return hasArticle && hasEAN && hasPrice;
+  }
+
+  /**
+   * Remove duplicate products
+   */
+  private removeDuplicates(products: PDFProduct[], byURL: boolean): PDFProduct[] {
+    return products.reduce((acc, product) => {
+      const exists = byURL
+        ? acc.find(p => p.url === product.url)
+        : acc.find(p => p.articleNumber === product.articleNumber || p.eanCode === product.eanCode);
+      
+      if (!exists) {
+        acc.push(product);
+      }
+      
+      return acc;
+    }, [] as PDFProduct[]);
+  }
+
   /**
    * Extract hyperlinks and product data from supplier PDF using position-based row detection
    * This method uses Y-coordinate matching to associate prices and metadata with specific product links
@@ -111,7 +255,7 @@ export class PDFParserService {
   /**
    * Parse a single table row into a product
    */
-  private parseProductRow(rowText: string, url: string): PDFProduct | null {
+  private parseProductRow(rowText: string, url: string | null): PDFProduct | null {
     try {
       // Pattern for table: Marke | Bezeichnung | Artikel-Nr. | Beschreibung | EAN | VE | EK | UEVP
       const parts = rowText.split(/\s{2,}/); // Split by 2+ spaces
@@ -186,13 +330,19 @@ export class PDFParserService {
         console.log(`  ✅ EK: ${product.ekPrice || 'N/A'}, UEVP: ${product.uevp || 'N/A'}`);
       }
 
-      // Extract product name from URL
-      const urlParts = url.split('/').filter((p: string) => p);
-      const lastPart = urlParts[urlParts.length - 1];
-      product.productName = lastPart
-        .replace(/-/g, ' ')
-        .replace(/\/$/, '')
-        .trim();
+      // Extract product name from URL (if available)
+      if (url) {
+        const urlParts = url.split('/').filter((p: string) => p);
+        const lastPart = urlParts[urlParts.length - 1];
+        product.productName = lastPart
+          .replace(/-/g, ' ')
+          .replace(/\/$/, '')
+          .trim();
+      } else {
+        // No URL: Extract from row text (first significant text)
+        const match = rowText.match(/([A-ZÄÖÜ][a-zäöü\s\-]+)/);
+        product.productName = match ? match[0].trim() : 'Unknown Product';
+      }
 
       // Extract Marke (first word is often the brand)
       const firstWord = rowText.split(/\s+/)[0];

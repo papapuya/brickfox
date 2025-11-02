@@ -1425,14 +1425,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[PDF Preview] Processing PDF: ${req.file.originalname}`);
 
-      const extractedProducts = await pdfParserService.extractProductsFromPDFAdvanced(req.file.buffer);
+      // Extract products WITH and WITHOUT URLs
+      const parseResult = await pdfParserService.extractProductsWithSeparation(req.file.buffer);
 
-      console.log(`[PDF Preview] Found ${extractedProducts.length} products with URLs`);
+      console.log(`[PDF Preview] Found ${parseResult.withURL.length} products WITH URLs`);
+      console.log(`[PDF Preview] Found ${parseResult.withoutURL.length} products WITHOUT URLs`);
 
       res.json({
         success: true,
-        totalProducts: extractedProducts.length,
-        products: extractedProducts,
+        totalProducts: parseResult.totalProducts,
+        withURL: parseResult.withURL,
+        withoutURL: parseResult.withoutURL,
+        // Legacy field for backwards compatibility
+        products: parseResult.withURL,
       });
     } catch (error: any) {
       console.error('[PDF Preview] Error:', error);
