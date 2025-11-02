@@ -731,13 +731,13 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }
   }
 
-  // Calculate VK Price from EK Price (VK = EK × 2 × 1.19, always ending in ,95)
-  // Format: German format with comma (e.g., 91,95)
+  // Calculate VK Price from EK Price: (EK × 2) + 195% = EK × 3.9, always ending in ,95
+  // Format: German format with comma (e.g., 19,95)
   if (product.ekPrice) {
     const ekValue = parseFloat(product.ekPrice.replace(',', '.'));
     if (!isNaN(ekValue)) {
-      const vkCalculated = ekValue * 2 * 1.19;
-      // Round to ,95 ending (e.g., 91.76 → 91,95)
+      const vkCalculated = ekValue * 3.9;
+      // Round to ,95 ending (e.g., 19.50 → 19,95)
       const vkRounded = Math.floor(vkCalculated) + 0.95;
       product.vkPrice = vkRounded.toFixed(2).replace('.', ',');  // German format
       console.log(`💰 Calculated VK Price: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2).replace('.', ',')})`);
@@ -747,8 +747,8 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     const priceValue = parseFloat(product.price.replace(',', '.'));
     if (!isNaN(priceValue)) {
       product.ekPrice = product.price;
-      const vkCalculated = priceValue * 2 * 1.19;
-      // Round to ,95 ending (e.g., 91.76 → 91,95)
+      const vkCalculated = priceValue * 3.9;
+      // Round to ,95 ending (e.g., 19.50 → 19,95)
       const vkRounded = Math.floor(vkCalculated) + 0.95;
       product.vkPrice = vkRounded.toFixed(2).replace('.', ',');  // German format
       console.log(`💰 Calculated VK Price from price field: EK ${product.ekPrice}€ → VK ${product.vkPrice}€ (calculated: ${vkCalculated.toFixed(2).replace('.', ',')})`);

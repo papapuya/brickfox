@@ -765,11 +765,11 @@ export default function URLScraper() {
               pdfProductName: pdfMetadata.productName,
             } : data.product;
             
-            // Calculate VK if EK exists
+            // Calculate VK if EK exists: (EK × 2) + 195% = EK × 3.9, rounded to ,95
             if (mergedProduct.ekPrice) {
               const ekValue = parseFloat(mergedProduct.ekPrice.replace(',', '.'));
               if (!isNaN(ekValue)) {
-                const vkValue = Math.floor(ekValue * 2 * 1.19) + 0.95;
+                const vkValue = Math.floor(ekValue * 3.9) + 0.95;
                 mergedProduct.vkPrice = vkValue.toFixed(2).replace('.', ',');
               }
             }

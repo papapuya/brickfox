@@ -45,6 +45,19 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 
 ## Recent Changes
 
+### 2025-11-02: VK-Preisberechnung korrigiert 💰
+**Bugfix**: VK-Preisberechnung verwendet nun die korrekte Formel und rundet auf ,95.
+
+**Problem**: VK wurde mit falscher Formel `(EK × 2 × 1,19) + 0,95` berechnet.
+
+**Lösung**:
+- **Neue Formel**: `(EK × 2) + 195%` = **EK × 3,9**
+- **Rundung auf ,95**: Ergebnis wird immer auf ,95 gerundet (z.B. 19,95, 14,95)
+- **Beispiel**: EK = 5,00€ → VK = 5 × 3,9 = 19,50 → **19,95€**
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - VK-Berechnungslogik
+
 ### 2025-11-02: Magento-Gallery-JSON-Parser für ANSMANN-Produkte 🖼️
 **Feature**: Intelligente Extraktion aller Produktbilder aus Magento-JavaScript-Galerien (ANSMANN PIM).
 
