@@ -904,6 +904,8 @@ export default function URLScraper() {
               structuredData[key] = product[key];
             }
           });
+          
+          console.log(`📦 Strukturierte Daten für ${product.productName}:`, structuredData);
 
           const token = localStorage.getItem('supabase_token');
           const response = await fetch('/api/generate-description', {
