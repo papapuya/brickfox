@@ -429,8 +429,9 @@ export class PDFParserService {
    */
   private isValidProduct(product: PDFProduct): boolean {
     const name = product.productName.toLowerCase();
+    const url = product.url?.toLowerCase() || '';
     
-    // Filter out common non-product pages
+    // Filter out common non-product pages by name
     const invalidKeywords = [
       'agb',
       'geschaeftskunden',
@@ -441,13 +442,36 @@ export class PDFParserService {
       'nutzungsbedingungen',
       'widerruf',
       'versand',
-      'zahlung'
+      'zahlung',
+      'gmbh',          // Company names
+      'co. kg',
+      ' ag ',
+      'akkushop',
+      'ansmann ag'
     ];
     
-    // If product name contains any invalid keyword, reject it
+    // Filter out invalid URLs
+    const invalidUrlPatterns = [
+      'agb',
+      'geschaeftskund',
+      'datenschutz',
+      'impressum',
+      'kontakt',
+      'cookie'
+    ];
+    
+    // Check product name for invalid keywords
     if (invalidKeywords.some(keyword => name.includes(keyword))) {
       if (DEBUG_MODE) {
-        console.log(`⚠️ Filtered out non-product: ${product.productName}`);
+        console.log(`⚠️ Filtered out non-product (name): ${product.productName}`);
+      }
+      return false;
+    }
+    
+    // Check URL for invalid patterns
+    if (url && invalidUrlPatterns.some(pattern => url.includes(pattern))) {
+      if (DEBUG_MODE) {
+        console.log(`⚠️ Filtered out non-product (URL): ${product.url}`);
       }
       return false;
     }
