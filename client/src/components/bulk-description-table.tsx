@@ -9,6 +9,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface BulkProduct {
   id: number;
@@ -52,55 +60,51 @@ export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml 
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse" data-testid="table-products">
-          <thead className="sticky top-0 z-10 bg-primary text-primary-foreground">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[140px]">
+        <Table data-testid="table-products">
+          <TableHeader className="sticky top-0 bg-background z-10">
+            <TableRow>
+              <TableHead className="min-w-[140px]">
                 Artikelnummer
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[200px]">
+              </TableHead>
+              <TableHead className="min-w-[200px]">
                 Produktname
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[400px]">
+              </TableHead>
+              <TableHead className="min-w-[400px]">
                 Produktbeschreibung Text
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[500px]">
+              </TableHead>
+              <TableHead className="min-w-[500px]">
                 Produktbeschreibung HTML
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[300px]">
+              </TableHead>
+              <TableHead className="min-w-[300px]">
                 MediaMarkt Titel V1
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[250px]">
+              </TableHead>
+              <TableHead className="min-w-[250px]">
                 MediaMarkt Titel V2
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[300px]">
+              </TableHead>
+              <TableHead className="min-w-[300px]">
                 SEO Beschreibung
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium uppercase tracking-wide min-w-[350px]">
+              </TableHead>
+              <TableHead className="min-w-[350px]">
                 Kurzbeschreibung
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayedProducts.map((product, index) => (
-              <tr
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayedProducts.map((product) => (
+              <TableRow
                 key={product.id}
-                className={`
-                  border-b border-border transition-colors hover-elevate
-                  ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
-                `}
                 data-testid={`row-product-${product.id}`}
               >
-                <td className="px-4 py-3">
-                  <span className="text-sm font-mono text-foreground" data-testid={`text-sku-${product.id}`}>
+                <TableCell>
+                  <span className="text-sm font-mono" data-testid={`text-sku-${product.id}`}>
                     {product.artikelnummer || '-'}
                   </span>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <p className="text-sm text-foreground line-clamp-3">
+                        <p className="text-sm line-clamp-3">
                           {product.produktname || '-'}
                         </p>
                       </TooltipTrigger>
@@ -111,16 +115,16 @@ export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml 
                       )}
                     </Tooltip>
                   </TooltipProvider>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <Textarea
                     value={product.produktbeschreibung}
                     onChange={(e) => onUpdateProduct(product.id, 'produktbeschreibung', e.target.value)}
                     className="text-xs resize-none min-h-[100px] font-sans"
                     data-testid={`input-beschreibung-${product.id}`}
                   />
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <div className="flex gap-2 items-start">
                     <Textarea
                       value={product.produktbeschreibung_html}
@@ -140,43 +144,43 @@ export function BulkDescriptionTable({ products, onUpdateProduct, onPreviewHtml 
                       </Button>
                     )}
                   </div>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <Textarea
                     value={product.mediamarktname_v1}
                     onChange={(e) => onUpdateProduct(product.id, 'mediamarktname_v1', e.target.value)}
                     className="text-sm resize-none min-h-[80px] font-sans font-medium"
                     data-testid={`input-marktplatz-${product.id}`}
                   />
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <Textarea
                     value={product.mediamarktname_v2}
                     onChange={(e) => onUpdateProduct(product.id, 'mediamarktname_v2', e.target.value)}
                     className="text-sm resize-none min-h-[80px] font-sans font-medium"
                     data-testid={`input-marktplatz-v2-${product.id}`}
                   />
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <Textarea
                     value={product.seo_beschreibung}
                     onChange={(e) => onUpdateProduct(product.id, 'seo_beschreibung', e.target.value)}
                     className="text-sm resize-none min-h-[80px] font-sans"
                     data-testid={`input-seo-${product.id}`}
                   />
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <Textarea
                     value={product.kurzbeschreibung}
                     onChange={(e) => onUpdateProduct(product.id, 'kurzbeschreibung', e.target.value)}
                     className="text-sm resize-none min-h-[80px] font-sans"
                     data-testid={`input-kurz-${product.id}`}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       {/* Pagination Controls */}
       {products.length > itemsPerPage && (
