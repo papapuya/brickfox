@@ -255,6 +255,10 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     images: []
   };
 
+  // Detect supplier from URL
+  const isANSMANN = url.includes('pim.ansmann.de');
+  const isNitecore = url.includes('nitecore.de');
+  
   // Article Number / SKU (support both 'articleNumber' and 'productCode')
   const articleSelector = (selectors as any).productCode || selectors.articleNumber;
   if (articleSelector) {
@@ -269,10 +273,21 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     // Store manufacturer article number (without hyphens)
     product.manufacturerArticleNumber = manufacturerNumber;
     
-    // Generate Brickfox article number: ANS + manufacturer number (no hyphens)
+    // Generate Brickfox article number based on supplier
     if (manufacturerNumber) {
-      product.articleNumber = 'ANS' + manufacturerNumber;
-      console.log(`📦 Generated Brickfox Article Number: ${product.articleNumber} (from ${manufacturerNumber})`);
+      if (isANSMANN) {
+        // ANSMANN: ANS + manufacturer number
+        product.articleNumber = 'ANS' + manufacturerNumber;
+        console.log(`📦 [ANSMANN] Generated Article Number: ${product.articleNumber} (from ${manufacturerNumber})`);
+      } else if (isNitecore) {
+        // Nitecore: Use manufacturer number as-is (no prefix)
+        product.articleNumber = manufacturerNumber;
+        console.log(`📦 [Nitecore] Using Article Number: ${product.articleNumber}`);
+      } else {
+        // Generic: Use manufacturer number as-is
+        product.articleNumber = manufacturerNumber;
+        console.log(`📦 [Generic] Using Article Number: ${product.articleNumber}`);
+      }
     } else {
       product.articleNumber = '';
     }
