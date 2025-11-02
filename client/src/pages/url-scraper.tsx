@@ -552,6 +552,13 @@ export default function URLScraper() {
           }) as any;
 
           if (data && data.product) {
+            console.log('🔍 [FRONTEND] Received product from backend:', Object.keys(data.product));
+            console.log('🔍 [FRONTEND] Nitecore fields in response:', {
+              length: data.product.length,
+              led1: data.product.led1,
+              led2: data.product.led2,
+              maxLuminosity: data.product.maxLuminosity
+            });
             products.push(data.product);
           } else {
             console.error(`Fehler beim Scrapen von ${productUrl}`);
