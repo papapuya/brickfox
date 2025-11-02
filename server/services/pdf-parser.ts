@@ -13,6 +13,7 @@ interface PDFProduct {
   marke: string | null;
   ve: string | null;
   uevp: string | null;
+  liefermenge: string | null;
   kategorie?: string | null;
   bezeichnung?: string | null;
 }
@@ -270,6 +271,7 @@ export class PDFParserService {
         marke: null,
         ve: null,
         uevp: null,
+        liefermenge: null,
       };
 
       // Extract structured data using IMPROVED regex patterns
@@ -348,6 +350,17 @@ export class PDFParserService {
       const firstWord = rowText.split(/\s+/)[0];
       if (firstWord && firstWord.length > 2) {
         product.marke = firstWord;
+      }
+
+      // Extract Liefermenge (e.g., "1 Stück", "4 Stück", "10 Stück")
+      // Patterns: "X Stück", "X St.", "X-er Pack", etc.
+      const liefermengeMatch = rowText.match(/(\d+)\s*(Stück|St\.|stück|st\.|STK|stk|STÜCK|Pack|pack)/i);
+      if (liefermengeMatch) {
+        product.liefermenge = `${liefermengeMatch[1]} Stück`;
+        console.log(`  ✅ Liefermenge: ${product.liefermenge}`);
+      } else {
+        // Default: 1 Stück if not specified
+        product.liefermenge = '1 Stück';
       }
 
       return product;

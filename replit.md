@@ -15,6 +15,25 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-02: PDF Parser - Liefermenge-Extraktion
+**Feature**: Automatische Erkennung der Liefermenge aus PDF-Text (z.B. "1 Stück", "4 Stück").
+
+**Problem**: Liefermenge wurde nicht aus PDFs extrahiert, obwohl diese Information oft in der Spalte "Bezeichnung" steht.
+
+**Lösung**:
+- **PDF-Parser**: Regex-Extraktion für Liefermengen (Patterns: "X Stück", "X St.", "X STK", "X Pack")
+- **Default-Wert**: Falls keine Liefermenge erkannt wird, wird "1 Stück" angenommen
+- **Frontend-Tabellen**: Neue Spalte "Liefermenge" in beiden Tabs (MIT URL / OHNE URL)
+
+**Betroffene Dateien**:
+- `server/services/pdf-parser.ts` - Liefermenge-Extraktion via Regex
+- `client/src/pages/pdf-auto-scraper.tsx` - Neue Tabellenspalte in beiden Tabs
+
+**Beispiele**:
+- "ANSMANN Akkupack 4 Stück" → Liefermenge: **4 Stück**
+- "Batterien AA 10er Pack" → Liefermenge: **10 Stück**
+- "Einzelprodukt" (ohne Angabe) → Liefermenge: **1 Stück** (Standard)
+
 ### 2025-11-02: VK-Preisberechnung & EK-Preis aus PDF
 **Feature**: Korrektur der VK-Preisberechnung und Sicherstellung, dass EK-Preis immer aus PDF gelesen wird.
 

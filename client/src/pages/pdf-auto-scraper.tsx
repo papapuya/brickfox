@@ -22,6 +22,7 @@ interface PDFProduct {
   marke: string | null;
   ve: string | null;
   uevp: string | null;
+  liefermenge: string | null;
 }
 
 interface PDFPreviewResult {
@@ -330,6 +331,7 @@ export default function PDFAutoScraper() {
                           <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
                           <TableHead className="min-w-[130px]">EAN</TableHead>
                           <TableHead className="min-w-[100px]">EK-Preis</TableHead>
+                          <TableHead className="min-w-[100px]">Liefermenge</TableHead>
                           <TableHead className="min-w-[400px]">URL</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -343,6 +345,7 @@ export default function PDFAutoScraper() {
                             <TableCell>{product.articleNumber || '-'}</TableCell>
                             <TableCell>{product.eanCode || '-'}</TableCell>
                             <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                            <TableCell className="whitespace-nowrap">{product.liefermenge || '1 Stück'}</TableCell>
                             <TableCell>
                               <a 
                                 href={product.url!} 
@@ -414,6 +417,7 @@ export default function PDFAutoScraper() {
                                   <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
                                   <TableHead className="min-w-[130px]">EAN</TableHead>
                                   <TableHead className="min-w-[100px]">EK-Preis</TableHead>
+                                  <TableHead className="min-w-[100px]">Liefermenge</TableHead>
                                   <TableHead className="min-w-[100px]">UEVP</TableHead>
                                 </TableRow>
                               </TableHeader>
@@ -424,6 +428,7 @@ export default function PDFAutoScraper() {
                                     <TableCell>{product.articleNumber || '-'}</TableCell>
                                     <TableCell>{product.eanCode || '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{product.liefermenge || '1 Stück'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.uevp ? `${product.uevp} €` : '-'}</TableCell>
                                   </TableRow>
                                 ))}
