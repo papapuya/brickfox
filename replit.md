@@ -45,6 +45,41 @@ The frontend utilizes React 18, TypeScript, Vite, shadcn/ui, Radix UI, and Tailw
 
 ## Recent Changes
 
+### 2025-11-02: Magento-Gallery-JSON-Parser für ANSMANN-Produkte 🖼️
+**Feature**: Intelligente Extraktion aller Produktbilder aus Magento-JavaScript-Galerien (ANSMANN PIM).
+
+**Problem**: ANSMANN verwendet Magento's Fotorama-Plugin, das Bilder dynamisch per JavaScript lädt. Cheerio (HTML-Parser) kann nur statisches HTML parsen und fand daher nur 1 Fallback-Bild statt ~10 Galerie-Bildern.
+
+**Lösung**:
+- **Magento-JSON-Parser**: Extrahiert Bilder aus `<script type="text/x-magento-init">` JSON-Config
+- **Automatische Erkennung**: Aktiviert sich, wenn ≤1 Bild gefunden wurde (Fallback-Trigger)
+- **Vollständige Galerie**: Extrahiert alle Bilder (`full`, `large`, `thumb` URLs) ohne JavaScript-Ausführung
+- **Kein Headless Browser**: Performante Lösung ohne Browser-Overhead (Puppeteer/Playwright)
+- **Robustes Fallback**: Bei JSON-Parse-Fehler bleibt das statische Fallback-Bild erhalten
+
+**Ergebnisse**:
+- ✅ **10 Bilder** pro ANSMANN-Produkt (statt 1)
+- ✅ Alle Bilder automatisch heruntergeladen und lokal gespeichert
+- ✅ Keine Performance-Einbußen durch Headless-Browser
+
+**Betroffene Dateien**:
+- `server/scraper-service.ts` - Magento-Gallery-JSON-Parser mit Fallback-Trigger
+
+### 2025-11-02: Static-File-Server für Produktbilder 🌐
+**Feature**: Lokale Produktbilder werden als URLs bereitgestellt, damit sie im Browser angezeigt werden können.
+
+**Implementierung**:
+- **Express Static-Server**: Serviert Bilder aus `attached_assets/product_images/` unter `/product-images/`
+- **URL-Umwandlung**: Lokale Pfade werden automatisch in Browser-URLs konvertiert
+  - Pfad: `attached_assets/product_images/ANS15210039/bild_1.jpg`
+  - URL: `/product-images/ANS15210039/bild_1.jpg`
+- **CSV-Export**: "Lokale_Bildpfade" enthält jetzt direkte URLs (z.B. `/product-images/ANS15210039/bild_1.jpg|/product-images/ANS15210039/bild_2.jpg`)
+- **Browser-Kompatibilität**: Alle Bilder können direkt im Browser geöffnet werden
+
+**Betroffene Dateien**:
+- `server/index.ts` - Static-File-Server-Endpoint
+- `server/routes-supabase.ts` - URL-Umwandlung für `localImagePaths`
+
 ### 2025-11-02: Automatischer Bilder-Download beim Scraping 📥
 **Feature**: Alle Produktbilder werden beim Scraping automatisch heruntergeladen und lokal gespeichert.
 

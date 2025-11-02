@@ -70,6 +70,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Serve product images statically
+  const productImagesPath = path.join(process.cwd(), 'attached_assets', 'product_images');
+  app.use('/product-images', express.static(productImagesPath));
+  log('Static file server enabled for /product-images');
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

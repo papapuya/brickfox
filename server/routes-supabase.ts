@@ -834,8 +834,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { downloadProductImages } = await import('./image-download-service');
           const downloadedImages = await downloadProductImages(product.images, product.articleNumber);
           
-          // Add local image paths to product data
-          (product as any).localImagePaths = downloadedImages.map(img => img.localPath);
+          // Add local image paths as URLs to product data
+          (product as any).localImagePaths = downloadedImages.map(img => 
+            img.localPath.replace('attached_assets/product_images/', '/product-images/')
+          );
           (product as any).downloadedImages = downloadedImages;
           
           console.log(`[Image Download] ✅ ${downloadedImages.length} Bilder erfolgreich heruntergeladen`);
