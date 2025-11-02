@@ -1085,60 +1085,61 @@ export async function generateSEOMetadata(
   const productTitle = productName;
   const productDescription = description || '';
 
-  // SEO Title Prompt (Meta Title for Google SERP)
-  const titlePrompt = `Du bist ein professioneller SEO-Experte für Google Meta-Titles.
+  // SEO Title Prompt (akkushop.de Format)
+  const titlePrompt = `Du bist ein professioneller SEO-Experte für Akkushop-Produkttitel.
 
 Eingabeparameter:
 - product_title: ${productTitle}
 - product_description: ${productDescription}
 
 Ziel:
-Erstelle einen prägnanten SEO-Titel mit **EXAKT 55-65 Zeichen** für optimale Google-Anzeige.
+Erstelle einen prägnanten Meta-Titel mit **EXAKT 50-55 Zeichen** im akkushop.de-Stil.
 
 Struktur:
-[MARKE] [SPANNUNG] [KAPAZITÄT] [AKKUTYP] – [KURZER ZUSATZ]
+[MARKE] [SPANNUNG] [KAPAZITÄT] [AKKUTYP] kaufen | Akkushop
 
 Regeln:
-1. **KRITISCH: Zielbereich 55-65 Zeichen** (optimal für Google, ohne Abschneiden)
-2. **Technische Daten:** Marke, Spannung (z. B. "3,6 V"), Kapazität (z. B. "7800 mAh"), Akkutyp (z. B. "Li-Ion")
-3. **Kurzer Zusatz:** Max. 2-3 Wörter nach dem Gedankenstrich (z. B. "langlebig", "hochwertig", "vielseitig")
+1. **KRITISCH: Zielbereich 50-55 Zeichen** (optimal: 438-480 Pixel)
+2. **Technische Daten:** Marke, Spannung (z. B. "3,6 V"), Kapazität (z. B. "7800 mAh"), Akkutyp (kurz: "Li-Ion")
+3. **ENDE mit "kaufen | Akkushop"** (Branding + Conversion-Keyword)
 4. **Keine Artikelnummern:** Vermeide "Art.-Nr.", "UN-Test", "Modell", "ANS...", "Ref."
 5. **Deutsche Sprache:** Ausschließlich Deutsch
 6. **Nur Titel ausgeben** – keine Erklärungen
 
-Beispiel (59 Zeichen):
+Beispiel (52 Zeichen):
 Eingabe:
 product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
 Ausgabe:
-"ANSMANN 14,4 V 2600 mAh Li-Ion Akkupack – langlebig"`;
+"ANSMANN 14,4 V 2600 mAh Li-Ion kaufen | Akkushop"`;
 
-  // SEO Description Prompt (Meta Description for Google SERP)
-  const descriptionPrompt = `Du bist ein professioneller SEO-Experte für Google Meta-Descriptions.
+  // SEO Description Prompt (akkushop.de Format)
+  const descriptionPrompt = `Du bist ein professioneller SEO-Experte für Akkushop-Produktbeschreibungen.
 
 Eingabeparameter:
 - product_title: ${productTitle}
 - product_description: ${productDescription}
 
 Ziel:
-Erstelle eine prägnante Meta-Description mit **EXAKT 140-160 Zeichen** für Google-Suchergebnisse.
+Erstelle eine prägnante Meta-Description mit **EXAKT 120-140 Zeichen** im akkushop.de-Stil.
 
-Struktur (2 Sätze):
-1. **Kernnutzen:** Marke + Hauptspecs + wichtigster Vorteil (z. B. "Das ANSMANN 3,6 V 7800 mAh Akkupack bietet hohe Energiedichte für vielseitige Anwendungen.")
-2. **Qualitätsmerkmal:** Ein konkretes Feature oder Sicherheitsaspekt (z. B. "Mit 18650-Zellen und integriertem Schutz vor Überladung.")
+Struktur:
+[QUALITÄTSMERKMAL] ✓[VORTEIL 1] ✓[VORTEIL 2] ✓[VORTEIL 3] ✓[SERVICE]
 
 Regeln:
-1. **KRITISCH: Halte dich STRIKT an 140-160 Zeichen** (optimal für Google-Snippets)
-2. **Keyword-Optimierung:** Verwende Marke, Spannung, Kapazität, Akkutyp
-3. **Klare Sprache:** Kurz, prägnant, ohne technische Kürzel oder Artikelnummern
-4. **Vollständige Sätze:** Schließe mit Punkt ab, KEIN "..." am Ende
-5. **Deutsche Sprache:** Ausschließlich Deutsch
-6. **Nur Text ausgeben** – keine Erklärungen oder Formatierungen
+1. **KRITISCH: Zielbereich 120-140 Zeichen** (optimal: 750-880 Pixel)
+2. **Start:** Kurze Einleitung mit Qualitätsmerkmal (z. B. "Hochwertige ANSMANN Li-Ion Batterie")
+3. **Checkmark-Liste:** Verwende ✓ für jeden Vorteil (✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice)
+4. **USPs:** Qualität, Versand, Service, Garantie, Zertifizierung
+5. **Keine Artikelnummern:** Vermeide technische Kürzel
+6. **Deutsche Sprache:** Ausschließlich Deutsch
+7. **Kein Punkt am Ende** (akkushop.de-Stil)
+8. **Nur Text ausgeben** – keine Erklärungen
 
-Beispiel (157 Zeichen):
+Beispiel (127 Zeichen):
 Eingabe:
 product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
 Ausgabe:
-"Das ANSMANN 14,4 V 2600 mAh Akkupack bietet zuverlässige Energie für vielseitige Anwendungen. Mit hochwertigen 18650-Zellen und integriertem Schutz."`;
+"Hochwertige ANSMANN Li-Ion Batterie ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✓Schnelle Lieferung"`;
 
   try {
     // Generate SEO Title
