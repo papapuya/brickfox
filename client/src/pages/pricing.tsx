@@ -24,9 +24,9 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
           {/* Professional Plan */}
-          <Card className="relative bg-white shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="relative bg-white shadow-lg hover:shadow-xl transition-shadow flex flex-col">
             <CardHeader className="pb-8">
               <CardTitle className="text-3xl font-bold text-gray-900">Professional</CardTitle>
               <CardDescription className="text-gray-600 mt-2">
@@ -34,7 +34,7 @@ export default function Pricing() {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4 pb-8">
+            <CardContent className="space-y-4 pb-8 flex-grow">
               <div className="space-y-3">
                 <div className="flex items-start">
                   <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
@@ -87,7 +87,7 @@ export default function Pricing() {
           </Card>
 
           {/* Enterprise Plan */}
-          <Card className="relative bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-300 shadow-xl hover:shadow-2xl transition-shadow">
+          <Card className="relative bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-300 shadow-xl hover:shadow-2xl transition-shadow flex flex-col">
             <CardHeader className="pb-8">
               <CardTitle className="text-3xl font-bold text-gray-900">Enterprise</CardTitle>
               <CardDescription className="text-gray-700 mt-2">
@@ -95,7 +95,7 @@ export default function Pricing() {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4 pb-8">
+            <CardContent className="space-y-4 pb-8 flex-grow">
               <div className="space-y-3">
                 <div className="flex items-start">
                   <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
