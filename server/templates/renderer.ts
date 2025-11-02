@@ -130,8 +130,13 @@ function renderMediaMarktLayout(data: {
     .map(usp => `✅ ${usp}`)
     .join('<br />\n');
 
-  // Build technical specs table with left-aligned values
-  const techTableHtml = data.technicalSpecs.length > 0
+  // 🎯 PRIORITY: Use original HTML table from supplier if available (1:1), otherwise build from AI specs
+  const techTableHtml = data.technicalDataTable
+    ? `<h4>Technische Daten:</h4>
+${data.technicalDataTable}
+
+`
+    : data.technicalSpecs.length > 0
     ? `<h4>Technische Daten:</h4>
 <table border="0" summary="" style="border-collapse: collapse; width: 100%; max-width: 600px;">
 <tbody>

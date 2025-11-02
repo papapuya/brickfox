@@ -42,6 +42,21 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: Technische Tabelle 1:1 vom Lieferanten übernehmen
+**Problem behoben**: Produktbeschreibungs-Vorschau zeigte nur 4 Zeilen (vereinfachte AI-Tabelle), nicht die vollständige technische Tabelle von der ANSMANN-Website.
+
+**Ursache**: 
+- `technicalDataTable` wurde vom Scraper extrahiert (z.B. `#additional` mit 2227 chars)
+- Aber der Renderer verwendete die **AI-generierte Tabelle** (vereinfacht) anstatt der **originalen HTML-Tabelle** (1:1)
+
+**Implementierung**:
+- **Priorität geändert**: `renderer.ts` prüft jetzt ZUERST, ob `technicalDataTable` vorhanden ist
+- **Falls ja**: Originale Tabelle wird 1:1 übernommen (alle Felder von der ANSMANN-Website)
+- **Falls nein**: AI-generierte Tabelle wird als Fallback verwendet
+
+**Betroffene Dateien**:
+- `server/templates/renderer.ts` - Rendering-Logik angepasst für 1:1 Tabellenübernahme
+
 ### 2025-11-02: SEO-Schwellenwerte optimiert
 **Änderung**: SERP-Snippet-Vorschau zeigt jetzt mehr Werte im grünen Bereich an.
 
