@@ -15,6 +15,53 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-02: AI-Bildanalyse für automatische Farbextraktion
+**Feature**: OpenAI Vision API Integration zur automatischen Erkennung der Produktfarbe aus Bildern.
+
+**Problem**: ANSMANN-Produktseiten enthalten oft falsche Textdaten für Farben (z.B. "blau" im Text, aber schwarzer Akkupack im Bild).
+
+**Lösung**:
+- **OpenAI Vision API** analysiert automatisch das erste Produktbild
+- Erkennt dominante Farbe (schwarz, gelb, rot, blau, grün, weiß, grau, orange, silber)
+- Überschreibt fehlerhafte Textdaten mit AI-erkannter Farbe
+- Flag `colorDetectedByAI` für Frontend-Anzeige
+
+**Technische Details**:
+- Neue Funktion: `analyzeProductImageColor()` in `server/ai-service.ts`
+- Integration in beide Scraper-Routen (`/api/scrape`, `/api/scrape-product`)
+- GPT-4o-mini Vision mit 'low' detail für schnelle/günstige Analyse
+- Validierung: Nur erlaubte Farben werden akzeptiert
+
+### 2025-11-02: SEO-Optimierung für akkushop.de
+**Feature**: Komplette Überarbeitung der AI-Prompts für akkushop.de-konforme SEO und Produktbeschreibungen.
+
+**SEO Title (Meta Title)**:
+- Format: `Akkupack 2s2p 5200mah kaufen | Akkushop`
+- Zielbereich: 45-55 Zeichen (380-480 Pixel)
+- Produktfokus statt Markenfokus
+- Conversion-Keyword "kaufen"
+
+**SEO Description (Meta Description)**:
+- Format: `Hochwertiger Akkupack 2s2p 5200mah ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010`
+- Zielbereich: 120-140 Zeichen (750-880 Pixel)
+- Feste Service-USPs für konsistente Markenbotschaft
+- Telefonnummer mit grünem ☎ Symbol
+
+**HTML-Produktbeschreibung**:
+- KEINE langen Beschreibungen mehr - nur kurze, prägnante USPs
+- 3 produktspezifische USPs (aus technischen Specs)
+- 2 feste Service-USPs: `✓Versandkostenfrei ab 39,95€ ✓Kundenservice ☎071517071010`
+- Grünes Telefon-Symbol via `<span style="color: green;">☎</span>`
+
+**SERP Preview Qualitätsindikatoren**:
+- Grüne Balken: Title 380-580px, Description 750-1000px
+- Gelbe Balken: Title 320-380px oder 580-620px, Description 600-750px oder 1000-1100px
+- Rote Balken: außerhalb der optimalen Bereiche
+
+**Betroffene Dateien**:
+- `server/ai-service.ts` - SEO-Prompts und Produktbeschreibungs-Prompts
+- `client/src/pages/url-scraper.tsx` - SERP Preview Schwellenwerte
+
 ### 2025-11-01: ANSMANN Supplier Integration - 10 Technical Specification Selectors
 **Feature**: Hinzufügung von 10 lieferantenspezifischen CSS-Selektoren für ANSMANN-Produkte.
 
@@ -69,7 +116,7 @@ DEBUG_MODE=true
 - **Frontend**: React 18, TypeScript, Vite, shadcn/ui, Radix UI, Tailwind CSS
 - **Backend**: Express.js, TypeScript
 - **Database**: PostgreSQL (Helium Dev / Supabase Production) with Drizzle ORM
-- **AI/ML**: OpenAI API (GPT-4o-mini)
+- **AI/ML**: OpenAI API (GPT-4o-mini for text generation, GPT-4o-mini Vision for image analysis)
 - **Web Scraping**: Cheerio (Custom scraper service)
 - **Authentication**: Supabase Auth (JWT-based)
 
@@ -85,7 +132,7 @@ The application employs a **modular subprompt architecture** for specialized AI 
 - **Usage Tracking**: Real-time API call monitoring with limit enforcement.
 - **CSV Bulk Processing**: Upload and process product data via CSV for mass AI generation.
 - **URL Web Scraper**: Custom Cheerio-based scraper with configurable CSS selectors, intelligent auto-recognition, and a tables parser. Supports multi-URL scraping, automatic login with encrypted credentials, and session cookie capture.
-- **AI Generation**: Automated product descriptions using OpenAI GPT-4o-mini, with dynamic, product-specific prompts.
+- **AI Generation**: Automated product descriptions using OpenAI GPT-4o-mini, with dynamic, product-specific prompts. AI-powered image analysis for automatic color detection from product images.
 - **Project Management**: Save and organize generated products into projects.
 - **Supplier Profiles**: Manage multiple suppliers with saved selectors.
 - **Pixi ERP Integration**: Automated product comparison with Pixi ERP system to identify new vs. existing products, with CSV upload, intelligent matching, and CSV export functionality.
