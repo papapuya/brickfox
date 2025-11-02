@@ -285,7 +285,7 @@ export async function generateProductDescription(
   },
   model: string = 'gpt-4o-mini', // COST OPTIMIZATION: 30× günstiger!
   onProgress?: (step: number, message: string) => void
-): Promise<string> {
+): Promise<{ html: string; categoryId: string; enrichedProductData: any }> {
   console.log(`=== USING CATEGORY-BASED GENERATION with ${model} ===`);
   
   const { detectCategory, getCategoryConfig } = await import('./templates/category-config.js');
@@ -339,7 +339,7 @@ export async function generateProductDescription(
     pdfManualUrl: customAttributes?.pdfManualUrl // Pass PDF URL
   });
 
-  return html;
+  return { html, categoryId, enrichedProductData };
 }
 
 export async function convertTextToHTML(

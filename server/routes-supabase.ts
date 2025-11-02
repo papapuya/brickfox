@@ -995,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Produktdaten fehlen' });
       }
 
-      const description = await generateProductDescription(productData);
+      const { html: description } = await generateProductDescription(productData);
       const htmlCode = convertTextToHTML(description);
       
       await trackApiUsage(req, res, () => {});
@@ -1034,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // COST OPTIMIZATION: Use GPT-4o-mini (30× cheaper) by default
       const aiModel = model || 'gpt-4o-mini';
-      const description = await generateProductDescription(
+      const { html: description, categoryId: detectedCategory, enrichedProductData } = await generateProductDescription(
         enhancedData, 
         undefined, 
         {
@@ -1051,8 +1051,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstData = extractedData[0] || {};
       const productName = customAttributes?.exactProductName || firstData.productName || firstData.product_name || '';
       const manufacturer = firstData.manufacturer || firstData.Hersteller || '';
-      const category = firstData.category || firstData.kategorie || '';
+      const category = detectedCategory; // Use AI-detected category instead of scraped category
       const articleNumber = firstData.articleNumber || firstData.artikel_nr || '';
+      
+      console.log(`[SEO] Using detected category "${detectedCategory}" for SEO generation`);
       
       // Collect technical specs for SEO context
       const technicalSpecs: string[] = [];
@@ -1069,8 +1071,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         articleNumber,
         description: autoExtractedDescription || description.replace(/<[^>]*>/g, '').substring(0, 300),
         technicalSpecs,
-        nominalkapazitaet: firstData.nominalkapazitaet || structuredData?.nominalkapazitaet,
-        zellenchemie: firstData.zellenchemie || structuredData?.zellenchemie
+        nominalkapazitaet: enrichedProductData.nominalkapazitaet || firstData.nominalkapazitaet || structuredData?.nominalkapazitaet,
+        zellenchemie: enrichedProductData.zellenchemie || firstData.zellenchemie || structuredData?.zellenchemie
       }, aiModel);
       
       const { seoTitle, seoDescription } = seoMetadata;
