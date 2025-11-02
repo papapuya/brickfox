@@ -15,6 +15,35 @@ Keine spezifischen Präferenzen dokumentiert.
 
 ## Recent Changes
 
+### 2025-11-02: PDF Parser - Exakte Datenextraktion (Bezeichnung, Artikel-Nr., Netto-EK)
+**Feature**: Korrekte Extraktion der exakten PDF-Spalten als Produktdaten.
+
+**Problem**: 
+- Produktnamen wurden aus URL extrahiert statt aus PDF-Spalte "Bezeichnung"
+- Falsche Daten in Vorschau-Tabellen
+- UEVP-Spalte wurde angezeigt, aber nicht benötigt
+
+**Lösung**:
+- **Bezeichnung → Produktname**: Intelligente Extraktion der "Bezeichnung"-Spalte durch Entfernung strukturierter Daten (Artikel-Nr., EAN, Preise)
+- **Netto-EK**: Letzter Preis in der Zeile wird als Netto-EK interpretiert
+- **UEVP entfernt**: Spalte komplett aus Frontend und Backend entfernt
+- **Produktnamen in Tab "Ohne URL"**: Werden jetzt korrekt ausgefüllt
+
+**Betroffene Dateien**:
+- `server/services/pdf-parser.ts` - Neue Extraktionslogik für Bezeichnung
+- `client/src/pages/pdf-auto-scraper.tsx` - UEVP-Spalte entfernt, Header angepasst
+
+**Beispiel-Extraktion**:
+```
+PDF-Zeile: "ANSMANN Akkupack 4 Stück 2447-0121 4013674024711 38,49"
+↓
+Produktname: "Akkupack 4 Stück"
+Artikel-Nr.: "24470121"
+EAN: "4013674024711"
+Netto-EK: "38,49"
+Liefermenge: "4 Stück"
+```
+
 ### 2025-11-02: PDF Parser - Liefermenge-Extraktion
 **Feature**: Automatische Erkennung der Liefermenge aus PDF-Text (z.B. "1 Stück", "4 Stück").
 
