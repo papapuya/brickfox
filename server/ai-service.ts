@@ -701,26 +701,36 @@ ERSTELLE IMMER DIESE EXAKTE STRUKTUR:
 <li>
 <h2>PRODUKTNAME</h2>
 <p>Detaillierte Produktbeschreibung (4-5 Sätze)<br /><br />
-✅ USP 1 (verkaufsfördernd, z.B. "Wiederaufladbar - spart Geld und schont die Umwelt")<br />
-✅ USP 2 (verkaufsfördernd, z.B. "Integrierte Schutzschaltung - maximale Sicherheit")<br />
-✅ USP 3 (verkaufsfördernd, z.B. "Langlebig und zuverlässig - für professionelle Anwendungen")<br />
-✅ USP 4 (verkaufsfördernd, z.B. "Umweltfreundlich - nachhaltige Technologie")<br />
-✅ USP 5 (verkaufsfördernd, z.B. "Hohe Leistung - langanhaltende Energie")</p>
+✓USP 1 (produktspezifisch basierend auf technischen Specs, z.B. "Hohe Energiedichte - langanhaltende Leistung")<br />
+✓USP 2 (produktspezifisch, z.B. "Thermisch stabil - sicher bei hohen Temperaturen")<br />
+✓USP 3 (produktspezifisch, z.B. "Integrierte Schutzschaltung - maximale Sicherheit")<br />
+✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010</p>
 
-KRITISCH: Die 5 Bulletpoints (✅) müssen IMMER verkaufsfördernde USPs sein!
+KRITISCH: Die ersten 3 Bulletpoints (✓) müssen PRODUKTSPEZIFISCHE USPs sein!
+Die letzten 2 USPs sind IMMER zusammen in einer Zeile: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010"
+
+FORMATIERUNG:
+- Verwende ✓ (nicht ✅)
+- KEIN Leerzeichen zwischen ✓ und Text
+- Telefonnummer mit ✆ Symbol direkt nach "Kundenservice"
+
+PRODUKTSPEZIFISCHE USPs (wähle aus technischen Specs):
+✓ Akkupack mit mehreren Zellen → "Hohe Energiedichte - langanhaltende Leistung"
+✓ Hohe Kapazität (>2000 mAh) → "Lange Laufzeit - für intensive Anwendungen"
+✓ Lithium-Ionen Zellenchemie → "Moderne Li-Ion Technologie - keine Memory-Effekte"
+✓ Integrierte Schutzschaltung → "Schutzschaltung integriert - Sicherheit vor Überladung"
+✓ Thermisch stabil → "Thermisch stabil - sicher bei hohen Temperaturen"
+✓ Hoher Entladestrom → "Hoher Entladestrom - für leistungsstarke Geräte"
+✓ Wiederaufladbar → "Wiederaufladbar - nachhaltig und kostensparend"
+
 VERBOTEN in den Bulletpoints:
-❌ Spannung (z.B. "7,2 V", "3,6V")
-❌ Kapazität (z.B. "5200 mAh", "950mAh")  
-❌ Gewicht (z.B. "184 g", "18 g")
-❌ Abmessungen (z.B. "70×37.5×37.5 mm")
-❌ Entladestrom, Ladestrom, etc.
+❌ Reine Zahlenwerte (z.B. "7,2 V", "5200 mAh", "184 g", "70×37.5×37.5 mm")
+❌ Technische Rohdaten ohne Kundennutzen
+❌ Generische USPs wenn produktspezifische Daten verfügbar sind
 
-✅ ERLAUBT in den Bulletpoints (Beispiele):
-- "Wiederaufladbar - spart Kosten und schont die Umwelt"
-- "Integrierte Schutzschaltung - maximale Sicherheit vor Überladung"
-- "Langlebige Lithium-Ionen Technologie - lange Lebensdauer"
-- "Professionelle Qualität - zuverlässig für den täglichen Einsatz"
-- "Vielseitig einsetzbar - perfekt für viele Geräte"</p>
+PRODUKTTYP-ERKENNUNG:
+- Wenn Spannung + Kapazität vorhanden → "Akkupack" (nicht "Batterie")
+- Wenn nur Spannung → "Batterie"</p>
 
 <h3>Produkteigenschaften & Highlights</h3>
 <ul>
@@ -759,8 +769,10 @@ WICHTIGE REGELN:
 4. Ersetze WERT AUS DATEN durch echte technische Werte
 5. Ersetze LIEFERUMFANG AUS DATEN durch echte Lieferumfang-Angaben
 6. Überschriften OHNE Icons (nur Text)
-7. Icons ✅ nur in den <p> Elementen
-8. Abmessungen Format: "L×B×H mm" (z.B. "57×20×69 mm") - NICHT "572069 mm"
+7. Verwende ✓ (nicht ✅) für USPs in <p> Elementen
+8. KEIN Leerzeichen zwischen ✓ und Text
+9. Letzte Zeile IMMER: "✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010"
+10. Abmessungen Format: "L×B×H mm" (z.B. "57×20×69 mm") - NICHT "572069 mm"
 9. Gewicht immer in Gramm (g)
 10. Verwende IMMER die Werte aus technicalSpecs.size für Abmessungen, NICHT aus bullets
 11. Gib NUR den HTML-Code zurück, ohne \`\`\`html`;
