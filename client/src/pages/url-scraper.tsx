@@ -2268,7 +2268,49 @@ export default function URLScraper() {
                 <p className="text-lg font-semibold leading-relaxed" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                   {seoTitlePreviewContent}
                 </p>
-                <p className="text-xs text-muted-foreground mt-3">Zeichenanzahl: {seoTitlePreviewContent.length}/70</p>
+                
+                {/* SEO Quality Indicator */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">Zeichenanzahl: {seoTitlePreviewContent.length} / 70</span>
+                    <span className={`font-semibold ${
+                      seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? 'text-green-600' :
+                      seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? 'text-yellow-600' :
+                      seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? '✓ Optimal' :
+                       seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? '⚠ Akzeptabel' :
+                       seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? '⚠ Etwas zu lang' :
+                       seoTitlePreviewContent.length > 75 ? '✗ Zu lang' : '✗ Zu kurz'}
+                    </span>
+                  </div>
+                  
+                  {/* Visual Progress Bar */}
+                  <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all ${
+                        seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? 'bg-green-500' :
+                        seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? 'bg-yellow-500' :
+                        seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${Math.min((seoTitlePreviewContent.length / 70) * 100, 100)}%` }}
+                    />
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    {seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? 
+                      '✓ Perfekte Länge für Google-Suchergebnisse' :
+                     seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? 
+                      'Etwas kurz, aber noch gut sichtbar' :
+                     seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 
+                      'Könnte in Suchergebnissen abgeschnitten werden' :
+                     seoTitlePreviewContent.length > 75 ? 
+                      'Wird wahrscheinlich in Suchergebnissen gekürzt' :
+                      'Zu kurz - nutzen Sie mehr relevante Keywords'}
+                  </p>
+                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button 
@@ -2298,8 +2340,51 @@ export default function URLScraper() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="p-6 bg-muted/50 border rounded-lg overflow-y-auto" style={{ maxHeight: '60vh' }}>
+              <div className="p-6 bg-muted/50 border rounded-lg">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{seoPreviewContent}</p>
+                
+                {/* SEO Quality Indicator */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">Zeichenanzahl: {seoPreviewContent.length} / 160</span>
+                    <span className={`font-semibold ${
+                      seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? 'text-green-600' :
+                      seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 'text-yellow-600' :
+                      seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? '✓ Optimal' :
+                       seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? '⚠ Akzeptabel' :
+                       seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? '⚠ Etwas zu lang' :
+                       seoPreviewContent.length > 175 ? '✗ Zu lang' : '✗ Zu kurz'}
+                    </span>
+                  </div>
+                  
+                  {/* Visual Progress Bar */}
+                  <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all ${
+                        seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? 'bg-green-500' :
+                        seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 'bg-yellow-500' :
+                        seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${Math.min((seoPreviewContent.length / 160) * 100, 100)}%` }}
+                    />
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    {seoPreviewContent.length >= 140 && seoPreviewContent.length <= 160 ? 
+                      '✓ Perfekte Länge für Google Meta-Description (wird vollständig angezeigt)' :
+                     seoPreviewContent.length >= 120 && seoPreviewContent.length < 140 ? 
+                      'Etwas kurz, aber noch gut lesbar' :
+                     seoPreviewContent.length > 160 && seoPreviewContent.length <= 175 ? 
+                      'Könnte in Suchergebnissen leicht gekürzt werden' :
+                     seoPreviewContent.length > 175 ? 
+                      'Wird wahrscheinlich in Suchergebnissen abgeschnitten' :
+                      'Zu kurz - fügen Sie mehr Produktinformationen hinzu'}
+                  </p>
+                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button 
