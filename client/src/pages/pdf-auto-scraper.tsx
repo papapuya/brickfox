@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,25 @@ export default function PDFAutoScraper() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 6;
+
+  // Load extracted products from sessionStorage on mount (when returning from URL-Scraper)
+  useEffect(() => {
+    const savedProducts = sessionStorage.getItem('pdf_auto_scraper_extracted_products');
+    const savedSupplierId = sessionStorage.getItem('pdf_auto_scraper_selected_supplier');
+    
+    if (savedProducts) {
+      try {
+        const products = JSON.parse(savedProducts);
+        setExtractedProducts(products);
+      } catch (error) {
+        console.error('Failed to parse saved products:', error);
+      }
+    }
+    
+    if (savedSupplierId) {
+      setSelectedSupplierId(savedSupplierId);
+    }
+  }, []);
 
   // Load suppliers
   const { data: suppliersData } = useQuery<{ success: boolean; suppliers: any[] }>({
@@ -79,6 +98,10 @@ export default function PDFAutoScraper() {
     onSuccess: (data) => {
       setExtractedProducts(data.products);
       setCurrentPage(1); // Reset to first page
+      
+      // Save to sessionStorage so it persists when returning from URL-Scraper
+      sessionStorage.setItem('pdf_auto_scraper_extracted_products', JSON.stringify(data.products));
+      
       toast({
         title: 'PDF analysiert',
         description: `${data.totalProducts} Produkt-URLs erfolgreich extrahiert`,
@@ -162,10 +185,13 @@ export default function PDFAutoScraper() {
     sessionStorage.setItem('pdf_extracted_urls', urls);
     sessionStorage.setItem('pdf_url_metadata_map', JSON.stringify(urlToMetadata));
     
-    // Store selected supplier ID
+    // Store selected supplier ID for URL-Scraper
     if (selectedSupplierId && selectedSupplierId !== "__none__") {
       sessionStorage.setItem('pdf_selected_supplier_id', selectedSupplierId);
     }
+    
+    // Store selected supplier ID for PDF-Auto-Scraper (to restore when returning)
+    sessionStorage.setItem('pdf_auto_scraper_selected_supplier', selectedSupplierId);
     
     setLocation('/url-scraper?from=pdf-auto-scraper');
   };
