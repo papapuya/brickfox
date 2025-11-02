@@ -167,7 +167,7 @@ export default function PDFAutoScraper() {
       sessionStorage.setItem('pdf_selected_supplier_id', selectedSupplierId);
     }
     
-    setLocation('/url-scraper');
+    setLocation('/url-scraper?from=pdf-auto-scraper');
   };
 
   return (

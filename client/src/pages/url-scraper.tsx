@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check, Maximize2 } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check, Maximize2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1317,14 +1317,31 @@ export default function URLScraper() {
     }
   };
 
+  // Check if coming from PDF Auto-Scraper
+  const isFromPdfAutoScraper = window.location.search.includes('from=pdf-auto-scraper');
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">URL Webscraper</h1>
-          <p className="text-muted-foreground mt-2">
-            Extrahieren Sie Produktdaten direkt von Lieferanten-Websites
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">URL Webscraper</h1>
+            <p className="text-muted-foreground mt-2">
+              Extrahieren Sie Produktdaten direkt von Lieferanten-Websites
+            </p>
+          </div>
+          
+          {/* Back to PDF Auto-Scraper button (only shown when coming from PDF-Auto-Scraper) */}
+          {isFromPdfAutoScraper && (
+            <Button
+              variant="outline"
+              onClick={() => setLocation('/pdf-auto-scraper')}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Zurück zum PDF-Auto-Scraper
+            </Button>
+          )}
         </div>
 
         {/* Lieferanten-Shop Scraper */}
