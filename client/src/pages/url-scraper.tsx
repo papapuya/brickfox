@@ -979,56 +979,58 @@ export default function URLScraper() {
   const convertToCSV = (products: ScrapedProduct[]): string => {
     if (products.length === 0) return '';
 
-    // Fixed list of ALL expected fields (base fields + AI description + technical fields)
+    // Fixed list of ALL expected fields (base fields + AI description + ANSMANN technical fields)
     // This ensures ALL columns appear in CSV, even if fields are missing
     const orderedKeys = [
       'articleNumber',
       'productName',
       'ean',
       'manufacturer',
-      'price',
-      'weight',
+      'ekPrice',
+      'vkPrice',
+      'nominalspannung',
+      'nominalkapazitaet',
+      'maxEntladestrom',
+      'laenge',
+      'breite',
+      'hoehe',
+      'gewicht',
+      'zellenchemie',
+      'energie',
+      'farbe',
+      'category',
+      'seoTitle',
+      'seoDescription',
+      'seoKeywords',
       'description',
-      'aiDescription',
-      'technicalTable',
-      'length',
-      'bodyDiameter',
-      'headDiameter',
-      'weightWithoutBattery',
-      'totalWeight',
-      'powerSupply',
-      'led1',
-      'led2',
-      'spotIntensity',
-      'maxLuminosity',
-      'maxBeamDistance',
       'pdfManualUrl',
       'safetyWarnings',
       'images'
     ];
 
-    // Create friendly header names
+    // Create friendly header names (ANSMANN fields)
     const headerMap: Record<string, string> = {
       articleNumber: 'Artikelnummer',
       productName: 'Produktname',
       ean: 'EAN',
       manufacturer: 'Hersteller',
-      price: 'Preis',
-      weight: 'Gewicht',
-      description: 'Beschreibung_HTML',
-      aiDescription: 'AI_MediaMarkt_Beschreibung',
-      technicalTable: 'Technische_Tabelle',
-      length: 'Länge_mm',
-      bodyDiameter: 'Gehäusedurchmesser_mm',
-      headDiameter: 'Kopfdurchmesser_mm',
-      weightWithoutBattery: 'Gewicht_ohne_Akku_g',
-      totalWeight: 'Gesamt_Gewicht_g',
-      powerSupply: 'Stromversorgung',
-      led1: 'Leuchtmittel_1',
-      led2: 'Leuchtmittel_2',
-      spotIntensity: 'Spotintensität_cd',
-      maxLuminosity: 'Leuchtleistung_max',
-      maxBeamDistance: 'Leuchtweite_max_m',
+      ekPrice: 'EK_Preis',
+      vkPrice: 'VK_Preis',
+      nominalspannung: 'Nominalspannung_V',
+      nominalkapazitaet: 'Nominalkapazität_mAh',
+      maxEntladestrom: 'Max_Entladestrom_A',
+      laenge: 'Länge_mm',
+      breite: 'Breite_mm',
+      hoehe: 'Höhe_mm',
+      gewicht: 'Gewicht_g',
+      zellenchemie: 'Zellenchemie',
+      energie: 'Energie_Wh',
+      farbe: 'Farbe',
+      category: 'Kategorie',
+      seoTitle: 'SEO_Titel',
+      seoDescription: 'SEO_Beschreibung',
+      seoKeywords: 'SEO_Keywords',
+      description: 'AI_Produktbeschreibung_HTML',
       pdfManualUrl: 'PDF_Bedienungsanleitung_URL',
       safetyWarnings: 'Sicherheitshinweise',
       images: 'Bild_URLs'
@@ -1040,8 +1042,20 @@ export default function URLScraper() {
     // Fill missing fields with empty strings
     const rows = products.map(product => 
       orderedKeys.map(key => {
-        // Special handling for AI-generated description
-        if (key === 'aiDescription') {
+        // Special handling for AI-generated fields
+        if (key === 'seoTitle') {
+          const aiData = generatedDescriptions.get(product.articleNumber);
+          return (aiData?.seoTitle || '').replace(/"/g, '""');
+        }
+        if (key === 'seoDescription') {
+          const aiData = generatedDescriptions.get(product.articleNumber);
+          return (aiData?.seoDescription || '').replace(/"/g, '""');
+        }
+        if (key === 'seoKeywords') {
+          const aiData = generatedDescriptions.get(product.articleNumber);
+          return (aiData?.seoKeywords || '').replace(/"/g, '""');
+        }
+        if (key === 'description') {
           const aiData = generatedDescriptions.get(product.articleNumber);
           const aiDesc = aiData?.description || '';
           return aiDesc.replace(/"/g, '""');
@@ -1051,11 +1065,6 @@ export default function URLScraper() {
         
         if (key === 'images' && Array.isArray(value)) {
           return value.join(' | ');
-        }
-        
-        if (key === 'description') {
-          // Keep HTML, only escape quotes for CSV
-          return (value as string || '').replace(/"/g, '""');
         }
         
         // Return empty string if field is missing
