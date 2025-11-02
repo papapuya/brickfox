@@ -208,7 +208,6 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
     { key: 'description', label: 'Beschreibung' },
     { key: 'images', label: 'Bilder' },
     { key: 'weight', label: 'Gewicht' },
-    { key: 'category', label: 'Kategorie' },
   ];
 
   return (

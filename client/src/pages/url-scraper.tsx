@@ -1592,15 +1592,6 @@ export default function URLScraper() {
                     className="text-sm"
                   />
                 </div>
-                <div>
-                  <Label className="text-xs">Kategorie Selector</Label>
-                  <Input
-                    placeholder='.breadcrumb'
-                    value={selectors.category}
-                    onChange={(e) => setSelectors({...selectors, category: e.target.value})}
-                    className="text-sm"
-                  />
-                </div>
               </div>
                 )}
               </>
@@ -1641,7 +1632,6 @@ export default function URLScraper() {
                       manufacturer: 'Hersteller',
                       price: 'Preis',
                       weight: 'Gewicht (g)',
-                      category: 'Kategorie',
                       description: 'Beschreibung',
                       length: 'Länge (mm)',
                       bodyDiameter: 'Gehäusedurchmesser (mm)',
