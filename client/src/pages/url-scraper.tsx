@@ -73,6 +73,10 @@ export default function URLScraper() {
   const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, status: "" });
   
+  // Pagination for preview table
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 6;
+  
   // Batch AI Generation
   const [generatedDescriptions, setGeneratedDescriptions] = useState<Map<string, GeneratedContent>>(new Map());
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -1842,9 +1846,13 @@ export default function URLScraper() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {scrapedProducts.map((product, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-mono text-sm sticky left-0 bg-white z-10">{index + 1}</TableCell>
+                    {scrapedProducts
+                      .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+                      .map((product, index) => {
+                        const absoluteIndex = (currentPage - 1) * productsPerPage + index;
+                        return (
+                          <TableRow key={absoluteIndex}>
+                        <TableCell className="font-mono text-sm sticky left-0 bg-white z-10">{absoluteIndex + 1}</TableCell>
                         <TableCell className="sticky left-12 bg-white z-10">
                           {product.images && product.images.length > 0 ? (
                             <img 
@@ -1975,11 +1983,52 @@ export default function URLScraper() {
                             <span className="text-muted-foreground italic">wird generiert...</span>
                           )}
                         </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               </div>
+              
+              {/* Pagination Controls */}
+              {scrapedProducts.length > productsPerPage && (
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+                  <div className="text-sm text-muted-foreground">
+                    Zeige {((currentPage - 1) * productsPerPage) + 1} bis {Math.min(currentPage * productsPerPage, scrapedProducts.length)} von {scrapedProducts.length} Produkten
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Zurück
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.ceil(scrapedProducts.length / productsPerPage) }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(Math.ceil(scrapedProducts.length / productsPerPage), currentPage + 1))}
+                      disabled={currentPage === Math.ceil(scrapedProducts.length / productsPerPage)}
+                    >
+                      Weiter
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         )}
