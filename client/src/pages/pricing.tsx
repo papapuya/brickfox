@@ -1,187 +1,158 @@
-import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
-
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  apiCallsLimit: number;
-  features: string[];
-}
 
 export default function Pricing() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
-  const { data: plansData } = useQuery<{ plans: Plan[] }>({
-    queryKey: ['/api/stripe/plans'],
-    queryFn: async () => {
-      const res = await fetch('/api/stripe/plans');
-      if (!res.ok) throw new Error('Failed to load plans');
-      return res.json();
-    },
-  });
-
-  const { data: userData } = useQuery({
-    queryKey: ['/api/auth/user'],
-    queryFn: async () => {
-      const res = await fetch('/api/auth/user', { credentials: 'include' });
-      if (!res.ok) return null;
-      return res.json();
-    },
-    retry: false,
-  });
-
-  const checkoutMutation = useMutation({
-    mutationFn: async (planId: string) => {
-      const res = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
-        credentials: 'include',
-      });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Checkout fehlgeschlagen');
-      }
-      
-      return res.json();
-    },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Fehler',
-        description: error.message,
-        variant: 'destructive',
-      });
-      setSelectedPlan(null);
-    },
-  });
-
-  const handleSelectPlan = (planId: string) => {
-    if (!userData?.user) {
-      setLocation('/register');
-      return;
-    }
-
-    setSelectedPlan(planId);
-    checkoutMutation.mutate(planId);
+  const handleDemo = (plan: string) => {
+    setLocation('/register');
   };
 
-  const plans = plansData?.plans || [];
-  const currentPlanId = userData?.user?.planId;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Wählen Sie Ihren Plan
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            Der passende Tarif für deinen Erfolg
           </h1>
-          <p className="text-xl text-gray-600">
-            Professionelle PIM-Beschreibungen für jedes Team
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            PIMPilot unterstützt dich bei der Produktdatenverwaltung – unabhängig von deiner 
+            Unternehmensgröße und Branche. Starte jetzt mit einer kostenlosen Testphase und wähle 
+            anschließend das für dich passende Paket.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={`relative ${
-                plan.id === 'pro'
-                  ? 'border-2 border-blue-500 shadow-xl'
-                  : ''
-              } ${
-                currentPlanId === plan.id
-                  ? 'ring-2 ring-green-500'
-                  : ''
-              }`}
-            >
-              {plan.id === 'pro' && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500">
-                  Beliebt
-                </Badge>
-              )}
-              
-              {currentPlanId === plan.id && (
-                <Badge className="absolute -top-3 right-4 bg-green-500">
-                  Aktueller Plan
-                </Badge>
-              )}
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Professional Plan */}
+          <Card className="relative bg-white shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="pb-8">
+              <CardTitle className="text-3xl font-bold text-gray-900">Professional</CardTitle>
+              <CardDescription className="text-gray-600 mt-2">
+                Hervorragend für Start-Ups, Scale-Ups, kleinere Unternehmen und kleinere Agenturen geeignet.
+              </CardDescription>
+            </CardHeader>
 
-              <CardHeader>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900">
-                      €{plan.price}
-                    </span>
-                    <span className="text-gray-600">/Monat</span>
-                  </div>
-                </CardDescription>
-              </CardHeader>
+            <CardContent className="space-y-4 pb-8">
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">
+                    <span className="text-blue-600 font-medium">CSV Bulk-Import</span> – Hunderte Produkte auf einmal importieren
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">
+                    <span className="text-blue-600 font-medium">URL Scraper</span> – Automatisches Auslesen von Lieferanten-Websites
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">
+                    <span className="text-blue-600 font-medium">AI-Produktbeschreibungen</span> – SEO-optimierte Texte per KI
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">
+                    <span className="text-blue-600 font-medium">Lieferanten-Verwaltung</span> – Gespeicherte CSS-Selektoren
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">Brickfox CSV-Export mit Field-Mapping</span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700">
+                    <span className="text-blue-600 font-medium">Bis zu 500 Produkte/Monat</span>
+                  </span>
+                </div>
+              </div>
+            </CardContent>
 
-              <CardContent>
-                <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+            <CardFooter className="flex flex-col gap-3 pt-4">
+              <p className="text-2xl font-semibold text-blue-600 text-center w-full">
+                Preis auf Anfrage
+              </p>
+              <Button 
+                onClick={() => handleDemo('professional')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-6 text-base"
+              >
+                Demo anfordern
+              </Button>
+            </CardFooter>
+          </Card>
 
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  variant={plan.id === 'pro' ? 'default' : 'outline'}
-                  onClick={() => handleSelectPlan(plan.id)}
-                  disabled={selectedPlan === plan.id || currentPlanId === plan.id}
-                >
-                  {currentPlanId === plan.id
-                    ? 'Aktueller Plan'
-                    : selectedPlan === plan.id
-                    ? 'Wird geladen...'
-                    : userData?.user
-                    ? 'Plan wählen'
-                    : 'Jetzt starten'}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+          {/* Enterprise Plan */}
+          <Card className="relative bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-300 shadow-xl hover:shadow-2xl transition-shadow">
+            <CardHeader className="pb-8">
+              <CardTitle className="text-3xl font-bold text-gray-900">Enterprise</CardTitle>
+              <CardDescription className="text-gray-700 mt-2">
+                Die perfekte Lösung für große Unternehmen und Agenturen, die viel Content in kurzer Zeit erstellen.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-4 pb-8">
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-800">Alle Features aus Professional</span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-800">
+                    <span className="text-purple-600 font-medium">PDF Auto-Scraper</span> – Automatische URL-Extraktion aus PDFs
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-800">
+                    <span className="text-purple-600 font-medium">Pixi ERP-Integration</span> – Duplikat-Erkennung & Abgleich
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-800">
+                    <span className="text-purple-600 font-medium">MediaMarkt-Formatierung</span> – Automatische Titelgenerierung
+                  </span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-800">Persönlicher Ansprechpartner & Support</span>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-5 w-5 text-purple-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-800">
+                    <span className="text-purple-600 font-medium">Unbegrenzte Produktgenerierung</span>
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex flex-col gap-3 pt-4">
+              <p className="text-2xl font-semibold text-purple-600 text-center w-full">
+                Preis auf Anfrage
+              </p>
+              <Button 
+                onClick={() => handleDemo('enterprise')}
+                className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium py-6 text-base shadow-lg"
+              >
+                Demo anfordern
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
 
-        <div className="mt-12 text-center text-gray-600 space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
-            <p className="text-blue-900 font-medium">
-              💡 <strong>Hinweis:</strong> Stripe ist noch nicht konfiguriert
-            </p>
-            <p className="text-sm text-blue-800 mt-2">
-              Neue User erhalten automatisch 100 kostenlose AI-Generierungen zum Testen.
-              Nach der Stripe-Konfiguration können Sie hier upgraden.
-            </p>
-            <p className="text-xs text-blue-600 mt-2">
-              Setup-Anleitung: Siehe <code>STRIPE_SETUP.md</code>
-            </p>
-          </div>
-          <div>
-            <p>Alle Pläne beinhalten 7 Tage Geld-zurück-Garantie</p>
-            <p className="mt-2">Monatlich kündbar • Keine versteckten Kosten</p>
-          </div>
+        <div className="mt-16 text-center">
+          <p className="text-gray-600">
+            Alle Pläne beinhalten 7 Tage Geld-zurück-Garantie
+          </p>
+          <p className="text-gray-600 mt-2">
+            Monatlich kündbar • Keine versteckten Kosten
+          </p>
         </div>
       </div>
     </div>
