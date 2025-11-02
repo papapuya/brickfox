@@ -42,6 +42,34 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: URL-Scraper - Technische Daten vollständig an AI übertragen
+**Problem behoben**: AI generierte keine Beschreibungen für gescrapte Produkte (Taschenlampen, etc.), weil technische Daten nicht übertragen wurden.
+
+**Ursache**: 
+- Der Scraper extrahierte technische Daten wie `length`, `bodyDiameter`, `led1`, `led2`, `maxLuminosity`, `spotIntensity`, etc.
+- Aber nur 8 Basis-Felder (productName, ean, manufacturer, price, weight, category, description, articleNumber) wurden an die AI geschickt
+- Die AI hatte keine technischen Daten für die Generierung
+
+**Implementierung**:
+- **Frontend** (`url-scraper.tsx`): Sendet jetzt ALLE gescrapten Felder als `structuredData` an die API
+- **Backend** (`routes-supabase.ts`): Empfängt `structuredData` und übergibt es an `generateProductDescription`
+- **Technische Daten**: Werden jetzt 1:1 von `tech-spec-parser.ts` extrahiert und in AI-Beschreibung integriert
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - `generateWithTimeout()` sendet jetzt `structuredData`
+- `server/routes-supabase.ts` - `/api/generate-description` empfängt und verarbeitet `structuredData`
+
+### 2025-11-02: MediaMarkt V1/V2 im URL-Scraper korrigiert
+**Änderung**: MediaMarkt V1/V2 Titel werden jetzt auch im URL-Scraper korrekt generiert (war vorher nur im CSV-Bulk aktiv).
+
+**Implementierung**:
+- **MediaMarkt V1**: Produktname (z.B. "Nitecore Chameleon CG7 - 2500 Lumen Weißlicht, 540 Lumen grünes Licht")
+- **MediaMarkt V2**: Modellcodes ohne Herstellerpräfix (z.B. "NCCG7" statt "ANSNCCG7")
+- **Beide Workflows**: URL-Scraper und CSV-Bulk verwenden jetzt dieselbe Logik
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - MediaMarkt V1/V2 Generierung für Single-Produkt und Batch-Speicherung
+
 ### 2025-11-02: SERP-Snippet-Anzeige entfernt
 **Änderung**: Progress-Balken und Status-Indikatoren bei SEO-Dialogen entfernt für sauberere Darstellung.
 

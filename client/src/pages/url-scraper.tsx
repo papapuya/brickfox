@@ -895,6 +895,16 @@ export default function URLScraper() {
             description: product.description,
           };
 
+          // WICHTIG: Alle gescrapten technischen Felder übertragen (length, bodyDiameter, led1, etc.)
+          const structuredData: any = {};
+          Object.keys(product).forEach((key) => {
+            // Überspringe Basis-Felder (die bereits in productData sind)
+            const skipFields = ['productName', 'articleNumber', 'ean', 'manufacturer', 'price', 'weight', 'category', 'description', 'images', 'autoExtractedDescription', 'technicalDataTable', 'safetyWarnings', 'pdfManualUrl'];
+            if (!skipFields.includes(key) && product[key] !== undefined && product[key] !== null && product[key] !== '') {
+              structuredData[key] = product[key];
+            }
+          });
+
           const token = localStorage.getItem('supabase_token');
           const response = await fetch('/api/generate-description', {
             method: 'POST',
@@ -904,6 +914,7 @@ export default function URLScraper() {
             },
             body: JSON.stringify({
               extractedData: [productData],
+              structuredData: Object.keys(structuredData).length > 0 ? structuredData : undefined,
               customAttributes: {
                 exactProductName: product.productName,
               },
