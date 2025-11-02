@@ -1068,7 +1068,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         category,
         articleNumber,
         description: autoExtractedDescription || description.replace(/<[^>]*>/g, '').substring(0, 300),
-        technicalSpecs
+        technicalSpecs,
+        nominalkapazitaet: firstData.nominalkapazitaet || structuredData?.nominalkapazitaet,
+        zellenchemie: firstData.zellenchemie || structuredData?.zellenchemie
       }, aiModel);
       
       const { seoTitle, seoDescription } = seoMetadata;

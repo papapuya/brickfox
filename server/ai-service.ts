@@ -1181,6 +1181,8 @@ export async function generateSEOMetadata(
     articleNumber?: string;
     description?: string;
     technicalSpecs?: string[];
+    nominalkapazitaet?: string;
+    zellenchemie?: string;
   },
   model: string = 'gpt-4o-mini'
 ): Promise<{ seoTitle: string; seoDescription: string }> {
@@ -1188,59 +1190,91 @@ export async function generateSEOMetadata(
     apiKey: process.env.OPENAI_API_KEY,
   });
 
-  const { productName, manufacturer, category, articleNumber, description, technicalSpecs } = productData;
+  const { productName, manufacturer, category, articleNumber, description, technicalSpecs, nominalkapazitaet, zellenchemie } = productData;
   
   // Build context from available data
   const productTitle = productName;
   const productDescription = description || '';
 
-  // SEO Title Prompt (akkushop.de Format)
+  // Bestimme Produkttyp basierend auf Kategorie und technischen Daten
+  let productType = 'Akkupack'; // Default
+  let productTypeAdjective = 'Hochwertiger'; // Default für Akkupack
+  
+  if (category === 'flashlight') {
+    productType = 'Taschenlampe';
+    productTypeAdjective = 'Leistungsstarke';
+  } else if (category === 'charger') {
+    productType = 'Ladegerät';
+    productTypeAdjective = 'Professionelles';
+  } else if (category === 'testing_equipment') {
+    productType = 'Messgerät';
+    productTypeAdjective = 'Präzises';
+  } else if (category === 'accessory') {
+    productType = 'Zubehör';
+    productTypeAdjective = 'Hochwertiges';
+  } else if (category === 'battery') {
+    // Unterscheide zwischen Akkupack (wiederaufladbar) und Batterie (Einweg)
+    const zellenchemieStr = (zellenchemie || '').toLowerCase();
+    const hasCapacity = !!nominalkapazitaet;
+    
+    if (hasCapacity || zellenchemieStr.includes('nimh') || zellenchemieStr.includes('nickel') || zellenchemieStr.includes('li-ion') || zellenchemieStr.includes('lithium-ion')) {
+      productType = 'Akkupack';
+      productTypeAdjective = 'Hochwertiger';
+    } else if (zellenchemieStr.includes('alkaline') || zellenchemieStr.includes('lithium')) {
+      productType = 'Batterie';
+      productTypeAdjective = 'Hochwertige';
+    }
+  }
+
+  console.log(`[SEO] Produkttyp erkannt: ${productType} (Kategorie: ${category}, Zellenchemie: ${zellenchemie})`);
+
+  // SEO Title Prompt (akkushop.de Format) - KATEGORIE-ABHÄNGIG
   const titlePrompt = `Du bist ein professioneller SEO-Experte für Akkushop-Produkttitel.
 
 Eingabeparameter:
 - product_title: ${productTitle}
 - product_description: ${productDescription}
+- product_type: ${productType}
 
 Ziel:
 Erstelle einen prägnanten Meta-Titel mit **EXAKT 45-55 Zeichen** im akkushop.de-Stil.
 
 Struktur:
-Akkupack [KONFIGURATION] [KAPAZITÄT] kaufen | Akkushop
+${productType} [SPEZIFIKATION] kaufen | Akkushop
 
 Regeln:
 1. **KRITISCH: Zielbereich 45-55 Zeichen** (optimal: 380-480 Pixel)
-2. **Produkttyp:** "Akkupack" (nicht "Batterie" wenn Kapazität vorhanden)
-3. **Konfiguration:** Wenn verfügbar (z.B. "2s2p", "4s1p"), sonst Spannung
-4. **Kapazität:** Immer angeben (z.B. "5200mah")
-5. **ENDE mit "kaufen | Akkushop"** (Branding + Conversion-Keyword)
-6. **Keine Marke:** Fokus auf Produkttyp und Specs
-7. **Deutsche Sprache:** Ausschließlich Deutsch
-8. **Nur Titel ausgeben** – keine Erklärungen
+2. **Produkttyp:** "${productType}" (EXAKT verwenden!)
+3. **Spezifikation:** Hauptmerkmale aus Produktnamen extrahieren (z.B. "Mignon AA", "2500 Lumen", "2s2p 5200mah")
+4. **ENDE mit "kaufen | Akkushop"** (Branding + Conversion-Keyword)
+5. **Keine Marke:** Fokus auf Produkttyp und Specs
+6. **Deutsche Sprache:** Ausschließlich Deutsch
+7. **Nur Titel ausgeben** – keine Erklärungen
 
-Beispiel (45 Zeichen):
-Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh 2s2p"
-Ausgabe:
-Akkupack 2s2p 5200mah kaufen | Akkushop
+Beispiele:
+- ${productType === 'Batterie' ? 'Batterie Mignon AA kaufen | Akkushop' : ''}
+- ${productType === 'Akkupack' ? 'Akkupack 2s2p 5200mah kaufen | Akkushop' : ''}
+- ${productType === 'Taschenlampe' ? 'Taschenlampe 2500 Lumen kaufen | Akkushop' : ''}
 
 WICHTIG: Gib NUR den Text aus, OHNE Anführungszeichen am Anfang/Ende!`;
 
-  // SEO Description Prompt (akkushop.de Format)
+  // SEO Description Prompt (akkushop.de Format) - KATEGORIE-ABHÄNGIG
   const descriptionPrompt = `Du bist ein professioneller SEO-Experte für Akkushop-Produktbeschreibungen.
 
 Eingabeparameter:
 - product_title: ${productTitle}
 - product_description: ${productDescription}
+- product_type: ${productType}
 
 Ziel:
 Erstelle eine prägnante Meta-Description mit **EXAKT 120-140 Zeichen** im akkushop.de-Stil.
 
 Struktur:
-Hochwertiger Akkupack [KONFIGURATION] [KAPAZITÄT] ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010
+${productTypeAdjective} ${productType} [SPEZIFIKATION] ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010
 
 Regeln:
 1. **KRITISCH: Zielbereich 120-140 Zeichen** (optimal: 750-880 Pixel)
-2. **Start:** "Hochwertiger Akkupack" + Konfiguration (z.B. "2s2p") + Kapazität (z.B. "5200mah")
+2. **Start:** "${productTypeAdjective} ${productType}" + Spezifikation (z.B. "Mignon AA", "2500 Lumen")
 3. **FESTE USPs (IMMER verwenden):**
    - ✓Qualitätsprodukte
    - ✓Versandkostenfrei ab 39,95€
@@ -1250,11 +1284,10 @@ Regeln:
 6. **Kein Punkt am Ende** (akkushop.de-Stil)
 7. **Nur Text ausgeben** – keine Erklärungen
 
-Beispiel (127 Zeichen):
-Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 7,2 V/5200 mAh 2s2p"
-Ausgabe:
-Hochwertiger Akkupack 2s2p 5200mah ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010
+Beispiele:
+- ${productType === 'Batterie' ? 'Hochwertige Batterie Mignon AA ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010' : ''}
+- ${productType === 'Akkupack' ? 'Hochwertiger Akkupack 2s2p 5200mah ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010' : ''}
+- ${productType === 'Taschenlampe' ? 'Leistungsstarke Taschenlampe 2500 Lumen ✓Qualitätsprodukte ✓Versandkostenfrei ab 39,95€ ✓Kundenservice ✆071517071010' : ''}
 
 WICHTIG: Gib NUR den Text aus, OHNE Anführungszeichen am Anfang/Ende!`;
 
