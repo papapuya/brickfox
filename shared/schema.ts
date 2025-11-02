@@ -466,6 +466,7 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 
 export const registerUserSchema = z.object({
+  companyName: z.string().min(2, "Firmenname muss mindestens 2 Zeichen lang sein"),
   email: z.string().email("Ungültige E-Mail-Adresse"),
   password: z.string().min(8, "Passwort muss mindestens 8 Zeichen lang sein"),
   username: z.string().optional(),

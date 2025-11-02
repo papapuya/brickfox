@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 
 const registerSchema = z.object({
+  companyName: z.string().min(2, 'Firmenname muss mindestens 2 Zeichen lang sein'),
   email: z.string().email('Ungültige E-Mail-Adresse'),
   password: z.string().min(8, 'Passwort muss mindestens 8 Zeichen lang sein'),
   confirmPassword: z.string(),
@@ -102,6 +103,23 @@ export default function Register() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Firmenname</Label>
+              <Input
+                id="companyName"
+                type="text"
+                placeholder="z.B. AkkuShop GmbH"
+                {...register('companyName')}
+                disabled={isLoading}
+              />
+              {errors.companyName && (
+                <p className="text-sm text-red-500">{errors.companyName.message}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Ihr Firmenname wird verwendet, um Ihren eigenen Workspace zu erstellen
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">E-Mail</Label>
               <Input

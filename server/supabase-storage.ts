@@ -1233,6 +1233,22 @@ export class SupabaseStorage implements IStorage {
     };
   }
 
+  async getTenantBySlug(slug: string): Promise<Tenant | null> {
+    const tenants = await heliumDb.select().from(tenantsTable).where(eq(tenantsTable.slug, slug)).limit(1);
+    const tenant = tenants[0];
+
+    if (!tenant) return null;
+
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      settings: tenant.settings as TenantSettings || {},
+      createdAt: tenant.createdAt!,
+      updatedAt: tenant.updatedAt!,
+    };
+  }
+
   async createTenant(data: CreateTenant): Promise<Tenant> {
     // Generate slug from name if not provided
     const slug = data.slug || data.name.toLowerCase()

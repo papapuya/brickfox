@@ -201,12 +201,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
       }
 
+      // Step 1: Create new tenant for this company
+      // Generate slug with proper German umlaut handling
+      let tenantSlug = validatedData.companyName
+        .toLowerCase()
+        .normalize('NFD') // Decompose combined characters
+        .replace(/ä/g, 'ae')
+        .replace(/ö/g, 'oe')
+        .replace(/ü/g, 'ue')
+        .replace(/ß/g, 'ss')
+        .replace(/[^a-z0-9]+/g, '-') // Replace special chars with dashes
+        .replace(/^-+|-+$/g, '') // Remove leading/trailing dashes
+        .replace(/--+/g, '-'); // Collapse multiple dashes
+
+      // Ensure non-empty slug (fallback to "company" if empty)
+      if (!tenantSlug || tenantSlug.length === 0) {
+        tenantSlug = 'company';
+      }
+
+      // Handle slug collisions by appending a number
+      let finalSlug = tenantSlug;
+      let counter = 2;
+      let slugExists = true;
+      
+      while (slugExists) {
+        const existing = await supabaseStorage.getTenantBySlug(finalSlug);
+        if (!existing) {
+          slugExists = false;
+        } else {
+          finalSlug = `${tenantSlug}-${counter}`;
+          counter++;
+        }
+      }
+
+      console.log(`[Register] Creating tenant: ${validatedData.companyName} (slug: ${finalSlug})`);
+
+      const newTenant = await supabaseStorage.createTenant({
+        name: validatedData.companyName,
+        slug: finalSlug,
+        settings: {
+          default_categories: ['battery', 'charger', 'tool', 'gps', 'drone', 'camera'],
+          mediamarkt_title_format: 'Kategorie + Artikelnummer'
+        }
+      });
+
+      console.log(`[Register] Tenant created: ${newTenant.id}`);
+
+      // Step 2: Create user in Supabase Auth with tenant_id in metadata
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email: validatedData.email,
         password: validatedData.password,
         email_confirm: true,
         user_metadata: {
           username: validatedData.username || validatedData.email.split('@')[0],
+          tenant_id: newTenant.id,
+          company_name: validatedData.companyName,
         }
       });
 
@@ -221,6 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // User created successfully in Supabase Auth
       // The webhook will handle creating the user record in Helium DB automatically
       console.log(`[Register] User created in Supabase Auth: ${validatedData.email}`);
+      console.log(`[Register] User assigned to tenant: ${newTenant.id} (${validatedData.companyName})`);
       console.log('[Register] Webhook will sync user to Helium DB automatically');
 
       const { data: sessionData } = await supabase.auth.signInWithPassword({

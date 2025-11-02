@@ -109,8 +109,16 @@ async function handleUserInsert(record: SupabaseDatabaseWebhook['record']) {
   
   console.log(`[Webhook] Creating user in Helium DB: ${email}`);
 
-  // Get tenant ID
-  const tenantId = await getOrCreateAkkuShopTenant();
+  // Get tenant ID from user metadata (set during registration)
+  // If not present, fall back to AkkuShop for backward compatibility
+  let tenantId: string;
+  if (raw_user_meta_data?.tenant_id) {
+    tenantId = raw_user_meta_data.tenant_id;
+    console.log(`[Webhook] Using tenant from user metadata: ${tenantId} (${raw_user_meta_data.company_name || 'Unknown'})`);
+  } else {
+    console.warn(`[Webhook] No tenant_id in user metadata, falling back to AkkuShop (legacy user)`);
+    tenantId = await getOrCreateAkkuShopTenant();
+  }
 
   // Check if user already exists
   const existingUser = await db
@@ -129,13 +137,22 @@ async function handleUserInsert(record: SupabaseDatabaseWebhook['record']) {
   }
 
   // Create user in Helium DB
+  // First user of a new tenant becomes admin
+  const isFirstUserOfTenant = await db
+    .select()
+    .from(users)
+    .where(eq(users.tenantId, tenantId))
+    .limit(1);
+
+  const isAdmin = isFirstUserOfTenant.length === 0; // First user = admin
+
   await db.insert(users).values({
     id,
     email,
     username: raw_user_meta_data?.username || email.split('@')[0],
     tenantId,
-    isAdmin: false,
-    role: 'member',
+    isAdmin,
+    role: isAdmin ? 'admin' : 'member',
     subscriptionStatus: 'trial',
     planId: 'trial',
     apiCallsLimit: 3000,
@@ -145,13 +162,16 @@ async function handleUserInsert(record: SupabaseDatabaseWebhook['record']) {
   });
 
   console.log(`✅ [Webhook] User ${email} created successfully in Helium DB`);
+  console.log(`   - Tenant: ${tenantId}`);
+  console.log(`   - Role: ${isAdmin ? 'admin (first user)' : 'member'}`);
 
   return {
     status: 'success',
     action: 'user_insert',
     user_id: id,
     email,
-    tenant_id: tenantId
+    tenant_id: tenantId,
+    is_admin: isAdmin
   };
 }
 
