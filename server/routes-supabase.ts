@@ -755,6 +755,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const parsedSelectors: ScraperSelectors = selectors ? JSON.parse(selectors) : defaultSelectors.generic;
       const result = await scrapeProduct({ url, selectors: parsedSelectors });
       
+      // AI-Farbanalyse: Wenn Bilder vorhanden sind, analysiere das erste Bild
+      if (result.images && result.images.length > 0) {
+        const firstImageUrl = result.images[0];
+        console.log('[Scraper] Starte AI-Farbanalyse für Produktbild...');
+        
+        try {
+          const { analyzeProductImageColor } = await import('./ai-service');
+          const aiDetectedColor = await analyzeProductImageColor(firstImageUrl);
+          
+          if (aiDetectedColor) {
+            console.log(`[Scraper] AI erkannte Farbe: ${aiDetectedColor} (Original: ${(result as any).farbe || 'keine'})`);
+            (result as any).farbe = aiDetectedColor;
+            (result as any).colorDetectedByAI = true; // Flag für Frontend-Anzeige
+          }
+        } catch (error) {
+          console.error('[Scraper] Fehler bei AI-Farbanalyse:', error);
+          // Continue ohne Farbanalyse bei Fehler
+        }
+      }
+      
       await trackApiUsage(req, res, () => {});
       res.json(result);
     } catch (error: any) {
@@ -780,6 +800,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent,
         cookies: effectiveCookies
       });
+      
+      // AI-Farbanalyse: Wenn Bilder vorhanden sind, analysiere das erste Bild
+      if (product.images && product.images.length > 0) {
+        const firstImageUrl = product.images[0];
+        console.log('[Scraper] Starte AI-Farbanalyse für Produktbild...');
+        
+        try {
+          const { analyzeProductImageColor } = await import('./ai-service');
+          const aiDetectedColor = await analyzeProductImageColor(firstImageUrl);
+          
+          if (aiDetectedColor) {
+            console.log(`[Scraper] AI erkannte Farbe: ${aiDetectedColor} (Original: ${(product as any).farbe || 'keine'})`);
+            (product as any).farbe = aiDetectedColor;
+            (product as any).colorDetectedByAI = true; // Flag für Frontend-Anzeige
+          }
+        } catch (error) {
+          console.error('[Scraper] Fehler bei AI-Farbanalyse:', error);
+          // Continue ohne Farbanalyse bei Fehler
+        }
+      }
       
       await trackApiUsage(req, res, () => {});
       res.json({ product });

@@ -8,6 +8,88 @@ function debugLog(...args: any[]) {
   }
 }
 
+/**
+ * Analyzes a product image using OpenAI Vision API to detect the dominant color
+ * @param imageUrl - URL of the product image to analyze
+ * @returns Detected color in German (schwarz, gelb, rot, blau, grün, weiß, grau, etc.)
+ */
+export async function analyzeProductImageColor(imageUrl: string): Promise<string> {
+  try {
+    const currentApiKey = getOpenAIKey();
+    const currentBaseUrl = getOpenAIBaseUrl();
+    
+    if (!currentApiKey || currentApiKey === 'dein-api-schlüssel-hier') {
+      console.warn('[Image Color Analysis] OpenAI API key nicht konfiguriert - überspringe Farbanalyse');
+      return '';
+    }
+    
+    const openai = new OpenAI({
+      apiKey: currentApiKey,
+      baseURL: currentBaseUrl,
+    });
+    
+    console.log(`[Image Color Analysis] Analysiere Produktbild: ${imageUrl}`);
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `Du bist ein Experte für visuelle Produktanalyse. 
+          
+Analysiere das Produktbild und erkenne die HAUPTFARBE des Akkupacks/der Batterie.
+
+WICHTIG:
+- Ignoriere den Hintergrund
+- Fokussiere auf das Gehäuse/die Ummantelung des Akkupacks
+- Gib NUR die Farbe auf Deutsch zurück (ein Wort)
+- Erlaubte Farben: schwarz, gelb, rot, blau, grün, weiß, grau, orange, silber
+
+Beispiele:
+- Schwarzes Akkupack → "schwarz"
+- Gelbes Schrumpfschlauch → "gelb"
+- Rote Ummantelung → "rot"
+- Blaue Batterie → "blau"`
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Welche Farbe hat dieser Akkupack/diese Batterie?'
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrl,
+                detail: 'low' // Low detail für schnellere/günstigere Analyse
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 10,
+      temperature: 0.3 // Niedrige Temperature für konsistente Ergebnisse
+    });
+    
+    const detectedColor = response.choices[0]?.message?.content?.trim().toLowerCase() || '';
+    console.log(`[Image Color Analysis] Erkannte Farbe: ${detectedColor}`);
+    
+    // Validierung: Nur erlaubte Farben zurückgeben
+    const validColors = ['schwarz', 'gelb', 'rot', 'blau', 'grün', 'weiß', 'grau', 'orange', 'silber'];
+    if (validColors.includes(detectedColor)) {
+      return detectedColor;
+    } else {
+      console.warn(`[Image Color Analysis] Unbekannte Farbe erkannt: ${detectedColor}`);
+      return '';
+    }
+    
+  } catch (error) {
+    console.error('[Image Color Analysis] Fehler bei Bildanalyse:', error);
+    return '';
+  }
+}
+
 // Helper function to clean HTML responses from markdown code blocks
 function cleanHTMLResponse(content: string): string {
   // Remove markdown code blocks (```html, ```, etc.)
