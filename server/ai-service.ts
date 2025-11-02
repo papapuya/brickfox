@@ -1085,63 +1085,60 @@ export async function generateSEOMetadata(
   const productTitle = productName;
   const productDescription = description || '';
 
-  // SEO Title Prompt
-  const titlePrompt = `Du bist ein professioneller SEO-Experte für Produktdaten.
-
-Ziel:
-Erstelle einen suchmaschinenoptimierten SEO-Titel (max. 70 Zeichen) für ein Produkt aus dem Bereich Akkus, Batterien oder Elektronik.
-
-Eingabeparameter:
-- product_title: ${productTitle}
-- product_description: ${productDescription}
-
-Regeln:
-1. **Struktur:** [MARKE] [SPANNUNG] [KAPAZITÄT] [AKKUTYP] – [KAUFRELEVANTER ZUSATZ]
-2. Verwende keine Artikelnummern, Seriennummern oder Testhinweise (z. B. "UN-Transporttest", "Art.-Nr.", "Modell", "Ref.", "ANS...").
-3. **Technische Daten vorne:** Betone Marke, Spannung, Kapazität und Akkutyp (z. B. "14,4 V", "2600 mAh", "Lithium-Ionen").
-4. **Kaufrelevanter Zusatz:** Füge nach dem Gedankenstrich (–) einen vertrauenswürdigen, wertigen Zusatz hinzu (z. B. "hohe Energie, sichere Leistung", "langlebig und zuverlässig", "hochwertige Qualität").
-5. **Keyword-Dichte:** Stelle sicher, dass alle relevanten Begriffe enthalten sind (Marke, Spannung, Kapazität, Akkutyp, Produktart).
-6. Verwende maximal 70 Zeichen (optimal für Google-Snippets).
-7. Antworte **nur** mit dem SEO-Titel, kein Zusatztext.
-
-Beispiel:
-Eingabe:
-product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh | UN-Transporttest | ANS2447305040"
-Ausgabe:
-"ANSMANN 14,4 V 2600 mAh Lithium-Ionen Akkupack – hohe Energie, sichere Leistung"`;
-
-  // SEO Description Prompt
-  const descriptionPrompt = `Du bist ein professioneller SEO- und Produkttext-Experte für Akkus und Elektronikprodukte. 
-Deine Aufgabe ist es, aus Produktdaten eine suchmaschinenoptimierte, verkaufsorientierte Produktbeschreibung zu erstellen.
+  // SEO Title Prompt (Meta Title for Google SERP)
+  const titlePrompt = `Du bist ein professioneller SEO-Experte für Google Meta-Titles.
 
 Eingabeparameter:
 - product_title: ${productTitle}
 - product_description: ${productDescription}
 
 Ziel:
-Erstelle eine ansprechende, keyword-optimierte Produktbeschreibung mit **MAXIMAL 450 Zeichen** (≈ 1000 px Breite). 
-Die Beschreibung soll eine perfekte Balance zwischen technischen Details und emotionalen Kaufargumenten schaffen.
+Erstelle einen prägnanten SEO-Titel mit **EXAKT 55-65 Zeichen** für optimale Google-Anzeige.
 
-Struktur (3 Sätze):
-1. **Einleitung:** Marke + Technische Daten + Hauptnutzen (z. B. "zuverlässige Energiequelle", "vielfältige Anwendungen")
-2. **Technische Details:** Konkrete Specs und Vorteile (z. B. "18650-Zellen", "hohe Energiedichte", "geringe Selbstentladung", "lange Lebensdauer")
-3. **Sicherheit/Qualität:** Schutzfunktionen und Vertrauen (z. B. "integrierte Schutzschaltung", "sicher vor Überladung und Kurzschluss")
+Struktur:
+[MARKE] [SPANNUNG] [KAPAZITÄT] [AKKUTYP] – [KURZER ZUSATZ]
 
 Regeln:
-1. **Keyword-Optimierung:** Verwende die wichtigsten Keywords (Marke, Spannung, Kapazität, Akkutyp, Zellentyp wie "18650").
-2. **Technische + emotionale Balance:** Kombiniere harte Fakten mit Vertrauens- und Qualitätsaspekten.
-3. Verzichte auf technische Kürzel, Artikelnummern oder interne Angaben (z. B. „UN-Transporttest", „Art.-Nr.", „Modell", „Ref.").
-4. Schreibe in ganzen, flüssigen Sätzen mit aktivem Sprachstil.
-5. Verwende ausschließlich deutsche Sprache.
-6. **KRITISCH: Halte dich STRIKT an maximal 450 Zeichen. Schließe den Text mit einem vollständigen Satz ab, KEIN "..." am Ende.**
-7. Gib nur den finalen Beschreibungstext aus – **keine Erklärungen oder JSON-Struktur**.
+1. **KRITISCH: Zielbereich 55-65 Zeichen** (optimal für Google, ohne Abschneiden)
+2. **Technische Daten:** Marke, Spannung (z. B. "3,6 V"), Kapazität (z. B. "7800 mAh"), Akkutyp (z. B. "Li-Ion")
+3. **Kurzer Zusatz:** Max. 2-3 Wörter nach dem Gedankenstrich (z. B. "langlebig", "hochwertig", "vielseitig")
+4. **Keine Artikelnummern:** Vermeide "Art.-Nr.", "UN-Test", "Modell", "ANS...", "Ref."
+5. **Deutsche Sprache:** Ausschließlich Deutsch
+6. **Nur Titel ausgeben** – keine Erklärungen
 
-Beispiel (281 Zeichen):
+Beispiel (59 Zeichen):
 Eingabe:
 product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
-product_description: "Ideal für Anwendungen mit Li 18650-Zellen und UN 38.3 zertifiziert."
 Ausgabe:
-"Das ANSMANN Lithium-Ionen Akkupack mit 14,4 V und 2600 mAh bietet eine zuverlässige Energiequelle für vielfältige Anwendungen. Die hochwertigen 18650-Zellen sorgen für hohe Energiedichte, geringe Selbstentladung und lange Lebensdauer. Dank integrierter Schutzschaltung ist das Akkupack sicher vor Überladung und Kurzschluss."`;
+"ANSMANN 14,4 V 2600 mAh Li-Ion Akkupack – langlebig"`;
+
+  // SEO Description Prompt (Meta Description for Google SERP)
+  const descriptionPrompt = `Du bist ein professioneller SEO-Experte für Google Meta-Descriptions.
+
+Eingabeparameter:
+- product_title: ${productTitle}
+- product_description: ${productDescription}
+
+Ziel:
+Erstelle eine prägnante Meta-Description mit **EXAKT 140-160 Zeichen** für Google-Suchergebnisse.
+
+Struktur (2 Sätze):
+1. **Kernnutzen:** Marke + Hauptspecs + wichtigster Vorteil (z. B. "Das ANSMANN 3,6 V 7800 mAh Akkupack bietet hohe Energiedichte für vielseitige Anwendungen.")
+2. **Qualitätsmerkmal:** Ein konkretes Feature oder Sicherheitsaspekt (z. B. "Mit 18650-Zellen und integriertem Schutz vor Überladung.")
+
+Regeln:
+1. **KRITISCH: Halte dich STRIKT an 140-160 Zeichen** (optimal für Google-Snippets)
+2. **Keyword-Optimierung:** Verwende Marke, Spannung, Kapazität, Akkutyp
+3. **Klare Sprache:** Kurz, prägnant, ohne technische Kürzel oder Artikelnummern
+4. **Vollständige Sätze:** Schließe mit Punkt ab, KEIN "..." am Ende
+5. **Deutsche Sprache:** Ausschließlich Deutsch
+6. **Nur Text ausgeben** – keine Erklärungen oder Formatierungen
+
+Beispiel (157 Zeichen):
+Eingabe:
+product_title: "ANSMANN Lithium-Ionen Akkupack 14,4 V/2600 mAh"
+Ausgabe:
+"Das ANSMANN 14,4 V 2600 mAh Akkupack bietet zuverlässige Energie für vielseitige Anwendungen. Mit hochwertigen 18650-Zellen und integriertem Schutz."`;
 
   try {
     // Generate SEO Title
@@ -1181,17 +1178,17 @@ Ausgabe:
       temperature: 0.7
     });
 
-    let seoDescription = descriptionResponse.choices[0]?.message?.content?.trim() || description?.substring(0, 400) || '';
+    let seoDescription = descriptionResponse.choices[0]?.message?.content?.trim() || description?.substring(0, 150) || '';
     
     // Remove trailing "..." if AI added it (we want complete sentences)
     seoDescription = seoDescription.replace(/\.\.\.+$/, '').trim();
     
     // Only truncate if AI ignored the limit (emergency fallback)
-    if (seoDescription.length > 450) {
-      // Find last complete sentence before 450 chars
-      const truncated = seoDescription.substring(0, 447);
+    if (seoDescription.length > 160) {
+      // Find last complete sentence before 160 chars
+      const truncated = seoDescription.substring(0, 157);
       const lastPeriod = truncated.lastIndexOf('.');
-      seoDescription = lastPeriod > 200 ? truncated.substring(0, lastPeriod + 1) : truncated + '...';
+      seoDescription = lastPeriod > 100 ? truncated.substring(0, lastPeriod + 1) : truncated + '...';
     }
     
     return {
