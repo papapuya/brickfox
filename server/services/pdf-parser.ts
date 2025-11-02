@@ -64,8 +64,9 @@ export class PDFParserService {
 
         // 1. PRODUCTS WITH URL
         links.forEach((link) => {
-          const rowYMin = link.y - 8;
-          const rowYMax = link.y + 8;
+          // Increase Y-tolerance to capture multi-line data (article number, EAN, price might be on different Y positions)
+          const rowYMin = link.y - 15;  // Increased from 8 to 15
+          const rowYMax = link.y + 15;  // Increased from 8 to 15
 
           const rowTextItems = textItems.filter((item) => {
             const itemY = item.transform[5];
@@ -83,11 +84,12 @@ export class PDFParserService {
         });
 
         // 2. PRODUCTS WITHOUT URL (pure table rows)
-        // Group text items by Y position to find table rows
+        // Group text items by Y position range to capture multi-line data
         const textByRow = new Map<number, TextItem[]>();
         
         textItems.forEach((item) => {
-          const y = Math.round(item.transform[5]);
+          // Round to nearest 5 to group nearby Y positions
+          const y = Math.round(item.transform[5] / 5) * 5;
           if (!textByRow.has(y)) {
             textByRow.set(y, []);
           }
@@ -96,7 +98,12 @@ export class PDFParserService {
 
         // Process rows that weren't already processed (no URL)
         textByRow.forEach((items, y) => {
-          if (!processedYPositions.has(y)) {
+          // Check if this Y position is close to any processed position
+          const isProcessed = Array.from(processedYPositions).some(processedY => {
+            return Math.abs(y - processedY) < 15;
+          });
+          
+          if (!isProcessed) {
             items.sort((a, b) => a.transform[4] - b.transform[4]);
             const rowText = items.map(item => item.str).join(' ');
 
