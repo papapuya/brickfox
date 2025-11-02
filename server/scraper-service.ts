@@ -424,6 +424,43 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     }).get().filter(Boolean);
   }
 
+  // ANSMANN/Magento: Try to extract gallery images from JSON (JavaScript-loaded galleries)
+  if (!product.images || product.images.length <= 1) {
+    try {
+      // Find Magento gallery init script
+      const scripts = $('script[type="text/x-magento-init"]');
+      scripts.each((_, scriptEl) => {
+        const scriptContent = $(scriptEl).html();
+        if (scriptContent && scriptContent.includes('mage/gallery/gallery')) {
+          try {
+            const json = JSON.parse(scriptContent);
+            // Find the gallery config
+            for (const key of Object.keys(json)) {
+              if (json[key]['mage/gallery/gallery']) {
+                const gallery = json[key]['mage/gallery/gallery'];
+                if (gallery.data && Array.isArray(gallery.data)) {
+                  const galleryImages = gallery.data
+                    .map((img: any) => img.full || img.img || img.thumb)
+                    .filter(Boolean);
+                  
+                  if (galleryImages.length > 0) {
+                    product.images = galleryImages;
+                    console.log(`[Magento Gallery] Extracted ${galleryImages.length} images from JSON`);
+                    return false; // Break the loop
+                  }
+                }
+              }
+            }
+          } catch (parseError) {
+            // Silent fail - continue with other scripts
+          }
+        }
+      });
+    } catch (error) {
+      console.error('[Magento Gallery] Error parsing gallery JSON:', error);
+    }
+  }
+
   // Weight - Format for Brickfox: German format with comma, NO units (e.g., 250 or 1,5)
   if (selectors.weight) {
     const element = $(selectors.weight).first();
