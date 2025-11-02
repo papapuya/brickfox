@@ -559,7 +559,9 @@ export default function URLScraper() {
               led2: data.product.led2,
               maxLuminosity: data.product.maxLuminosity
             });
-            products.push(data.product);
+            // WICHTIG: Explizit ALLE Felder übernehmen (Spread-Operator)
+            const fullProduct = { ...data.product };
+            products.push(fullProduct);
           } else {
             console.error(`Fehler beim Scrapen von ${productUrl}`);
             failedCount++;
@@ -707,6 +709,14 @@ export default function URLScraper() {
           }) as any;
 
           if (data && data.product) {
+            console.log('🔍 [PDF-FLOW] Received product from backend:', Object.keys(data.product));
+            console.log('🔍 [PDF-FLOW] Nitecore fields in response:', {
+              length: data.product.length,
+              led1: data.product.led1,
+              led2: data.product.led2,
+              maxLuminosity: data.product.maxLuminosity
+            });
+            
             // Merge PDF data with scraped data (only if metadata exists for this URL)
             let mergedProduct = pdfMetadata ? {
               ...data.product,
@@ -726,6 +736,14 @@ export default function URLScraper() {
                 mergedProduct.vkPrice = vkValue.toFixed(2).replace('.', ',');
               }
             }
+            
+            console.log('🔍 [PDF-FLOW] Merged product fields:', Object.keys(mergedProduct));
+            console.log('🔍 [PDF-FLOW] Nitecore fields in merged product:', {
+              length: mergedProduct.length,
+              led1: mergedProduct.led1,
+              led2: mergedProduct.led2,
+              maxLuminosity: mergedProduct.maxLuminosity
+            });
             
             products.push(mergedProduct);
           } else {
