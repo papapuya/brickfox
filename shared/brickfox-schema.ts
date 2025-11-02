@@ -218,6 +218,38 @@ export const BRICKFOX_FIELDS: BrickfoxFieldMeta[] = [
     description: 'Gewicht der Variante in Gramm'
   },
   {
+    key: 'v_length',
+    label: 'Länge (mm)',
+    scope: 'variant',
+    type: 'number',
+    sourceType: 'scraped',
+    description: 'Länge der Variante in Millimetern'
+  },
+  {
+    key: 'v_width',
+    label: 'Breite (mm)',
+    scope: 'variant',
+    type: 'number',
+    sourceType: 'scraped',
+    description: 'Breite der Variante in Millimetern'
+  },
+  {
+    key: 'v_height',
+    label: 'Höhe (mm)',
+    scope: 'variant',
+    type: 'number',
+    sourceType: 'scraped',
+    description: 'Höhe der Variante in Millimetern'
+  },
+  {
+    key: 'v_capacity_mah',
+    label: 'Kapazität (mAh)',
+    scope: 'variant',
+    type: 'number',
+    sourceType: 'scraped',
+    description: 'Akkukapazität in Milliamperestunden'
+  },
+  {
     key: 'v_customs_tariff_number',
     label: 'Zolltarifnummer',
     scope: 'variant',
@@ -294,6 +326,10 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   'v_supplier_item_number': { source: 'scraped', field: 'articleNumber' },
   'v_purchase_price': { source: 'scraped', field: 'preis' },  // German field name
   'v_weight': { source: 'scraped', field: 'gewicht' },  // German field name
+  'v_length': { source: 'scraped', field: 'laenge' },  // German field name
+  'v_width': { source: 'scraped', field: 'breite' },  // German field name
+  'v_height': { source: 'scraped', field: 'hoehe' },  // German field name
+  'v_capacity_mah': { source: 'scraped', field: 'nominalkapazitaet' },  // German field name
   'v_customs_tariff_text': { source: 'scraped', field: 'customsTariff' },
   
   // Variant fields - constants

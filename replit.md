@@ -42,15 +42,29 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: Brickfox-Felder für Abmessungen und Kapazität hinzugefügt
+**Problem behoben**: Technische Daten (Länge, Breite, Höhe, mAh) wurden vom Scraper extrahiert, aber nicht ins Brickfox-CSV exportiert.
+
+**Implementierung**:
+- **Neue Brickfox-Felder**: `v_length`, `v_width`, `v_height`, `v_capacity_mah` in `shared/brickfox-schema.ts`
+- **Default-Mapping erweitert**: Automatisches Mapping von gescrapten Feldern (laenge, breite, hoehe, nominalkapazitaet) zu Brickfox-Spalten
+- **Datentyp**: Alle Felder als `number` (Länge/Breite/Höhe in mm, Kapazität in mAh)
+
+**Betroffene Dateien**:
+- `shared/brickfox-schema.ts` - Schema erweitert mit 4 neuen Feldern
+
 ### 2025-11-02: E-Mail-Integration für Lieferanten-Anfragen (Greyhound SMTP)
 **Feature**: Automatischer E-Mail-Versand für Produkte ohne URLs mit editierbarer Vorlage.
 
 **Implementierung**:
 - **SMTP-Integration**: Greyhound SMTP-Server via nodemailer (Zugangsdaten in Replit Secrets: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM)
+- **Timeout-Optimierung**: SMTP-Timeout von 120s auf 30s reduziert, Frontend-Timeout von 35s hinzugefügt
 - **E-Mail-Service**: `server/services/email-service.ts` für strukturierte E-Mail-Versendung
 - **API-Endpoint**: `/api/email/request-urls` für E-Mail-Versand mit EAN-Codes
 - **Frontend-Dialog**: Editierbare E-Mail-Vorlage mit Empfänger, Betreff, Nachricht und automatischem Anhängen der EAN-Codes
 - **Button "URLs anfragen"**: Im Tab "Ohne URL" - öffnet Dialog, sendet E-Mail über Greyhound SMTP
+
+**Status**: ⚠️ Greyhound SMTP-Server derzeit nicht von Replit aus erreichbar (Connection Timeout). Alternative: Resend, SendGrid oder Gmail Integration verfügbar.
 
 **Workflow**:
 1. PDF hochladen → Produkte OHNE URL werden im Tab "Ohne URL" angezeigt
@@ -60,6 +74,6 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 5. Lieferant erhält strukturierte Anfrage mit EAN-Liste
 
 **Betroffene Dateien**:
-- `server/services/email-service.ts` - SMTP-Service
+- `server/services/email-service.ts` - SMTP-Service mit Timeout-Optimierung
 - `server/routes-supabase.ts` - API-Endpoint
-- `client/src/pages/pdf-auto-scraper.tsx` - Dialog-Integration
+- `client/src/pages/pdf-auto-scraper.tsx` - Dialog-Integration mit Frontend-Timeout
