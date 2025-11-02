@@ -21,7 +21,6 @@ interface PDFProduct {
   description: string | null;
   marke: string | null;
   ve: string | null;
-  uevp: string | null;
   liefermenge: string | null;
 }
 
@@ -327,10 +326,10 @@ export default function PDFAutoScraper() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="min-w-[250px]">Produktname</TableHead>
+                          <TableHead className="min-w-[250px]">Produktname (Bezeichnung)</TableHead>
                           <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
                           <TableHead className="min-w-[130px]">EAN</TableHead>
-                          <TableHead className="min-w-[100px]">EK-Preis</TableHead>
+                          <TableHead className="min-w-[100px]">Netto-EK</TableHead>
                           <TableHead className="min-w-[100px]">Liefermenge</TableHead>
                           <TableHead className="min-w-[400px]">URL</TableHead>
                         </TableRow>
@@ -413,12 +412,11 @@ export default function PDFAutoScraper() {
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="min-w-[250px]">Produktname</TableHead>
+                                  <TableHead className="min-w-[250px]">Produktname (Bezeichnung)</TableHead>
                                   <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
                                   <TableHead className="min-w-[130px]">EAN</TableHead>
-                                  <TableHead className="min-w-[100px]">EK-Preis</TableHead>
+                                  <TableHead className="min-w-[100px]">Netto-EK</TableHead>
                                   <TableHead className="min-w-[100px]">Liefermenge</TableHead>
-                                  <TableHead className="min-w-[100px]">UEVP</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -429,7 +427,6 @@ export default function PDFAutoScraper() {
                                     <TableCell>{product.eanCode || '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.liefermenge || '1 Stück'}</TableCell>
-                                    <TableCell className="whitespace-nowrap">{product.uevp ? `${product.uevp} €` : '-'}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>

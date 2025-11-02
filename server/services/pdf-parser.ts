@@ -12,7 +12,6 @@ interface PDFProduct {
   description: string | null;
   marke: string | null;
   ve: string | null;
-  uevp: string | null;
   liefermenge: string | null;
   kategorie?: string | null;
   bezeichnung?: string | null;
@@ -270,7 +269,6 @@ export class PDFParserService {
         description: null,
         marke: null,
         ve: null,
-        uevp: null,
         liefermenge: null,
       };
 
@@ -315,35 +313,16 @@ export class PDFParserService {
         console.log(`  ✅ EAN: ${product.eanCode}`);
       }
       
-      // Process Prices (EK and UEVP)
+      // Process Prices (Netto-EK)
+      // The last price in the row is typically the Netto-EK
       if (priceMatches && priceMatches.length >= 1) {
         // Clean prices: remove € and whitespace
         const cleanedPrices = priceMatches.map(p => p.replace(/€/g, '').trim());
         
-        if (cleanedPrices.length >= 2) {
-          // If 2+ prices found: last 2 are likely EK and UEVP
-          product.ekPrice = cleanedPrices[cleanedPrices.length - 2];
-          product.uevp = cleanedPrices[cleanedPrices.length - 1];
-        } else if (cleanedPrices.length === 1) {
-          // If only 1 price found: assume it's EK
-          product.ekPrice = cleanedPrices[0];
-        }
+        // Take the last price as EK (Netto-EK)
+        product.ekPrice = cleanedPrices[cleanedPrices.length - 1];
         
-        console.log(`  ✅ EK: ${product.ekPrice || 'N/A'}, UEVP: ${product.uevp || 'N/A'}`);
-      }
-
-      // Extract product name from URL (if available)
-      if (url) {
-        const urlParts = url.split('/').filter((p: string) => p);
-        const lastPart = urlParts[urlParts.length - 1];
-        product.productName = lastPart
-          .replace(/-/g, ' ')
-          .replace(/\/$/, '')
-          .trim();
-      } else {
-        // No URL: Extract from row text (first significant text)
-        const match = rowText.match(/([A-ZÄÖÜ][a-zäöü\s\-]+)/);
-        product.productName = match ? match[0].trim() : 'Unknown Product';
+        console.log(`  ✅ Netto-EK: ${product.ekPrice || 'N/A'}`);
       }
 
       // Extract Marke (first word is often the brand)
@@ -351,6 +330,56 @@ export class PDFParserService {
       if (firstWord && firstWord.length > 2) {
         product.marke = firstWord;
       }
+
+      // Extract BEZEICHNUNG as productName (between Marke and Artikel-Nr.)
+      // Strategy: Remove all recognized patterns and extract the remaining text
+      let cleanedText = rowText;
+      
+      // Remove Marke (first word)
+      if (product.marke) {
+        cleanedText = cleanedText.replace(product.marke, '').trim();
+      }
+      
+      // Remove Artikel-Nr.
+      if (articleMatch) {
+        cleanedText = cleanedText.replace(articleMatch[0], '').trim();
+      }
+      
+      // Remove EAN
+      if (eanMatch) {
+        cleanedText = cleanedText.replace(eanMatch[0], '').trim();
+      }
+      
+      // Remove all prices
+      if (priceMatches) {
+        priceMatches.forEach(price => {
+          cleanedText = cleanedText.replace(price, '').trim();
+        });
+      }
+      
+      // Remove common column headers/noise
+      cleanedText = cleanedText
+        .replace(/\bVE\b/g, '')
+        .replace(/\bEK\b/g, '')
+        .replace(/\bUEVP\b/g, '')
+        .replace(/\bNetto-EK\b/g, '')
+        .replace(/\s{2,}/g, ' ') // Normalize multiple spaces
+        .trim();
+      
+      // Extract the first meaningful text block as Bezeichnung (product name)
+      // This should be the product description after removing all structured data
+      const bezeichnungMatch = cleanedText.match(/^([^€\d]{5,}?)(?:\s{2,}|$)/);
+      if (bezeichnungMatch) {
+        product.productName = bezeichnungMatch[1].trim();
+      } else if (cleanedText.length > 3) {
+        // Fallback: Use cleaned text if it's meaningful
+        product.productName = cleanedText.substring(0, 100).trim();
+      } else {
+        // Last resort: Use "Unknown Product"
+        product.productName = 'Unknown Product';
+      }
+      
+      console.log(`  ✅ Bezeichnung (Produktname): ${product.productName}`);
 
       // Extract Liefermenge (e.g., "1 Stück", "4 Stück", "10 Stück")
       // Patterns: "X Stück", "X St.", "X-er Pack", etc.
