@@ -270,13 +270,14 @@ export default function CSVBulkDescription() {
           const shortDesc =
             sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
 
-          // MediaMarkt V1: Kategorie + Modell (z.B. "Werkzeugakku 2607336705")
-          const kategorie = productData.kategorie || row['Kategorie'] || '';
+          // MediaMarkt V1: Produkt + Modell (z.B. "Akkupack Mignon AA / LR6")
+          // Verwende den Produktnamen, der bereits "Produkt + Modell" enthält
           const artikelnummer = productData.artikelnummer || row['Artikelnummer'] || '';
-          const mmNameV1 = `${kategorie} ${artikelnummer}`.trim();
+          const mmNameV1 = produktname.trim();
 
-          // MediaMarkt V2: Nur Artikelnummer/Modell
-          const mmNameV2 = artikelnummer;
+          // MediaMarkt V2: Nur Modellcodes (Großbuchstaben und Zahlen)
+          // Entferne Herstellerpräfixe wie "ANS-" und behalte nur alphanumerische Codes
+          const mmNameV2 = artikelnummer.replace(/^[A-Z]+-/, '').trim();
 
           return {
             id: globalIndex + 1,

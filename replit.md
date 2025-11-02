@@ -42,6 +42,46 @@ The application utilizes a modular subprompt architecture for specialized AI tas
 
 ## Recent Changes
 
+### 2025-11-02: MediaMarkt V1/V2 Formatierung korrigiert
+**Änderung**: MediaMarkt-Titel V1 und V2 folgen jetzt den korrekten Vorgaben.
+
+**Implementierung**:
+- **MediaMarkt V1**: Zeigt nur "Produkt + Modell" (z.B. "Akkupack Mignon AA / LR6"), keine weiteren Informationen
+- **MediaMarkt V2**: Zeigt nur Modellcodes (Großbuchstaben und Zahlen), Herstellerpräfixe wie "ANS-" werden automatisch entfernt
+
+**Vorher**:
+- V1: "Kategorie + Artikelnummer" (z.B. "Werkzeugakku 2607336705")
+- V2: Komplette Artikelnummer mit Präfix
+
+**Nachher**:
+- V1: "Akkupack Mignon AA / LR6" (nur Produkt + Modell)
+- V2: "1522-0017" (nur Modellcode ohne ANS-Präfix)
+
+**Betroffene Dateien**:
+- `client/src/pages/csv-bulk-description.tsx` - MediaMarkt-Titel-Generierung angepasst
+
+### 2025-11-02: Technische Tabelle linksbündig formatiert
+**Änderung**: Technische Tabelle in Produktbeschreibung ist jetzt vollständig linksbündig.
+
+**Implementierung**:
+- **Bereinigungsfunktion**: `cleanTechnicalTable()` entfernt CSS-Klassen, IDs, Wrapper-Divs und Caption
+- **Beide Spalten linksbündig**: Feldname (fett) und Wert (normal) sind linksbündig formatiert
+- **Inline-Styles**: Tabelle erhält `text-align: left` für saubere Darstellung
+
+**Betroffene Dateien**:
+- `server/templates/renderer.ts` - Tabellenformatierung optimiert
+
+### 2025-11-02: SEO Produktbeschreibung-Schwellenwerte angepasst
+**Änderung**: SEO Produktbeschreibung zeigt jetzt mehr Werte im grünen Bereich an.
+
+**Implementierung**:
+- **Grün-Bereich**: 100-160 Zeichen (vorher: 120-160)
+- **Gelb-Bereich**: 80-100 Zeichen
+- 113 Zeichen ist jetzt ✅ **GRÜN** (vorher: ❌ ROT)
+
+**Betroffene Dateien**:
+- `client/src/pages/url-scraper.tsx` - SEO-Qualitätsanalyse angepasst
+
 ### 2025-11-02: Technische Tabelle 1:1 vom Lieferanten übernehmen
 **Problem behoben**: Produktbeschreibungs-Vorschau zeigte nur 4 Zeilen (vereinfachte AI-Tabelle), nicht die vollständige technische Tabelle von der ANSMANN-Website.
 
