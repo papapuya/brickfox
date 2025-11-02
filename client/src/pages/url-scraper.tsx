@@ -2298,13 +2298,11 @@ export default function URLScraper() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium">Zeichenanzahl: {seoTitlePreviewContent.length} / 70</span>
                     <span className={`font-semibold ${
-                      seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? 'text-green-600' :
-                      seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? 'text-yellow-600' :
+                      seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? 'text-green-600' :
                       seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 'text-yellow-600' :
                       'text-red-600'
                     }`}>
-                      {seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? '✓ Optimal' :
-                       seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? '⚠ Akzeptabel' :
+                      {seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? '✓ Optimal' :
                        seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? '⚠ Etwas zu lang' :
                        seoTitlePreviewContent.length > 75 ? '✗ Zu lang' : '✗ Zu kurz'}
                     </span>
@@ -2314,8 +2312,7 @@ export default function URLScraper() {
                   <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className={`h-full transition-all ${
-                        seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? 'bg-green-500' :
-                        seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? 'bg-yellow-500' :
+                        seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? 'bg-green-500' :
                         seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`}
@@ -2324,10 +2321,8 @@ export default function URLScraper() {
                   </div>
                   
                   <p className="text-xs text-muted-foreground">
-                    {seoTitlePreviewContent.length >= 50 && seoTitlePreviewContent.length <= 70 ? 
+                    {seoTitlePreviewContent.length >= 39 && seoTitlePreviewContent.length <= 70 ? 
                       '✓ Perfekte Länge für Google-Suchergebnisse' :
-                     seoTitlePreviewContent.length >= 40 && seoTitlePreviewContent.length < 50 ? 
-                      'Etwas kurz, aber noch gut sichtbar' :
                      seoTitlePreviewContent.length > 70 && seoTitlePreviewContent.length <= 75 ? 
                       'Könnte in Suchergebnissen abgeschnitten werden' :
                      seoTitlePreviewContent.length > 75 ? 
