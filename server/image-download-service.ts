@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import { createWriteStream } from 'fs';
 import path from 'path';
 import https from 'https';
 import http from 'http';
@@ -22,7 +23,7 @@ async function downloadImage(url: string, outputPath: string): Promise<void> {
         return;
       }
 
-      const fileStream = require('fs').createWriteStream(outputPath);
+      const fileStream = createWriteStream(outputPath);
       response.pipe(fileStream);
 
       fileStream.on('finish', () => {
