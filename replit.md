@@ -49,6 +49,25 @@ The application employs a modular subprompt architecture for specialized AI task
 
 ## Recent Changes
 
+### 2025-11-02: Production-Build Fix für Mobile Safari 📱
+**Fix**: Production-Build erfolgreich konfiguriert für iOS/Safari-Kompatibilität.
+
+**Änderungen**:
+- **Build-Script**: `NODE_ENV=production` für korrekten Plugin-Loading
+- **Server-Config**: Host auf `0.0.0.0` für Replit Deployments
+- **Vite-Config**: `base: '/'` und Preview-Server für Production
+- **Build-Output**: `dist/public/` mit allen Assets (1 MB, gzip: 283 KB)
+
+**Betroffene Dateien**:
+- `package.json` - Build-Script mit `cross-env NODE_ENV=production`
+- `server/index.ts` - Host auf `0.0.0.0` für alle Environments
+- `vite.config.ts` - `base` und `preview` Config hinzugefügt
+
+**Build-Ergebnis**:
+✓ Build erfolgreich in 21.25s
+✓ Assets: 116 KB CSS, 1 MB JS (gzip: 283 KB)
+✓ Bereit für Deployment auf Replit Autoscale
+
 ### 2025-11-02: Kontaktformular mit E-Mail-Versand 📧
 **Feature**: Professionelles Kontaktformular mit direktem E-Mail-Versand an Admin.
 
