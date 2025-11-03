@@ -158,7 +158,7 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
         }
       });
 
-      const payload = {
+      const payload: any = {
         name: formData.name.trim(),
         supplNr: formData.supplNr || undefined,
         urlPattern: formData.urlPattern || undefined,
@@ -170,11 +170,14 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
         loginUsernameField: formData.loginUsernameField || undefined,
         loginPasswordField: formData.loginPasswordField || undefined,
         loginUsername: formData.loginUsername || undefined,
-        loginPassword: formData.loginPassword || undefined,
         selectors: activeSelectors,
         verifiedFields: Array.from(verifiedFields),
         lastVerifiedAt: verifiedFields.size > 0 ? new Date().toISOString() : undefined,
       };
+
+      if (formData.loginPassword && formData.loginPassword.trim()) {
+        payload.loginPassword = formData.loginPassword.trim();
+      }
 
       const data = await apiPut<{ success: boolean; error?: string }>(`/api/suppliers/${supplier.id}`, payload);
 
