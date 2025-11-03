@@ -490,12 +490,24 @@ export default function PixiComparePage() {
 
                 <Button
                   onClick={handleCSVCompare}
-                  disabled={!file || !supplNr || loading}
+                  disabled={!file || !supplNr.trim() || loading}
                   className="w-full"
+                  size="lg"
                 >
                   <Upload className="mr-2 h-4 w-4" />
                   {loading ? 'Vergleiche mit Pixi...' : 'Jetzt vergleichen'}
                 </Button>
+                
+                {!file && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    ℹ️ Bitte wählen Sie zuerst eine CSV-Datei aus
+                  </p>
+                )}
+                {file && !supplNr.trim() && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    ℹ️ Bitte geben Sie eine Lieferantennummer ein
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
