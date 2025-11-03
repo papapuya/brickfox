@@ -2,17 +2,17 @@
 
 ## Recent Changes
 
-### 2025-11-03: Login-Felder in Lieferanten-Profilen wiederhergestellt
-**Problem**: Die Login-Felder (Benutzername, Passwort, Login-URL) waren zwar im Backend gespeichert, wurden aber nicht im UI angezeigt.
+### 2025-11-03: Login-Felder Duplikation behoben
+**Problem**: Login-Felder wurden zweimal angezeigt - im Create/Edit-Dialog und in der Detailansicht.
 
-**Lösung**: Neue Sektion "Automatischer Login (optional)" im CSS-Selektoren-Tab mit folgenden Feldern:
-- Login-URL
-- Benutzername-Feld (CSS-Selektor)
-- Passwort-Feld (CSS-Selektor)  
-- Benutzername (Credentials)
-- Passwort (Credentials)
+**Lösung**: 
+- Duplizierte Login-Sektion aus `suppliers.tsx` (Create/Edit-Dialog) entfernt
+- Login-Felder nur noch in der Detailansicht verfügbar (Tab "CSS-Selektoren")
+- Übersichtlichere UI ohne Redundanz
 
-**Betroffene Dateien**: `client/src/components/supplier-selectors-tab.tsx`
+**Betroffene Dateien**: 
+- `client/src/pages/suppliers.tsx` - Login-Sektion entfernt
+- `client/src/components/supplier-selectors-tab.tsx` - Login-Felder bleiben hier
 
 ## Overview
 PIMPilot is a multi-tenant B2B SaaS platform designed to automate AI-powered product description and PIM metadata generation from supplier data. It processes product data via CSV uploads for multiple business customers, ensuring strict data isolation. The platform leverages OpenAI's GPT-4o-mini for text generation and a custom Cheerio-based web scraper. Its core capabilities include a robust multi-tenant architecture, secure authentication, Stripe-based subscription management, real-time API call monitoring, dynamic AI prompting, and a sophisticated category-based template system. The project aims to streamline product information management and enhance e-commerce content creation with a business vision to automate product content creation for e-commerce.
