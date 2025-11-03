@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check, Maximize2, ArrowLeft } from "lucide-react";
+import { Loader2, Globe, Settings2, FolderPlus, List, Download, Table as TableIcon, Eye, Sparkles, FileText, Save, Copy, Check, Maximize2, ArrowLeft, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -848,6 +848,67 @@ export default function URLScraper() {
       setIsLoading(false);
       abortScrapingRef.current = false;
     }
+  };
+
+  // Navigate to Pixi Compare with scraped products
+  const handlePixiCompare = () => {
+    if (scrapedProducts.length === 0) {
+      toast({
+        title: 'Keine Produkte',
+        description: 'Bitte scrapen Sie zuerst Produkte',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Get the selected supplier to find the SupplNr
+    const selectedSupplier = suppliersData?.suppliers?.find(s => s.id === selectedSupplierId);
+    const supplNr = selectedSupplier?.pixiSupplierNumber;
+
+    // STRICT VALIDATION: Supplier with SupplNr is required
+    if (!supplNr || selectedSupplierId === '__none__') {
+      toast({
+        title: 'Lieferant erforderlich',
+        description: 'Bitte wählen Sie einen Lieferanten mit hinterlegter Pixi-Lieferantennummer aus. Sie können diese im Lieferanten-Menü konfigurieren.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Convert scraped products to Brickfox CSV format for Pixi Compare
+    const csvData = scrapedProducts.map(product => {
+      // Extract images from localImagePaths (downloaded images) or images array
+      const imageUrls = product.localImagePaths || product.images || [];
+      
+      // Create separate p_image[1] to p_image[10] columns
+      const imageColumns: Record<string, string> = {};
+      for (let i = 1; i <= 10; i++) {
+        imageColumns[`p_image[${i}]`] = imageUrls[i - 1] || '';
+      }
+      
+      return {
+        'p_item_number': product.articleNumber || '',
+        'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '', // Remove ANS prefix
+        'p_name[de]': product.productName || '',
+        'v_ean': product.ean || '',
+        'p_brand': product.manufacturer || '',
+        'v_price_net': product.price?.replace(/[€\s]/g, '').replace(',', '.') || '',
+        ...imageColumns,  // Add p_image[1] to p_image[10]
+      };
+    });
+
+    // Store data AND supplier number in sessionStorage for Pixi Compare
+    sessionStorage.setItem('pixi_compare_data', JSON.stringify(csvData));
+    sessionStorage.setItem('pixi_compare_source', 'url-scraper');
+    sessionStorage.setItem('pixi_compare_supplNr', supplNr);
+    
+    toast({
+      title: 'Daten vorbereitet',
+      description: `${scrapedProducts.length} Produkte werden zum Pixi-Vergleich übertragen (Lieferant ${selectedSupplier.name}: ${supplNr})`,
+    });
+    
+    // Navigate to Pixi Compare
+    setLocation('/pixi-compare?from=url-scraper');
   };
 
   // Copy HTML to clipboard
@@ -1959,6 +2020,14 @@ export default function URLScraper() {
                 <Button onClick={downloadCSV} variant="outline">
                   <Download className="w-4 h-4 mr-2" />
                   CSV Exportieren
+                </Button>
+                <Button 
+                  onClick={handlePixiCompare} 
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Database className="w-4 h-4 mr-2" />
+                  Mit Pixi vergleichen
                 </Button>
               </div>
             </div>
