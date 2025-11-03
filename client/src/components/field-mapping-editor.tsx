@@ -72,9 +72,34 @@ export function FieldMappingEditor({ supplierId, projectId, sourceType: initialS
   };
 
   const loadExistingMappings = async () => {
+    // Skip loading if supplier ID is not provided for URL scraper
+    if (sourceType === 'url_scraper' && !supplierId) {
+      console.warn('[Field Mapping] No supplier ID provided, skipping mapping load');
+      return;
+    }
+
+    // Skip loading if project ID is not provided for CSV
+    if (sourceType === 'csv' && !projectId) {
+      console.warn('[Field Mapping] No project ID provided, skipping mapping load');
+      return;
+    }
+
     try {
       const params = new URLSearchParams({ source_type: sourceType });
-      const response = await fetch(`/api/suppliers/${supplierId}/mappings?${params}`, {
+      
+      // Use different endpoint based on source type
+      const url = sourceType === 'url_scraper' && supplierId
+        ? `/api/suppliers/${supplierId}/mappings?${params}`
+        : sourceType === 'csv' && projectId
+        ? `/api/projects/${projectId}/mappings?${params}`
+        : null;
+
+      if (!url) {
+        console.warn('[Field Mapping] No valid endpoint for loading mappings');
+        return;
+      }
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('supabase_token')}`,
         },
