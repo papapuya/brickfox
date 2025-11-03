@@ -1379,15 +1379,146 @@ export default function URLScraper() {
   };
 
   const downloadCSV = () => {
-    const csv = convertToCSV(scrapedProducts);
-    // Add UTF-8 BOM for Excel compatibility
-    const csvWithBOM = '\ufeff' + csv;
+    if (scrapedProducts.length === 0) {
+      toast({
+        title: 'Keine Produkte',
+        description: 'Bitte scrapen Sie zuerst Produkte',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Get the selected supplier to find the SupplNr
+    const selectedSupplier = suppliersData?.suppliers?.find(s => s.id === selectedSupplierId);
+    const supplierName = selectedSupplier?.name || 'Unbekannt';
+
+    // Convert scraped products to COMPLETE Brickfox CSV format (same as Pixi Compare)
+    const csvData = scrapedProducts.map(product => {
+      // Get AI-generated description if available
+      const generatedContent = generatedDescriptions.get(product.articleNumber);
+      
+      // Extract images: Prioritize URLs over local paths
+      let imageUrls: string[] = [];
+      
+      if (product.images && product.images.length > 0) {
+        imageUrls = product.images;
+      } else if (product.localImagePaths && product.localImagePaths.length > 0) {
+        const domain = window.location.hostname === 'localhost' 
+          ? 'localhost:5000'
+          : window.location.host;
+        imageUrls = product.localImagePaths.map(path => 
+          `https://${domain}${path.startsWith('/') ? path : '/' + path}`
+        );
+      }
+      
+      // Create separate p_image[1] to p_image[10] columns
+      const imageColumns: Record<string, string> = {};
+      for (let i = 1; i <= 10; i++) {
+        imageColumns[`p_image[${i}]`] = imageUrls[i - 1] || '';
+      }
+      
+      // Helper: Parse price (EXACT backend logic - returns number | null)
+      const parsePrice = (price: string | number | null | undefined): number | null => {
+        if (price === null || price === undefined) return null;
+        if (typeof price === 'number') return price;
+        
+        const priceStr = String(price);
+        let str = priceStr.replace(/[^\d,.-]/g, '').trim();
+        
+        let normalized = str;
+        if (str.includes(',')) {
+          normalized = str.replace(/\./g, '').replace(',', '.');
+        } else if (str.includes('.')) {
+          const dotMatch = str.match(/\.(\d+)$/);
+          if (dotMatch && dotMatch[1].length === 3) {
+            normalized = str.replace(/\./g, '');
+          }
+        }
+        
+        const value = parseFloat(normalized);
+        return isNaN(value) ? null : value;
+      };
+      
+      const calculateVKNetto = (ek: number): number => ek * 2;
+      const calculateVKBrutto = (ek: number): number => ek * 2 * 1.19;
+      
+      const ekPrice = parsePrice(product.price);
+      const vkPriceNetto = ekPrice !== null ? calculateVKNetto(ekPrice) : null;
+      const vkPriceBrutto = ekPrice !== null ? calculateVKBrutto(ekPrice) : null;
+      
+      return {
+        'p_item_number': product.articleNumber || '',
+        'p_group_path[de]': product.category || '',
+        'p_brand': product.manufacturer || '',
+        'p_status': 'Aktiv',
+        'p_name[de]': product.productName || '',
+        'p_tax_class': 'Regelsteuersatz (19%)',
+        'p_never_out_of_stock': 'false',
+        'p_condition': 'Neu',
+        'p_country': 'China',
+        'p_description[de]': generatedContent?.description || product.description || product.longDescription || '',
+        ...imageColumns,
+        
+        'v_item_number': product.articleNumber || '',
+        'v_ean': product.ean || '',
+        'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '',
+        'v_supplier_item_number': product.articleNumber || '',
+        'v_status': 'aktiv',
+        'v_classification': 'X',
+        'v_delivery_time[de]': '3-5 Tage',
+        'v_supplier[Eur]': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',
+        'v_purchase_price': ekPrice !== null ? ekPrice.toFixed(2) : '',
+        'v_price[Eur]': ekPrice !== null ? ekPrice.toFixed(2) : '',
+        'v_price_net': vkPriceNetto !== null ? vkPriceNetto.toFixed(2) : '',
+        'v_price_gross': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',
+        'v_never_out_of_stock[standard]': 'true',
+        'v_weight': product.weight || product.gewicht || '',
+        'v_length': product.length || product.laenge || '',
+        'v_width': product.bodyDiameter || product.breite || '',
+        'v_height': product.headDiameter || product.hoehe || '',
+        
+        'v_capacity_mah': product.nominalkapazitaet || '',
+        'v_voltage': product.nominalspannung || '',
+        'v_max_discharge_current': product.maxEntladestrom || '',
+        'v_cell_chemistry': product.zellenchemie || '',
+        'v_energy': product.energie || '',
+        'v_color': product.farbe || '',
+        
+        'v_power_supply': product.powerSupply || '',
+        'v_led_1': product.led1 || '',
+        'v_led_2': product.led2 || '',
+        'v_spot_intensity': product.spotIntensity || '',
+        'v_max_output': product.maxOutput || '',
+        'v_luminosity': product.luminosity || '',
+        'v_runtime': product.runtime || '',
+        'v_waterproof': product.waterproof || '',
+        
+        'p_seo_title[de]': generatedContent?.seoTitle || '',
+        'p_seo_description[de]': generatedContent?.seoDescription || '',
+        'p_seo_keywords[de]': generatedContent?.seoKeywords || '',
+      };
+    });
+
+    // Convert to CSV
+    if (csvData.length === 0) return;
+    
+    const headers = Object.keys(csvData[0]);
+    const rows = csvData.map(row => 
+      headers.map(header => {
+        const value = row[header as keyof typeof row] || '';
+        return `"${String(value).replace(/"/g, '""')}"`;
+      }).join(',')
+    );
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const csvWithBOM = '\ufeff' + csvContent;
+    
     const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
     link.setAttribute('href', url);
-    link.setAttribute('download', `produktliste_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `brickfox_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     
     document.body.appendChild(link);
@@ -1395,8 +1526,8 @@ export default function URLScraper() {
     document.body.removeChild(link);
 
     toast({
-      title: "CSV heruntergeladen",
-      description: `${scrapedProducts.length} Produkte exportiert`,
+      title: "Brickfox CSV heruntergeladen",
+      description: `${scrapedProducts.length} Produkte im Brickfox-Format exportiert`,
     });
   };
 
