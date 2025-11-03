@@ -38,6 +38,10 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,  // Disable source maps in dev to reduce CPU
+  },
+  optimizeDeps: {
+    exclude: ['lucide-react'],  // Don't pre-bundle heavy icon libraries
   },
   server: {
     host: '0.0.0.0',
@@ -45,6 +49,11 @@ export default defineConfig({
     strictPort: false,
     hmr: {
       clientPort: 443,
+      overlay: false,  // Disable error overlay to reduce CPU
+    },
+    watch: {
+      usePolling: false,  // Disable polling, use native file system events
+      interval: 1000,     // Slower polling if needed
     },
     fs: {
       strict: true,
