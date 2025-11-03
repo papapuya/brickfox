@@ -174,12 +174,18 @@ export default function PixiComparePage() {
   };
 
   const handleCSVCompare = async () => {
+    console.log('[Pixi Compare] CSV Compare button clicked');
+    console.log('[Pixi Compare] File:', file);
+    console.log('[Pixi Compare] SupplNr:', supplNr);
+    
     if (!file) {
+      console.error('[Pixi Compare] No file selected');
       setError('Bitte wählen Sie eine CSV-Datei aus');
       return;
     }
 
     if (!supplNr) {
+      console.error('[Pixi Compare] No supplier number entered');
       setError('Bitte geben Sie eine Lieferantennummer ein');
       return;
     }
@@ -190,10 +196,17 @@ export default function PixiComparePage() {
 
     try {
       const token = localStorage.getItem('supabase_token');
+      if (!token) {
+        console.error('[Pixi Compare] No authentication token found');
+        throw new Error('Nicht authentifiziert. Bitte melden Sie sich erneut an.');
+      }
+      
+      console.log('[Pixi Compare] Creating FormData...');
       const formData = new FormData();
       formData.append('csvFile', file);
       formData.append('supplNr', supplNr);
 
+      console.log('[Pixi Compare] Sending request to /api/pixi/compare...');
       const response = await fetch('/api/pixi/compare', {
         method: 'POST',
         headers: {
@@ -202,14 +215,18 @@ export default function PixiComparePage() {
         body: formData,
       });
 
+      console.log('[Pixi Compare] Response status:', response.status);
       const data = await response.json();
+      console.log('[Pixi Compare] Response data:', data);
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Vergleich fehlgeschlagen');
       }
 
       setResult(data);
+      console.log('[Pixi Compare] Comparison successful!');
     } catch (err: any) {
+      console.error('[Pixi Compare] Error:', err);
       setError(err.message || 'Ein Fehler ist aufgetreten');
     } finally {
       setLoading(false);
