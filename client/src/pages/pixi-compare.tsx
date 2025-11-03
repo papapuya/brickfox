@@ -605,7 +605,7 @@ export default function PixiComparePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-3 gap-4 mt-4">
                   <Button
                     onClick={downloadResults}
                     variant="outline"
@@ -622,6 +622,23 @@ export default function PixiComparePage() {
                   >
                     <Save className="mr-2 h-4 w-4" />
                     Projekt speichern
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('supabase_token');
+                        await fetch('/api/pixi/cache', {
+                          method: 'DELETE',
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        alert('Pixi Cache wurde geleert. Bitte vergleichen Sie erneut.');
+                      } catch (err) {
+                        console.error('Cache clear failed:', err);
+                      }
+                    }}
+                    variant="outline"
+                  >
+                    Cache leeren
                   </Button>
                 </div>
               </CardContent>
