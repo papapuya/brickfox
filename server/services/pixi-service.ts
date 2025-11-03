@@ -173,13 +173,18 @@ export class PixiService {
       let vorhandenCount = 0;
 
       for (const product of products) {
-        // Flexible column name matching (supports German, English, various casings)
+        // Get both article numbers for better matching
         const artikelnummer = this.getColumnValue(product, [
           'Artikelnummer', 'artikelnummer', 'ARTIKELNUMMER',
           'Article Number', 'ArticleNumber', 'article_number',
           'Item Number', 'ItemNumber', 'item_number',
           'SKU', 'sku', 'Art.-Nr.', 'Art.Nr.',
-          'p_item_number', 'v_manufacturers_item_number'  // Export system columns
+          'p_item_number'  // Prioritize p_item_number
+        ]);
+        
+        const manufacturerItemNr = this.getColumnValue(product, [
+          'v_manufacturers_item_number', 'manufacturers_item_number',
+          'Herstellerartikelnummer', 'Hersteller-Artikelnummer'
         ]);
         
         const produktname = this.getColumnValue(product, [
@@ -204,23 +209,35 @@ export class PixiService {
           'p_brand', 'v_brand'  // Export system columns
         ]);
 
-        // Check if product exists in Pixi by article number
-        const pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
-        
-        // Optionally validate with EAN if both exist
+        // Check if product exists in Pixi - try multiple strategies
+        let pixiItem = null;
         let isMatch = false;
         let matchedEan: string | null = null;
 
-        if (pixiItem) {
-          isMatch = true;
-          matchedEan = pixiItem.EANUPC || null;
-          
-          // If EAN is provided in both systems, verify they match
-          if (ean && pixiItem.EANUPC && ean !== pixiItem.EANUPC) {
-            console.warn(
-              `[Pixi Service] EAN mismatch for ${artikelnummer}: ` +
-              `CSV=${ean}, Pixi=${pixiItem.EANUPC}`
-            );
+        // Strategy 1: Try p_item_number (e.g., "ANS2447304960")
+        if (artikelnummer) {
+          pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
+          if (pixiItem) {
+            isMatch = true;
+            matchedEan = pixiItem.EANUPC || null;
+          }
+        }
+
+        // Strategy 2: Try v_manufacturers_item_number (e.g., "2447304960")
+        if (!isMatch && manufacturerItemNr) {
+          pixiItem = pixiByItemNr.get(manufacturerItemNr.toUpperCase());
+          if (pixiItem) {
+            isMatch = true;
+            matchedEan = pixiItem.EANUPC || null;
+          }
+        }
+
+        // Strategy 3: Try EAN as fallback
+        if (!isMatch && ean) {
+          pixiItem = pixiByEan.get(ean);
+          if (pixiItem) {
+            isMatch = true;
+            matchedEan = pixiItem.EANUPC || null;
           }
         }
 
