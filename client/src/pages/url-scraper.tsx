@@ -952,9 +952,9 @@ export default function URLScraper() {
         return ek * 2;
       };
       
-      // Helper: Calculate gross sales price (EK * 2 * 1.19, rounded to .95)
+      // Helper: Calculate gross sales price (EK * 2 + 19% = EK * 2 * 1.19)
       const calculateVKBrutto = (ek: number): number => {
-        return Math.floor(ek * 2 * 1.19) + 0.95;
+        return ek * 2 * 1.19;
       };
       
       const ekPrice = parsePrice(product.price);
@@ -983,11 +983,11 @@ export default function URLScraper() {
         'v_status': 'aktiv',
         'v_classification': 'X',
         'v_delivery_time[de]': '3-5 Tage',
-        'v_supplier[Eur]': supplierName,
+        'v_supplier[Eur]': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',  // VK-Preis (EK * 2 * 1.19)
         'v_purchase_price': ekPrice !== null ? ekPrice.toFixed(2) : '',
-        'v_price[Eur]': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',
+        'v_price[Eur]': ekPrice !== null ? ekPrice.toFixed(2) : '',  // EK-Preis
         'v_price_net': vkPriceNetto !== null ? vkPriceNetto.toFixed(2) : '',  // EK * 2 (Netto-VK)
-        'v_price_gross': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',  // EK * 2 * 1.19 + 0.95 (Brutto-VK)
+        'v_price_gross': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',  // EK * 2 * 1.19 (Brutto-VK)
         'v_never_out_of_stock[standard]': 'true',
         'v_weight': product.weight || product.gewicht || '',
         'v_length': product.length || product.laenge || '',
