@@ -107,7 +107,7 @@ export default function PixiComparePage() {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       console.log('[Pixi Compare] File selected:', selectedFile.name, selectedFile.size, 'bytes');
-      if (!selectedFile.name.endsWith('.csv')) {
+      if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
         console.error('[Pixi Compare] Invalid file type:', selectedFile.name);
         setError('Bitte wählen Sie eine CSV-Datei aus');
         return;
