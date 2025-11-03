@@ -2,21 +2,26 @@
 
 ## Recent Changes
 
-### 2025-11-03: Login-Felder im Dialog wiederhergestellt (kompakte Version)
-**Änderung**: Login-Felder wieder in den Create/Edit-Dialog eingefügt, diesmal in kompakter Form.
+### 2025-11-03: Selektoren neu strukturiert für Händler-Shops
+**Änderung**: Komplette Neustrukturierung der CSS-Selektoren für bessere Datenerfassung im eingeloggten Zustand.
 
-**Hintergrund**: 
-- Login-Felder waren vorher doppelt vorhanden (Dialog + Detailansicht)
-- Wurden aus dem Dialog entfernt → unpraktisch für Benutzer
-- Jetzt wieder im Dialog verfügbar, aber in kompakter Form
+**Neue Selektor-Struktur** (nach Gruppen organisiert):
+- **Basis-Daten**: Produktname, Artikelnummer, EAN, Hersteller
+- **Preise**: Händler-EK-Preis (Netto), Händler-EK-Preis (Brutto), UVP/Empf. VK-Preis
+- **Medien**: Produktbilder
+- **Beschreibungen**: Kurzbeschreibung, Ausführliche Beschreibung
+- **Technische Daten**: Gewicht, Abmessungen, Kategorie
 
-**Aktueller Stand**:
-- Login-Felder im Create/Edit-Dialog: ✅ Kompakte 2-Spalten-Layout
-- Login-Felder in Detailansicht (CSS-Selektoren Tab): ✅ Ausführliche Version
+**Wichtige Verbesserungen**:
+- ✅ Spezielle Felder für Händlerpreise (Netto/Brutto)
+- ✅ UVP/RRP-Feld für empfohlenen Verkaufspreis
+- ✅ Gruppierung nach Kategorien für bessere Übersicht
+- ✅ Verbesserte Platzhalter mit Beispiel-Selektoren
+- ✅ Login-Felder mit klarer Beschriftung (CSS-Selektor vs. Login-Daten)
 
 **Betroffene Dateien**: 
-- `client/src/pages/suppliers.tsx` - Kompakte Login-Sektion hinzugefügt
-- `client/src/components/supplier-selectors-tab.tsx` - Ausführliche Login-Felder
+- `client/src/components/supplier-selectors-tab.tsx` - Neue Selektor-Struktur mit Gruppierung
+- `server/scraper-service.ts` - Backend-Support für neue Felder (priceGross, rrp, longDescription, dimensions)
 
 ## Overview
 PIMPilot is a multi-tenant B2B SaaS platform designed to automate AI-powered product description and PIM metadata generation from supplier data. It processes product data via CSV uploads for multiple business customers, ensuring strict data isolation. The platform leverages OpenAI's GPT-4o-mini for text generation and a custom Cheerio-based web scraper. Its core capabilities include a robust multi-tenant architecture, secure authentication, Stripe-based subscription management, real-time API call monitoring, dynamic AI prompting, and a sophisticated category-based template system. The project aims to streamline product information management and enhance e-commerce content creation with a business vision to automate product content creation for e-commerce.

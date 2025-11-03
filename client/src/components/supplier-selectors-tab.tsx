@@ -200,14 +200,28 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
   };
 
   const selectorFields = [
-    { key: 'articleNumber', label: 'Artikelnummer' },
-    { key: 'productName', label: 'Produktname' },
-    { key: 'ean', label: 'EAN' },
-    { key: 'manufacturer', label: 'Hersteller' },
-    { key: 'price', label: 'Preis' },
-    { key: 'description', label: 'Beschreibung' },
-    { key: 'images', label: 'Bilder' },
-    { key: 'weight', label: 'Gewicht' },
+    // Basis-Produktdaten
+    { key: 'productName', label: 'Produktname', group: 'Basis-Daten', placeholder: 'h1.product-name, .product-title' },
+    { key: 'articleNumber', label: 'Artikelnummer (Hersteller)', group: 'Basis-Daten', placeholder: '.sku, .product-code, [itemprop="sku"]' },
+    { key: 'ean', label: 'EAN / GTIN', group: 'Basis-Daten', placeholder: '.ean, [itemprop="gtin13"]' },
+    { key: 'manufacturer', label: 'Hersteller / Marke', group: 'Basis-Daten', placeholder: '.brand, [itemprop="brand"]' },
+    
+    // Preise (wichtig für Händler!)
+    { key: 'price', label: '💰 Händler-EK-Preis (Netto)', group: 'Preise', placeholder: '.dealer-price, .wholesale-price, .net-price' },
+    { key: 'priceGross', label: '💰 Händler-EK-Preis (Brutto)', group: 'Preise', placeholder: '.gross-price, .price-incl-tax' },
+    { key: 'rrp', label: 'UVP / Empf. VK-Preis', group: 'Preise', placeholder: '.rrp, .msrp, [itemprop="price"]' },
+    
+    // Bilder und Medien
+    { key: 'images', label: 'Produktbilder', group: 'Medien', placeholder: '.product-image img, .gallery img' },
+    
+    // Beschreibungen
+    { key: 'description', label: 'Kurzbeschreibung', group: 'Beschreibungen', placeholder: '.short-description, .product-intro' },
+    { key: 'longDescription', label: 'Ausführliche Beschreibung', group: 'Beschreibungen', placeholder: '.long-description, .product-details' },
+    
+    // Technische Daten
+    { key: 'weight', label: 'Gewicht', group: 'Technische Daten', placeholder: '.weight, [itemprop="weight"]' },
+    { key: 'dimensions', label: 'Abmessungen (L×B×H)', group: 'Technische Daten', placeholder: '.dimensions, .size' },
+    { key: 'category', label: 'Kategorie', group: 'Technische Daten', placeholder: '.category, .breadcrumb' },
   ];
 
   return (
@@ -359,45 +373,58 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
           </p>
         </div>
 
-        <div className="space-y-3">
-          {selectorFields.map(({ key, label }) => {
-            const isVerified = verifiedFields.has(key);
-            const isTesting = testingField === key;
+        <div className="space-y-6">
+          {/* Group selectors by category */}
+          {['Basis-Daten', 'Preise', 'Medien', 'Beschreibungen', 'Technische Daten'].map(group => {
+            const groupFields = selectorFields.filter(f => f.group === group);
+            if (groupFields.length === 0) return null;
             
             return (
-              <div key={key} className="flex gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Label htmlFor={key} className="text-sm">{label}</Label>
-                    {isVerified && (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    )}
-                  </div>
-                  <Input
-                    id={key}
-                    value={formData.selectors[key] || ''}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      selectors: { ...formData.selectors, [key]: e.target.value }
-                    })}
-                    placeholder={`.${key}`}
-                    className={isVerified ? "border-green-500" : ""}
-                  />
+              <div key={group} className="border-l-4 border-blue-500 pl-4">
+                <h4 className="font-semibold text-sm mb-3 text-blue-700">{group}</h4>
+                <div className="space-y-3">
+                  {groupFields.map(({ key, label, placeholder }) => {
+                    const isVerified = verifiedFields.has(key);
+                    const isTesting = testingField === key;
+                    
+                    return (
+                      <div key={key} className="flex gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Label htmlFor={key} className="text-sm">{label}</Label>
+                            {isVerified && (
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            )}
+                          </div>
+                          <Input
+                            id={key}
+                            value={formData.selectors[key] || ''}
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              selectors: { ...formData.selectors, [key]: e.target.value }
+                            })}
+                            placeholder={placeholder || `.${key}`}
+                            className={`font-mono text-xs ${isVerified ? "border-green-500" : ""}`}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTestSelector(key, formData.selectors[key])}
+                          disabled={isTesting || !formData.selectors[key] || !testUrl}
+                          className="mt-6"
+                        >
+                          {isTesting ? (
+                            <AlertCircle className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <TestTube className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleTestSelector(key, formData.selectors[key])}
-                  disabled={isTesting || !formData.selectors[key] || !testUrl}
-                  className="mt-6"
-                >
-                  {isTesting ? (
-                    <AlertCircle className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <TestTube className="w-4 h-4" />
-                  )}
-                </Button>
               </div>
             );
           })}

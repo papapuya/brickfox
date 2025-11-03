@@ -15,9 +15,13 @@ export interface ScraperSelectors {
   ean?: string;
   manufacturer?: string;
   price?: string;
+  priceGross?: string;  // Händler-EK-Preis (Brutto)
+  rrp?: string;  // UVP / Empfohlener VK-Preis
   description?: string;
+  longDescription?: string;  // Ausführliche Beschreibung
   images?: string;
   weight?: string;
+  dimensions?: string;  // Abmessungen (L×B×H)
   category?: string;
   length?: string;
   bodyDiameter?: string;
@@ -39,11 +43,15 @@ export interface ScrapedProduct {
   ean?: string;
   manufacturer?: string;
   price?: string;
+  priceGross?: string;  // Händler-EK-Preis (Brutto)
+  rrp?: string;  // UVP / Empfohlener VK-Preis
   ekPrice?: string;  // Einkaufspreis (Purchase Price)
-  vkPrice?: string;  // Verkaufspreis (Sales Price) - calculated as EK * 2 * 1.19
+  vkPrice?: string;  // Verkaufspreis (Sales Price) - calculated as EK * 2.38, rounded to .95
   description?: string;
+  longDescription?: string;  // Ausführliche Beschreibung
   images: string[];
   weight?: string;
+  dimensions?: string;  // Abmessungen (L×B×H)
   category?: string;
   length?: string;
   bodyDiameter?: string;
@@ -410,6 +418,52 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
   if (selectors.description) {
     const element = $(selectors.description).first();
     product.description = element.html()?.trim() || element.text().trim() || '';
+  }
+
+  // Long Description (ausführliche Beschreibung)
+  if (selectors.longDescription) {
+    const element = $(selectors.longDescription).first();
+    product.longDescription = element.html()?.trim() || element.text().trim() || '';
+  }
+
+  // Price Gross (Händler-EK-Preis Brutto)
+  if (selectors.priceGross) {
+    const element = $(selectors.priceGross).first();
+    let priceText = element.text().trim() || element.attr('content')?.trim() || '';
+    if (priceText) {
+      const numericMatch = priceText.match(/[\d,.]+/);
+      if (numericMatch) {
+        priceText = numericMatch[0];
+        // Convert to German format with comma
+        if (priceText.includes('.') && !priceText.includes(',')) {
+          priceText = priceText.replace('.', ',');
+        }
+      }
+    }
+    product.priceGross = priceText;
+  }
+
+  // RRP / UVP (Empfohlener Verkaufspreis)
+  if (selectors.rrp) {
+    const element = $(selectors.rrp).first();
+    let priceText = element.text().trim() || element.attr('content')?.trim() || '';
+    if (priceText) {
+      const numericMatch = priceText.match(/[\d,.]+/);
+      if (numericMatch) {
+        priceText = numericMatch[0];
+        // Convert to German format with comma
+        if (priceText.includes('.') && !priceText.includes(',')) {
+          priceText = priceText.replace('.', ',');
+        }
+      }
+    }
+    product.rrp = priceText;
+  }
+
+  // Dimensions (Abmessungen)
+  if (selectors.dimensions) {
+    const element = $(selectors.dimensions).first();
+    product.dimensions = element.text().trim() || '';
   }
 
   // Images (support both 'images' and 'image')
