@@ -65,7 +65,7 @@ export default function PixiComparePage() {
   
   // Pagination for results table
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 6;
+  const productsPerPage = 100; // Show more products to enable scrolling
 
   useEffect(() => {
     if (activeTab === 'project') {
