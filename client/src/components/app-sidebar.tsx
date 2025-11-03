@@ -86,8 +86,13 @@ export function AppSidebar() {
   // Filter menu items based on tenant features
   const tenantFeatures = currentTenant?.settings?.features || {};
   const filteredMenuItems = menuItems.filter(item => {
+    // Hide "Abonnement" and "API Credentials" for Super-Admins (they use Replit Secrets)
+    if (item.url === '/pricing' || item.url === '/credentials') {
+      return !user?.isAdmin;
+    }
+    
     // Always show these basic items
-    if (['/', '/dashboard', '/projects', '/suppliers', '/credentials', '/account', '/pricing'].includes(item.url)) {
+    if (['/', '/dashboard', '/projects', '/suppliers', '/account'].includes(item.url)) {
       return true;
     }
     
