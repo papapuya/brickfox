@@ -10,14 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, FileText, Trash2, Upload, Download, Calendar, FolderOpen, Table, TrendingUp, CheckCircle, XCircle, FileSpreadsheet, Settings2 } from "lucide-react";
+import { ArrowLeft, Plus, FileText, Trash2, Upload, Download, Calendar, FolderOpen, Table, TrendingUp, CheckCircle, XCircle, FileSpreadsheet } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import type { Project, ProductInProject, ExportColumn } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
-import { FieldMappingEditor } from "@/components/field-mapping-editor";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -38,9 +37,6 @@ export default function ProjectDetail() {
   const [isBrickfoxPreviewOpen, setIsBrickfoxPreviewOpen] = useState(false);
   const [brickfoxPreviewData, setBrickfoxPreviewData] = useState<any[]>([]);
   const [brickfoxLoading, setBrickfoxLoading] = useState(false);
-  
-  // Field Mapping state
-  const [isFieldMappingOpen, setIsFieldMappingOpen] = useState(false);
   
   // Pagination for product table
   const [currentPage, setCurrentPage] = useState(1);
@@ -495,16 +491,6 @@ export default function ProjectDetail() {
               >
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Mit Pixi vergleichen
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsFieldMappingOpen(true)}
-                disabled={products.length === 0}
-                data-testid="button-field-mapping"
-                className="border-purple-600 text-purple-600 hover:bg-purple-50"
-              >
-                <Settings2 className="w-4 h-4 mr-2" />
-                Field Mapping
               </Button>
               <Button
                 variant="default"
@@ -1169,31 +1155,6 @@ export default function ProjectDetail() {
                   Jetzt exportieren
                 </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Field Mapping Dialog */}
-        <Dialog open={isFieldMappingOpen} onOpenChange={setIsFieldMappingOpen}>
-          <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle>Field Mapping - Brickfox CSV</DialogTitle>
-              <DialogDescription>
-                Mappen Sie die Produktfelder zu Brickfox-Feldern für den CSV-Export
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex-1 overflow-auto">
-              <FieldMappingEditor
-                projectId={id}
-                sourceType="csv"
-                onSave={(mappings) => {
-                  toast({
-                    title: "Mapping gespeichert",
-                    description: `${mappings.length} Feld-Mappings wurden gespeichert`,
-                  });
-                  setIsFieldMappingOpen(false);
-                }}
-              />
             </div>
           </DialogContent>
         </Dialog>
