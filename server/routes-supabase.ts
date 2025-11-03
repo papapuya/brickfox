@@ -440,6 +440,44 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
 
       let user = await supabaseStorage.getUserById(data.user.id);
 
+      // AUTO-FIX: If user doesn't exist in Helium DB, create it
+      if (!user && data.user.email) {
+        console.log(`🔧 [LOGIN AUTO-FIX] User ${data.user.email} exists in Supabase Auth but not in Helium DB. Creating...`);
+        
+        // Get or create AkkuShop tenant (fallback for legacy users)
+        const { data: akkushopTenant } = await supabaseAdmin!
+          .from('tenants')
+          .select('id')
+          .eq('slug', 'akkushop')
+          .single();
+        
+        if (akkushopTenant) {
+          const { error: insertError } = await supabaseAdmin!
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              username: data.user.email.split('@')[0],
+              is_admin: false, // Regular user
+              role: 'member',
+              tenant_id: akkushopTenant.id,
+              subscription_status: 'trial',
+              plan_id: 'trial',
+              api_calls_limit: 50,
+              api_calls_used: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          
+          if (insertError) {
+            console.error(`❌ Failed to create user in Helium DB:`, insertError);
+          } else {
+            console.log(`✅ User ${data.user.email} created in Helium DB`);
+            user = await supabaseStorage.getUserById(data.user.id);
+          }
+        }
+      }
+
       // AUTO-FIX: Update old limit to new standard (50 calls)
       if (user && user.apiCallsLimit < 50) {
         console.log(`🔄 Auto-updating ${user.email} to 50 credits (Trial Standard)`);
