@@ -747,6 +747,42 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
+  // Bulk delete selected tenants (MUST be before /:id route!)
+  app.delete('/api/admin/tenants/bulk-delete', requireSuperAdmin, async (req, res) => {
+    try {
+      const currentUser = (req as any).user;
+      if (!currentUser) {
+        return res.status(401).json({ error: 'Nicht authentifiziert' });
+      }
+
+      const { tenantIds } = req.body;
+
+      if (!tenantIds || !Array.isArray(tenantIds) || tenantIds.length === 0) {
+        return res.status(400).json({ error: 'Keine Tenant-IDs angegeben' });
+      }
+
+      // Prevent deleting super-admin's own tenant
+      const tenantsToDelete = tenantIds.filter(id => id !== currentUser.tenant_id);
+
+      let deletedCount = 0;
+      for (const tenantId of tenantsToDelete) {
+        const success = await supabaseStorage.deleteTenant(tenantId);
+        if (success) {
+          deletedCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        deletedCount,
+        message: `${deletedCount} Kunden wurden gelöscht`,
+      });
+    } catch (error: any) {
+      console.error('Bulk delete tenants error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Löschen der Tenants' });
+    }
+  });
+
   app.delete('/api/admin/tenants/:id', requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;
@@ -790,58 +826,6 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     } catch (error: any) {
       console.error('Update tenant error:', error);
       res.status(500).json({ error: error.message || 'Fehler beim Aktualisieren des Tenants' });
-    }
-  });
-
-  // Bulk delete selected tenants
-  app.delete('/api/admin/tenants/bulk-delete', requireSuperAdmin, async (req, res) => {
-    try {
-      const currentUser = (req as any).user;
-      if (!currentUser) {
-        return res.status(401).json({ error: 'Nicht authentifiziert' });
-      }
-
-      const { tenantIds } = req.body;
-
-      if (!tenantIds || !Array.isArray(tenantIds) || tenantIds.length === 0) {
-        return res.status(400).json({ error: 'Keine Tenant-IDs angegeben' });
-      }
-
-      // Prevent deleting super-admin's own tenant
-      const tenantsToDelete = tenantIds.filter(id => id !== currentUser.tenant_id);
-
-      let deletedCount = 0;
-      for (const tenantId of tenantsToDelete) {
-        const success = await supabaseStorage.deleteTenant(tenantId);
-        if (success) {
-          deletedCount++;
-        }
-      }
-
-      res.json({
-        success: true,
-        deletedCount,
-        message: `${deletedCount} Kunden wurden gelöscht`,
-      });
-    } catch (error: any) {
-      console.error('Bulk delete tenants error:', error);
-      res.status(500).json({ error: error.message || 'Fehler beim Löschen der Tenants' });
-    }
-  });
-
-  app.delete('/api/admin/tenants/:id', requireSuperAdmin, async (req, res) => {
-    try {
-      const { id} = req.params;
-      const success = await supabaseStorage.deleteTenant(id);
-      
-      if (!success) {
-        return res.status(404).json({ error: 'Tenant nicht gefunden' });
-      }
-
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error('Delete tenant error:', error);
-      res.status(500).json({ error: error.message || 'Fehler beim Löschen des Tenants' });
     }
   });
 

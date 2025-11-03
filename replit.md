@@ -28,10 +28,13 @@ Premium-Features (Pixi, SAP) können über das Admin-Dashboard pro Kunde individ
 - **Kunden Löschen**: Rote Trash-Button mit Bestätigungs-Dialog
   - Warnung vor unwiderruflicher Löschung aller Daten
   - Übersicht: Anzahl User, Projekte, Lieferanten
-- **Bulk-Delete**: Roter "Alle Kunden löschen" Button für schnelles Cleanup
-  - Löscht alle Test-Kunden (außer Super-Admin Account)
+- **Checkbox-basierte Bulk-Delete**: Selektive Auswahl mehrerer Kunden zum Löschen
+  - Checkbox bei jedem Kunden in der Tabelle
+  - "Alle auswählen" Checkbox im Tabellen-Header
+  - "Ausgewählte löschen (X)" Button zeigt Anzahl ausgewählter Kunden
   - Bestätigungs-Dialog mit Anzahl der zu löschenden Kunden
-  - Perfekt für Entwicklung und Testing
+  - Schutz: Super-Admin kann eigenen Account nicht löschen
+  - Automatisches Zurücksetzen der Auswahl nach erfolgreichem Löschen
 - **Feature-Flags**: Individuelle Feature-Freischaltung pro Kunde
 - **KPI-Übersicht**: System-weite Metriken und Statistiken
 
@@ -77,6 +80,27 @@ The application employs a modular subprompt architecture for specialized AI task
 - **Greyhound SMTP**: E-mail sending for automated supplier requests via nodemailer.
 
 ## Recent Changes
+
+### 2025-11-03: Checkbox-basierte Bulk-Delete für Admin-Dashboard ✅
+**Feature**: Selektive Auswahl und Löschung mehrerer Kunden im Admin-Dashboard.
+
+**Implementierung**:
+- **Checkbox-System**: Individuelle Auswahl pro Kunde + "Alle auswählen" im Header
+- **"Ausgewählte löschen (X)" Button**: Zeigt Anzahl ausgewählter Kunden
+- **Bestätigungs-Dialog**: Warnung vor unwiderruflicher Löschung mit Anzahl
+- **Backend-Endpoint**: `DELETE /api/admin/tenants/bulk-delete` mit Array von IDs
+- **Schutz**: Super-Admin kann eigenen Account nicht löschen
+- **Auto-Reset**: Auswahl wird nach erfolgreichem Löschen zurückgesetzt
+
+**Technische Details**:
+- Route-Reihenfolge korrigiert: `/bulk-delete` MUSS VOR `/:id` stehen
+- Frontend-State: `selectedTenantIds` tracked Auswahl
+- Automatische Query-Invalidierung nach Bulk-Delete
+
+**Betroffene Dateien**:
+- `client/src/pages/admin-dashboard.tsx` - Checkbox-UI und Bulk-Delete-Logik
+- `server/routes-supabase.ts` - Bulk-Delete-Endpoint (vor /:id Route verschoben)
+- `replit.md` - Admin-Dashboard Features dokumentiert
 
 ### 2025-11-02: Production-Build Fix für Mobile Safari 📱
 **Fix**: Production-Build erfolgreich konfiguriert für iOS/Safari-Kompatibilität.
