@@ -914,38 +914,56 @@ export class SupabaseStorage implements IStorage {
     if (!user) throw new Error('User not found');
 
     const insertData: any = {
-      user_id: userId,
-      tenant_id: user.tenantId || null,
+      userId: userId,
+      tenantId: user.tenantId || null,
       name: data.name,
-      suppl_nr: data.supplNr || null,
-      url_pattern: data.urlPattern || null,
+      supplNr: data.supplNr || null,
+      urlPattern: data.urlPattern || null,
       description: data.description || null,
       selectors: data.selectors || {},
-      product_link_selector: data.productLinkSelector || null,
-      session_cookies: data.sessionCookies || null,
-      user_agent: data.userAgent || null,
-      login_url: data.loginUrl || null,
-      login_username_field: data.loginUsernameField || null,
-      login_password_field: data.loginPasswordField || null,
-      login_username: data.loginUsername || null,
-      verified_fields: data.verifiedFields ? JSON.stringify(data.verifiedFields) : null,
-      last_verified_at: data.lastVerifiedAt || null,
+      productLinkSelector: data.productLinkSelector || null,
+      sessionCookies: data.sessionCookies || null,
+      userAgent: data.userAgent || null,
+      loginUrl: data.loginUrl || null,
+      loginUsernameField: data.loginUsernameField || null,
+      loginPasswordField: data.loginPasswordField || null,
+      loginUsername: data.loginUsername || null,
+      verifiedFields: data.verifiedFields || null,
+      lastVerifiedAt: data.lastVerifiedAt || null,
     };
 
     // SECURITY: Encrypt password before storing
     if (data.loginPassword) {
-      insertData.login_password = encrypt(data.loginPassword);
+      insertData.loginPassword = encrypt(data.loginPassword);
     }
 
-    const { data: supplier, error } = await db
-      .from('suppliers')
-      .insert(insertData)
-      .select()
-      .single();
+    // CRITICAL: Use Helium DB with Drizzle (same as reads!)
+    const [newSupplier] = await heliumDb
+      .insert(suppliersTable)
+      .values(insertData)
+      .returning();
 
-    if (error || !supplier) throw new Error('Failed to create supplier');
+    if (!newSupplier) throw new Error('Failed to create supplier');
 
-    return this.mapSupplier(supplier);
+    return {
+      id: newSupplier.id,
+      name: newSupplier.name,
+      supplNr: newSupplier.supplNr || undefined,
+      urlPattern: newSupplier.urlPattern || undefined,
+      description: newSupplier.description || undefined,
+      selectors: newSupplier.selectors as any,
+      productLinkSelector: newSupplier.productLinkSelector || undefined,
+      sessionCookies: newSupplier.sessionCookies || undefined,
+      userAgent: newSupplier.userAgent || undefined,
+      loginUrl: newSupplier.loginUrl || undefined,
+      loginUsernameField: newSupplier.loginUsernameField || undefined,
+      loginPasswordField: newSupplier.loginPasswordField || undefined,
+      loginUsername: newSupplier.loginUsername || undefined,
+      verifiedFields: newSupplier.verifiedFields || undefined,
+      lastVerifiedAt: newSupplier.lastVerifiedAt || undefined,
+      createdAt: newSupplier.createdAt!,
+      updatedAt: newSupplier.updatedAt!,
+    };
   }
 
   async getSuppliers(userId: string): Promise<Supplier[]> {
@@ -1031,46 +1049,64 @@ export class SupabaseStorage implements IStorage {
   }
 
   async updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null> {
-    const updateData: any = {};
+    const updateData: any = { updatedAt: new Date() };
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.supplNr !== undefined) updateData.suppl_nr = data.supplNr;
-    if (data.urlPattern !== undefined) updateData.url_pattern = data.urlPattern;
+    if (data.supplNr !== undefined) updateData.supplNr = data.supplNr;
+    if (data.urlPattern !== undefined) updateData.urlPattern = data.urlPattern;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.selectors !== undefined) updateData.selectors = data.selectors;
-    if (data.productLinkSelector !== undefined) updateData.product_link_selector = data.productLinkSelector;
-    if (data.sessionCookies !== undefined) updateData.session_cookies = data.sessionCookies;
-    if (data.userAgent !== undefined) updateData.user_agent = data.userAgent;
-    if (data.loginUrl !== undefined) updateData.login_url = data.loginUrl;
-    if (data.loginUsernameField !== undefined) updateData.login_username_field = data.loginUsernameField;
-    if (data.loginPasswordField !== undefined) updateData.login_password_field = data.loginPasswordField;
-    if (data.loginUsername !== undefined) updateData.login_username = data.loginUsername;
-    if (data.verifiedFields !== undefined) updateData.verified_fields = data.verifiedFields ? JSON.stringify(data.verifiedFields) : null;
-    if (data.lastVerifiedAt !== undefined) updateData.last_verified_at = data.lastVerifiedAt;
+    if (data.productLinkSelector !== undefined) updateData.productLinkSelector = data.productLinkSelector;
+    if (data.sessionCookies !== undefined) updateData.sessionCookies = data.sessionCookies;
+    if (data.userAgent !== undefined) updateData.userAgent = data.userAgent;
+    if (data.loginUrl !== undefined) updateData.loginUrl = data.loginUrl;
+    if (data.loginUsernameField !== undefined) updateData.loginUsernameField = data.loginUsernameField;
+    if (data.loginPasswordField !== undefined) updateData.loginPasswordField = data.loginPasswordField;
+    if (data.loginUsername !== undefined) updateData.loginUsername = data.loginUsername;
+    if (data.verifiedFields !== undefined) updateData.verifiedFields = data.verifiedFields || null;
+    if (data.lastVerifiedAt !== undefined) updateData.lastVerifiedAt = data.lastVerifiedAt;
     
     // SECURITY: Encrypt password before storing
     if (data.loginPassword !== undefined) {
-      updateData.login_password = data.loginPassword ? encrypt(data.loginPassword) : null;
+      updateData.loginPassword = data.loginPassword ? encrypt(data.loginPassword) : null;
     }
 
-    const { data: supplier, error } = await db
-      .from('suppliers')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    // CRITICAL: Use Helium DB with Drizzle (same as reads!)
+    const [updatedSupplier] = await heliumDb
+      .update(suppliersTable)
+      .set(updateData)
+      .where(eq(suppliersTable.id, id))
+      .returning();
 
-    if (error || !supplier) return null;
+    if (!updatedSupplier) return null;
 
-    return this.mapSupplier(supplier);
+    return {
+      id: updatedSupplier.id,
+      name: updatedSupplier.name,
+      supplNr: updatedSupplier.supplNr || undefined,
+      urlPattern: updatedSupplier.urlPattern || undefined,
+      description: updatedSupplier.description || undefined,
+      selectors: updatedSupplier.selectors as any,
+      productLinkSelector: updatedSupplier.productLinkSelector || undefined,
+      sessionCookies: updatedSupplier.sessionCookies || undefined,
+      userAgent: updatedSupplier.userAgent || undefined,
+      loginUrl: updatedSupplier.loginUrl || undefined,
+      loginUsernameField: updatedSupplier.loginUsernameField || undefined,
+      loginPasswordField: updatedSupplier.loginPasswordField || undefined,
+      loginUsername: updatedSupplier.loginUsername || undefined,
+      verifiedFields: updatedSupplier.verifiedFields || undefined,
+      lastVerifiedAt: updatedSupplier.lastVerifiedAt || undefined,
+      createdAt: updatedSupplier.createdAt!,
+      updatedAt: updatedSupplier.updatedAt!,
+    };
   }
 
   async deleteSupplier(id: string): Promise<boolean> {
-    const { error } = await db
-      .from('suppliers')
-      .delete()
-      .eq('id', id);
+    // CRITICAL: Use Helium DB with Drizzle (same as reads!)
+    await heliumDb
+      .delete(suppliersTable)
+      .where(eq(suppliersTable.id, id));
 
-    return !error;
+    return true;
   }
 
   async updateProductPixiStatus(productId: string, pixiData: {
