@@ -177,26 +177,30 @@ export class PixiService {
           'Artikelnummer', 'artikelnummer', 'ARTIKELNUMMER',
           'Article Number', 'ArticleNumber', 'article_number',
           'Item Number', 'ItemNumber', 'item_number',
-          'SKU', 'sku', 'Art.-Nr.', 'Art.Nr.'
+          'SKU', 'sku', 'Art.-Nr.', 'Art.Nr.',
+          'p_item_number', 'v_manufacturers_item_number'  // Export system columns
         ]);
         
         const produktname = this.getColumnValue(product, [
           'Produktname', 'produktname', 'PRODUKTNAME',
           'Product Name', 'ProductName', 'product_name',
           'Name', 'name', 'Bezeichnung', 'bezeichnung',
-          'Description', 'description'
+          'Description', 'description',
+          'p_name[de]', 'p_name[en]', 'p_name'  // Export system columns
         ]);
         
         const ean = this.getColumnValue(product, [
           'EAN', 'ean', 'EAN-Code', 'EAN Code',
           'GTIN', 'gtin', 'Barcode', 'barcode',
-          'UPC', 'upc', 'EAN/UPC'
+          'UPC', 'upc', 'EAN/UPC',
+          'v_ean', 'p_ean'  // Export system columns
         ]);
         
         const hersteller = this.getColumnValue(product, [
           'Hersteller', 'hersteller', 'HERSTELLER',
           'Manufacturer', 'manufacturer', 'Brand', 'brand',
-          'Marke', 'marke', 'Supplier', 'supplier'
+          'Marke', 'marke', 'Supplier', 'supplier',
+          'p_brand', 'v_brand'  // Export system columns
         ]);
 
         // Check if product exists in Pixi by article number
