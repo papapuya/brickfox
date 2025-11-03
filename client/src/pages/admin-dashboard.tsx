@@ -35,6 +35,7 @@ import {
   RefreshCcw,
   Bot,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -62,6 +63,8 @@ interface Tenant {
   userCount: number;
   projectCount: number;
   supplierCount: number;
+  subscriptionStatus?: string;
+  planId?: string;
   createdAt: string;
 }
 
@@ -89,7 +92,9 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
   const [newTenantName, setNewTenantName] = useState('');
   const { toast } = useToast();
 
@@ -187,6 +192,40 @@ export default function AdminDashboard() {
       setIsSettingsDialogOpen(false);
       setSelectedTenant(null);
       queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Fehler',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteTenantMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem('supabase_token');
+      const res = await fetch(`/api/admin/tenants/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete tenant');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Kunde gelöscht',
+        description: `${tenantToDelete?.name} wurde erfolgreich gelöscht!`,
+      });
+      setIsDeleteDialogOpen(false);
+      setTenantToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-kpis'] });
     },
     onError: (error: Error) => {
       toast({
@@ -430,6 +469,7 @@ export default function AdminDashboard() {
                     <TableRow className="bg-gray-50">
                       <TableHead className="font-semibold">Kundenname</TableHead>
                       <TableHead className="font-semibold">Slug</TableHead>
+                      <TableHead className="font-semibold">Abo-Status</TableHead>
                       <TableHead className="font-semibold text-right">User</TableHead>
                       <TableHead className="font-semibold text-right">Projekte</TableHead>
                       <TableHead className="font-semibold text-right">Lieferanten</TableHead>
@@ -440,7 +480,7 @@ export default function AdminDashboard() {
                   <TableBody>
                     {filteredTenants.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                           {searchQuery ? 'Keine Kunden gefunden' : 'Noch keine Kunden angelegt'}
                         </TableCell>
                       </TableRow>
@@ -457,6 +497,24 @@ export default function AdminDashboard() {
                             <Badge variant="outline" className="bg-gray-50 text-gray-700 font-mono text-xs">
                               {tenant.slug}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {tenant.subscriptionStatus === 'active' ? (
+                              <Badge className="bg-green-100 text-green-800 border-green-300">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                {tenant.planId === 'professional' ? 'Professional' : tenant.planId === 'enterprise' ? 'Enterprise' : 'Aktiv'}
+                              </Badge>
+                            ) : tenant.subscriptionStatus === 'trial' ? (
+                              <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                                <Crown className="h-3 w-3 mr-1" />
+                                Trial
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800 border-gray-300">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                {tenant.subscriptionStatus || 'Unbekannt'}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             {tenant.userCount}
@@ -479,6 +537,17 @@ export default function AdminDashboard() {
                                 onClick={() => handleOpenSettings(tenant)}
                               >
                                 <Settings className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  setTenantToDelete(tenant);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -617,6 +686,80 @@ export default function AdminDashboard() {
               className="gap-2"
             >
               {updateTenantMutation.isPending ? 'Wird gespeichert...' : 'Einstellungen speichern'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Kunden löschen?
+            </DialogTitle>
+            <DialogDescription>
+              Möchten Sie den Kunden <span className="font-semibold text-gray-900">{tenantToDelete?.name}</span> wirklich löschen?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-3">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-red-900 mb-1">
+                    Achtung: Diese Aktion kann nicht rückgängig gemacht werden!
+                  </h4>
+                  <p className="text-xs text-red-700">
+                    Alle Daten dieses Kunden (User, Projekte, Produkte, Lieferanten) werden unwiderruflich gelöscht.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {tenantToDelete && (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Anzahl User:</span>
+                  <span className="font-medium">{tenantToDelete.userCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Anzahl Projekte:</span>
+                  <span className="font-medium">{tenantToDelete.projectCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Anzahl Lieferanten:</span>
+                  <span className="font-medium">{tenantToDelete.supplierCount}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setTenantToDelete(null);
+              }}
+              disabled={deleteTenantMutation.isPending}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (tenantToDelete) {
+                  deleteTenantMutation.mutate(tenantToDelete.id);
+                }
+              }}
+              disabled={deleteTenantMutation.isPending}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleteTenantMutation.isPending ? 'Wird gelöscht...' : 'Endgültig löschen'}
             </Button>
           </DialogFooter>
         </DialogContent>
