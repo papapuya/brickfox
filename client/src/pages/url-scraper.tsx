@@ -1149,7 +1149,9 @@ export default function URLScraper() {
         }
         
         if (key === 'localImagePaths' && Array.isArray(value)) {
-          return value.join(' | ');
+          // Convert local paths to full URLs
+          const baseUrl = window.location.origin;
+          return value.map(path => `${baseUrl}${path}`).join(' | ');
         }
         
         // Return empty string if field is missing
