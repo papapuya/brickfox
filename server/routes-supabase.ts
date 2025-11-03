@@ -1534,7 +1534,14 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
 
       console.log(`[Pixi Compare] Processing CSV for supplier ${supplNr}, file size: ${file.size} bytes`);
 
-      const csvContent = file.buffer.toString('utf-8');
+      // Try to detect encoding - first try UTF-8, then Windows-1252
+      let csvContent = file.buffer.toString('utf-8');
+      
+      // Check if content contains replacement characters (�), indicating wrong encoding
+      if (csvContent.includes('�')) {
+        console.log('[Pixi Compare] UTF-8 decoding produced replacement characters, trying Windows-1252');
+        csvContent = file.buffer.toString('latin1');
+      }
 
       const parseResult = await new Promise<any>((resolve, reject) => {
         Papa.parse(csvContent, {
