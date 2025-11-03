@@ -191,7 +191,26 @@ function getFieldValue(
   const fieldMeta = getBrickfoxField(brickfoxField);
   if (!fieldMeta) return null;
   
-  // STEP 1: Versuche intelligentes Auto-Mapping ZUERST (Priorität!)
+  // SPECIAL CASE: p_description[de] soll IMMER htmlCode verwenden (nicht Auto-Mapping!)
+  if (brickfoxField === 'p_description[de]') {
+    // Verwende direkt das htmlCode-Feld aus dem Product
+    const htmlCode = (product as any).htmlCode;
+    if (htmlCode) {
+      debugLog(`[SPECIAL] p_description[de] → htmlCode (${htmlCode.length} chars)`);
+      return htmlCode;
+    }
+    // Fallback: Versuche description aus extractedData
+    if (product.extractedData && product.extractedData.length > 0) {
+      const descItem = product.extractedData.find((item: any) => 
+        item.label && item.label.toLowerCase().includes('produktbeschreibung')
+      );
+      if (descItem && descItem.value) {
+        return descItem.value;
+      }
+    }
+  }
+  
+  // STEP 1: Versuche intelligentes Auto-Mapping für andere Felder
   const autoMappedValue = autoMapFieldByLabel(product, brickfoxField);
   if (autoMappedValue !== null && autoMappedValue !== undefined && autoMappedValue !== '') {
     let value: any = autoMappedValue;
