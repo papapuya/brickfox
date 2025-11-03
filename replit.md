@@ -2,6 +2,31 @@
 
 ## Recent Changes
 
+### 2025-11-03: PDF-Scraper → Pixi-Compare Direkt-Integration
+**Änderung**: PDF-Scraper ist jetzt direkt mit dem Pixi-Vergleich verbunden - ohne CSV-Export/Import-Zwischenschritt!
+
+**Neuer Workflow**:
+1. PDF hochladen → Produkte extrahieren
+2. Lieferant mit Pixi-Nummer auswählen (obligatorisch!)
+3. Button "Mit Pixi vergleichen" → **Direkte Übergabe** an Pixi-System
+4. Automatischer Vergleich mit Multi-Strategie Matching
+
+**Technische Details**:
+- ✅ **Strikte Validierung**: Lieferantennummer ist jetzt obligatorisch (kein Fallback mehr)
+- ✅ **Multi-Strategie Matching** im Pixi-Service:
+  - Strategie 1: `p_item_number` (z.B. "ANS2447304960")
+  - Strategie 2: `v_manufacturers_item_number` (z.B. "2447304960" ohne Präfix)
+  - Strategie 3: EAN als Fallback
+- ✅ **Automatische Datenkonvertierung**: PDF → Brickfox-Format → Pixi-Vergleich
+- ✅ **SessionStorage-Übergabe**: csvData + supplNr + source
+- ✅ **Auto-Loading**: Pixi-Compare lädt Daten automatisch beim Öffnen
+
+**Betroffene Dateien**:
+- `client/src/pages/pdf-auto-scraper.tsx` - Button + Datenkonvertierung
+- `client/src/pages/pixi-compare.tsx` - Auto-Loading + Validierung
+- `server/routes-supabase.ts` - Neue Route `/api/pixi/compare-direct`
+- `server/services/pixi-service.ts` - Multi-Strategie Matching
+
 ### 2025-11-03: Brickfox CSV Export - Separate Bild-Spalten
 **Änderung**: Brickfox CSV Export erstellt jetzt separate Spalten für jede Bild-URL (p_image[1] bis p_image[10]).
 
