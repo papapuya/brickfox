@@ -266,6 +266,70 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
       </Card>
 
       <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Automatischer Login (optional)</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Konfigurieren Sie einen automatischen Login für Lieferanten, die eine Anmeldung erfordern.
+        </p>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="loginUrl">Login-URL</Label>
+            <Input
+              id="loginUrl"
+              value={formData.loginUrl}
+              onChange={(e) => setFormData({ ...formData, loginUrl: e.target.value })}
+              placeholder="https://shop.example.com/login"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="loginUsernameField">Benutzername-Feld (CSS-Selektor)</Label>
+              <Input
+                id="loginUsernameField"
+                value={formData.loginUsernameField}
+                onChange={(e) => setFormData({ ...formData, loginUsernameField: e.target.value })}
+                placeholder="input[name='username']"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="loginPasswordField">Passwort-Feld (CSS-Selektor)</Label>
+              <Input
+                id="loginPasswordField"
+                value={formData.loginPasswordField}
+                onChange={(e) => setFormData({ ...formData, loginPasswordField: e.target.value })}
+                placeholder="input[name='password']"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="loginUsername">Benutzername</Label>
+              <Input
+                id="loginUsername"
+                value={formData.loginUsername}
+                onChange={(e) => setFormData({ ...formData, loginUsername: e.target.value })}
+                placeholder="Ihr Benutzername"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="loginPassword">Passwort</Label>
+              <Input
+                id="loginPassword"
+                type="password"
+                value={formData.loginPassword}
+                onChange={(e) => setFormData({ ...formData, loginPassword: e.target.value })}
+                placeholder="Ihr Passwort"
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">CSS-Selektoren testen</h3>
         
         <div className="mb-4">
