@@ -632,16 +632,16 @@ export default function PixiComparePage() {
                 <CardTitle>Produktliste ({result.products.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-x-auto">
+                <div className="rounded-md border overflow-auto max-h-[600px]">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Artikelnummer</TableHead>
-                        <TableHead>Produktname</TableHead>
-                        <TableHead>EAN</TableHead>
-                        <TableHead>Hersteller</TableHead>
-                        <TableHead>Pixi EAN</TableHead>
+                        <TableHead className="bg-background">Status</TableHead>
+                        <TableHead className="bg-background">Artikelnummer</TableHead>
+                        <TableHead className="bg-background">Produktname</TableHead>
+                        <TableHead className="bg-background">EAN</TableHead>
+                        <TableHead className="bg-background">Hersteller</TableHead>
+                        <TableHead className="bg-background">Pixi EAN</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -666,15 +666,15 @@ export default function PixiComparePage() {
                               {product.pixi_status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="font-mono text-sm">
+                          <TableCell className="font-mono text-sm whitespace-nowrap">
                             {product.artikelnummer}
                           </TableCell>
-                          <TableCell className="max-w-xs truncate">
+                          <TableCell className="min-w-[300px]">
                             {product.produktname}
                           </TableCell>
-                          <TableCell className="font-mono text-sm">{product.ean}</TableCell>
-                          <TableCell>{product.hersteller}</TableCell>
-                          <TableCell className="font-mono text-sm text-muted-foreground">
+                          <TableCell className="font-mono text-sm whitespace-nowrap">{product.ean}</TableCell>
+                          <TableCell className="whitespace-nowrap">{product.hersteller}</TableCell>
+                          <TableCell className="font-mono text-sm text-muted-foreground whitespace-nowrap">
                             {product.pixi_ean || '-'}
                           </TableCell>
                         </TableRow>
