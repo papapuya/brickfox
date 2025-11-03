@@ -49,7 +49,6 @@ export default defineConfig({
     strictPort: false,
     hmr: {
       clientPort: 443,
-      overlay: false,  // Disable error overlay to reduce CPU
     },
     watch: {
       usePolling: false,  // Disable polling, use native file system events
