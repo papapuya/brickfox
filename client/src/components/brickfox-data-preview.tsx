@@ -271,6 +271,24 @@ export default function BrickfoxDataPreview({ products, projectName }: BrickfoxD
                 attr.key.toLowerCase().includes('lieferumfang') || attr.key.toLowerCase().includes('scope')
               )?.value || '';
               break;
+            case 'product_image':
+            case 'product_media':
+            case 'variant_image':
+            case 'variant_media':
+              // Convert all image filenames to full URLs
+              const baseUrl = window.location.origin;
+              if (product.files && Array.isArray(product.files)) {
+                row[column.label] = product.files.map((f: any) => {
+                  const filename = f.fileName || f.filename || '';
+                  if (filename) {
+                    return `${baseUrl}/product-images/${filename}`;
+                  }
+                  return '';
+                }).filter(url => url).join(', ');
+              } else {
+                row[column.label] = '';
+              }
+              break;
             default:
               row[column.label] = 'TBD';
           }

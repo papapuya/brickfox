@@ -81,6 +81,29 @@ The application employs a modular subprompt architecture for specialized AI task
 
 ## Recent Changes
 
+### 2025-11-03: CSV-Export mit vollständigen Bild-URLs 🖼️
+**Feature**: Alle Produktbilder werden jetzt als vollständige URLs in CSV-Exporten exportiert.
+
+**Implementierung**:
+- **Standard CSV-Export**: Alle Bilder im `files`-Feld werden als vollständige URLs exportiert
+- **Brickfox CSV-Export**: `product_image`, `product_media`, `variant_image`, `variant_media` verwenden vollständige URLs
+- **URL-Format**: `https://[DOMAIN]/product-images/[filename]`
+- **Base-URL**: Verwendet `window.location.origin` für korrekte Domain
+
+**Vorher**:
+```csv
+files: "image1.jpg, image2.jpg"
+```
+
+**Nachher**:
+```csv
+files: "https://example.replit.dev/product-images/image1.jpg, https://example.replit.dev/product-images/image2.jpg"
+```
+
+**Betroffene Dateien**:
+- `client/src/pages/project-detail.tsx` - Standard CSV-Export mit Bild-URLs
+- `client/src/components/brickfox-data-preview.tsx` - Brickfox CSV-Export mit Bild-URLs
+
 ### 2025-11-03: Checkbox-basierte Bulk-Delete für Admin-Dashboard ✅
 **Feature**: Selektive Auswahl und Löschung mehrerer Kunden im Admin-Dashboard.
 

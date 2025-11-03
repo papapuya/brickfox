@@ -343,6 +343,9 @@ export default function ProjectDetail() {
 
     const enabledColumns = selectedColumns.filter(col => col.enabled);
     
+    // Get the base URL for images
+    const baseUrl = window.location.origin;
+    
     const csvData = products.map(product => {
       const row: Record<string, string> = {};
       enabledColumns.forEach(col => {
@@ -356,7 +359,14 @@ export default function ProjectDetail() {
           if (col.field === 'createdAt' && value) {
             row[col.label] = format(new Date(value as string), "dd.MM.yyyy HH:mm");
           } else if (col.field === 'files' && Array.isArray(value)) {
-            row[col.label] = value.map((f: any) => f.fileName || f.filename || '').join(', ');
+            // Convert all image filenames to full URLs
+            row[col.label] = value.map((f: any) => {
+              const filename = f.fileName || f.filename || '';
+              if (filename) {
+                return `${baseUrl}/product-images/${filename}`;
+              }
+              return '';
+            }).filter(url => url).join(', ');
           } else {
             row[col.label] = String(value || '');
           }
