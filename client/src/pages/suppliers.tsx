@@ -551,6 +551,74 @@ export default function Suppliers() {
                   Falls die Webseite bestimmte Browser erfordert
                 </p>
               </div>
+
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium mb-3">Automatischer Login</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Für Shops, die eine Anmeldung erfordern
+                </p>
+                
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="loginUrl">Login-URL</Label>
+                    <Input
+                      id="loginUrl"
+                      value={formData.loginUrl}
+                      onChange={(e) => setFormData({ ...formData, loginUrl: e.target.value })}
+                      placeholder="https://shop.example.com/login"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="loginUsernameField" className="text-xs">Benutzername-Feld</Label>
+                      <Input
+                        id="loginUsernameField"
+                        value={formData.loginUsernameField}
+                        onChange={(e) => setFormData({ ...formData, loginUsernameField: e.target.value })}
+                        placeholder="input[name='username']"
+                        className="text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="loginPasswordField" className="text-xs">Passwort-Feld</Label>
+                      <Input
+                        id="loginPasswordField"
+                        value={formData.loginPasswordField}
+                        onChange={(e) => setFormData({ ...formData, loginPasswordField: e.target.value })}
+                        placeholder="input[name='password']"
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="loginUsername" className="text-xs">Benutzername</Label>
+                      <Input
+                        id="loginUsername"
+                        value={formData.loginUsername}
+                        onChange={(e) => setFormData({ ...formData, loginUsername: e.target.value })}
+                        placeholder="Ihr Benutzername"
+                        className="text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="loginPassword" className="text-xs">Passwort</Label>
+                      <Input
+                        id="loginPassword"
+                        type="password"
+                        value={formData.loginPassword}
+                        onChange={(e) => setFormData({ ...formData, loginPassword: e.target.value })}
+                        placeholder="Ihr Passwort"
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="border-t pt-4">
