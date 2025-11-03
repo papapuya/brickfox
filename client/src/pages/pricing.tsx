@@ -94,7 +94,7 @@ export default function Pricing() {
                 onClick={() => handleDemo('professional')}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-6 text-base"
               >
-                Demo anfordern
+                Kostenlos starten
               </Button>
             </CardFooter>
           </Card>
@@ -153,7 +153,7 @@ export default function Pricing() {
                 onClick={() => handleDemo('enterprise')}
                 className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium py-6 text-base shadow-lg"
               >
-                Demo anfordern
+                Kostenlos starten
               </Button>
             </CardFooter>
           </Card>

@@ -215,28 +215,6 @@ export default function Contact() {
 
           {/* Contact Info */}
           <div className="space-y-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Demo anfordern</CardTitle>
-                <CardDescription>
-                  Interessiert an einer persönlichen Demo?
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">
-                  Erleben Sie PIMPilot live in einer persönlichen Demo-Session. 
-                  Wir zeigen Ihnen alle Features und beantworten Ihre Fragen.
-                </p>
-                <Button
-                  onClick={() => setLocation('/register')}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Kostenlose Demo starten
-                </Button>
-              </CardContent>
-            </Card>
-
             <Card className="shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
               <CardHeader>
                 <CardTitle>Warum PIMPilot?</CardTitle>

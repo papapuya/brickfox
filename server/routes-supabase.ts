@@ -110,6 +110,48 @@ async function requireAdmin(req: any, res: any, next: any) {
   });
 }
 
+// Super Admin check: Only for system-wide admin (sarahzerrer@icloud.com)
+async function requireSuperAdmin(req: any, res: any, next: any) {
+  await requireAuth(req, res, async () => {
+    const isSuperAdmin = req.user?.email === 'sarahzerrer@icloud.com';
+    if (!isSuperAdmin) {
+      return res.status(403).json({ error: 'System-Admin-Zugriff erforderlich' });
+    }
+    next();
+  });
+}
+
+// Middleware: Check if tenant has a specific feature enabled
+function requireFeature(featureName: keyof NonNullable<import('@shared/schema').TenantSettings['features']>) {
+  return async (req: any, res: any, next: any) => {
+    if (!req.user?.tenantId) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    const tenant = await supabaseStorage.getTenant(req.user.tenantId);
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant nicht gefunden' });
+    }
+
+    const features = tenant.settings?.features || {};
+    const isEnabled = features[featureName];
+
+    // Default values: urlScraper, csvBulkImport, aiDescriptions are enabled by default
+    const defaultEnabled = ['urlScraper', 'csvBulkImport', 'aiDescriptions'];
+    const featureAllowed = defaultEnabled.includes(featureName) 
+      ? isEnabled !== false  // Enabled unless explicitly disabled
+      : isEnabled === true;  // Disabled unless explicitly enabled
+
+    if (!featureAllowed) {
+      return res.status(403).json({ 
+        error: `Feature "${featureName}" ist für Ihren Account nicht freigeschaltet. Bitte upgraden Sie Ihr Abonnement.` 
+      });
+    }
+
+    next();
+  };
+}
+
 async function checkApiLimit(req: any, res: any, next: any) {
   if (!req.user) {
     return res.status(401).json({ error: 'Nicht authentifiziert' });
@@ -349,7 +391,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
         role: 'admin',
         subscriptionStatus: 'trial',
         planId: 'trial',
-        apiCallsLimit: 3000,
+        apiCallsLimit: 50,
         apiCallsUsed: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -398,12 +440,12 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
 
       let user = await supabaseStorage.getUserById(data.user.id);
 
-      // AUTO-FIX: Update old 100 limit to new 3000 (GPT-4o-mini adjustment)
-      if (user && user.apiCallsLimit === 100) {
-        console.log(`🔄 Auto-updating ${user.email} from 100 to 3000 credits (GPT-4o-mini)`);
+      // AUTO-FIX: Update old limit to new standard (50 calls)
+      if (user && user.apiCallsLimit < 50) {
+        console.log(`🔄 Auto-updating ${user.email} to 50 credits (Trial Standard)`);
         await supabaseAdmin!
           .from('users')
-          .update({ api_calls_limit: 3000 })
+          .update({ api_calls_limit: 50 })
           .eq('id', user.id);
         
         // Refresh user data
@@ -481,7 +523,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       const { error } = await supabaseAdmin!
         .from('users')
         .update({ 
-          api_calls_limit: 3000,
+          api_calls_limit: 50,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -522,7 +564,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
           projectCount: projects.length,
           productCount: totalProducts,
           apiCallsUsed: freshUser?.apiCallsUsed || 0,
-          apiCallsLimit: freshUser?.apiCallsLimit || 3000, // Updated for GPT-4o-mini
+          apiCallsLimit: freshUser?.apiCallsLimit || 50,
           planId: freshUser?.planId || 'trial',
           subscriptionStatus: freshUser?.subscriptionStatus || 'trial',
         },
@@ -534,7 +576,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.get('/api/admin/customers', requireAdmin, async (req, res) => {
+  app.get('/api/admin/customers', requireSuperAdmin, async (req, res) => {
     try {
       const users = await supabaseStorage.getAllUsers();
       
@@ -565,7 +607,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  app.get('/api/admin/users', requireSuperAdmin, async (req, res) => {
     try {
       const users = await supabaseStorage.getAllUsers();
       res.json(users);
@@ -574,7 +616,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/admin/create-admin', async (req, res) => {
+  app.post('/api/admin/create-admin', requireSuperAdmin, async (req, res) => {
     try {
       const { email, password } = req.body;
       
@@ -590,7 +632,35 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Tenant Management Endpoints (Admin only)
-  app.get('/api/admin/tenants', requireAdmin, async (req, res) => {
+  // Get user's own tenant (for regular customers)
+  app.get('/api/user/tenant', requireAuth, async (req: any, res) => {
+    try {
+      const user = req.user; // Already set by requireAuth middleware
+      if (!user || !user.tenantId) {
+        return res.status(401).json({ error: 'Nicht authentifiziert' });
+      }
+
+      const tenant = await supabaseStorage.getTenant(user.tenantId);
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant nicht gefunden' });
+      }
+
+      const stats = await supabaseStorage.getTenantStats(tenant.id);
+
+      res.json({
+        success: true,
+        tenant: {
+          ...tenant,
+          ...stats,
+        },
+      });
+    } catch (error) {
+      console.error('Get user tenant error:', error);
+      res.status(500).json({ error: 'Fehler beim Laden des Tenants' });
+    }
+  });
+
+  app.get('/api/admin/tenants', requireSuperAdmin, async (req, res) => {
     try {
       const tenants = await supabaseStorage.getAllTenants();
       
@@ -615,7 +685,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/admin/tenants', requireAdmin, async (req, res) => {
+  app.post('/api/admin/tenants', requireSuperAdmin, async (req, res) => {
     try {
       const { name, settings } = req.body;
       
@@ -639,7 +709,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.delete('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
+  app.delete('/api/admin/tenants/:id', requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -659,7 +729,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.patch('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
+  app.patch('/api/admin/tenants/:id', requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { name, settings } = req.body;
@@ -685,7 +755,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.delete('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
+  app.delete('/api/admin/tenants/:id', requireSuperAdmin, async (req, res) => {
     try {
       const { id} = req.params;
       const success = await supabaseStorage.deleteTenant(id);
@@ -702,7 +772,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Admin KPIs Dashboard Endpoint
-  app.get('/api/admin/kpis', requireAdmin, async (req, res) => {
+  app.get('/api/admin/kpis', requireSuperAdmin, async (req, res) => {
     try {
       const tenantId = req.query.tenantId as string | undefined;
       
@@ -874,7 +944,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/bulk-save-to-project', requireAuth, checkApiLimit, async (req: any, res) => {
+  app.post('/api/bulk-save-to-project', requireAuth, requireFeature('csvBulkImport'), checkApiLimit, async (req: any, res) => {
     try {
       const { projectName, products } = req.body;
 
@@ -995,7 +1065,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/scrape', requireAuth, checkApiLimit, upload.none(), async (req, res) => {
+  app.post('/api/scrape', requireAuth, requireFeature('urlScraper'), checkApiLimit, upload.none(), async (req, res) => {
     try {
       const { url, selectors } = req.body;
       
@@ -1034,7 +1104,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Single product scraping is also FREE
-  app.post('/api/scrape-product', requireAuth, async (req, res) => {
+  app.post('/api/scrape-product', requireAuth, requireFeature('urlScraper'), async (req, res) => {
     try {
       const { url, selectors, userAgent, cookies, supplierId } = req.body;
       
@@ -1139,7 +1209,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Test a single CSS selector (for supplier configuration verification)
-  app.post('/api/scraper/test-selector', requireAuth, async (req, res) => {
+  app.post('/api/scraper/test-selector', requireAuth, requireFeature('urlScraper'), async (req, res) => {
     try {
       const { url, selector, userAgent, cookies, supplierId } = req.body;
       
@@ -1168,7 +1238,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Scraping is FREE - no API limit check
-  app.post('/api/scrape-product-list', requireAuth, async (req, res) => {
+  app.post('/api/scrape-product-list', requireAuth, requireFeature('urlScraper'), async (req, res) => {
     try {
       const { listUrl, productLinkSelector, maxProducts, selectors, userAgent, cookies, supplierId } = req.body;
       
@@ -1194,7 +1264,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Scraping is FREE - no API limit check (only AI generation costs credits)
-  app.post('/api/scrape-all-pages', requireAuth, async (req, res) => {
+  app.post('/api/scrape-all-pages', requireAuth, requireFeature('urlScraper'), async (req, res) => {
     try {
       const { url, listUrl, productLinkSelector, paginationSelector, maxPages, maxProducts, selectors, userAgent, cookies } = req.body;
       
@@ -1257,7 +1327,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/generate', requireAuth, checkApiLimit, async (req, res) => {
+  app.post('/api/generate', requireAuth, requireFeature('aiDescriptions'), checkApiLimit, async (req, res) => {
     try {
       const { productData, template } = req.body;
       
@@ -1275,7 +1345,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/generate-description', requireAuth, checkApiLimit, async (req, res) => {
+  app.post('/api/generate-description', requireAuth, requireFeature('aiDescriptions'), checkApiLimit, async (req, res) => {
     try {
       const { extractedData, structuredData, customAttributes, autoExtractedDescription, technicalDataTable, safetyWarnings, pdfManualUrl, model } = req.body;
 
@@ -1382,7 +1452,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/pixi/compare', requireAuth, upload.single('csvFile'), async (req: any, res) => {
+  app.post('/api/pixi/compare', requireAuth, requireFeature('pixiIntegration'), upload.single('csvFile'), async (req: any, res) => {
     try {
       const { supplNr } = req.body;
       const file = req.file;
@@ -1440,7 +1510,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  app.post('/api/pixi/compare-json', requireAuth, async (req: any, res) => {
+  app.post('/api/pixi/compare-json', requireAuth, requireFeature('pixiIntegration'), async (req: any, res) => {
     try {
       const { products, supplNr } = req.body;
 
@@ -1659,7 +1729,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
   });
 
   // Pixi Supabase Integration - Compare project products with Pixi ERP
-  app.post('/api/pixi/compare-project', requireAuth, async (req: any, res) => {
+  app.post('/api/pixi/compare-project', requireAuth, requireFeature('pixiIntegration'), async (req: any, res) => {
     try {
       const { projectId, supplierId, supplNr } = req.body;
 

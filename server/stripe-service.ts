@@ -292,16 +292,16 @@ export async function getSubscriptionStatus(userId: string) {
         subscriptionStatus: user.subscriptionStatus || 'trial',
         planId: user.planId || 'trial',
         apiCallsUsed: user.apiCallsUsed || 0,
-        apiCallsLimit: user.apiCallsLimit || 3000, // GPT-4o-mini adjustment
+        apiCallsLimit: user.apiCallsLimit || 50,
       },
       plan: planId && PLANS[planId] ? PLANS[planId] : {
         id: 'trial',
         name: 'Trial',
         price: 0,
         currency: 'eur',
-        apiCallsLimit: 3000, // GPT-4o-mini: 30× cheaper than GPT-4o
+        apiCallsLimit: 50, // Trial limit: 50 calls
         features: [
-          '3.000 AI-Generierungen (Trial mit GPT-4o-mini)',
+          '50 AI-Generierungen (Trial)',
           'Alle Features zum Testen',
           'Upgrade jederzeit möglich'
         ]

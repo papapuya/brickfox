@@ -29,11 +29,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
 
-  // Fetch all tenants (only for admins)
+  // Only true system admins can see tenant switcher (not regular tenant admins)
+  const isSuperAdmin = user?.email === 'sarahzerrer@icloud.com';
+  
+  // Fetch all tenants (only for system admins)
   const { data: tenantsData, isLoading: tenantsLoading, refetch: refetchTenants } = useQuery({
     queryKey: ['admin-tenants'],
     queryFn: async () => {
-      if (!user?.isAdmin) return { tenants: [] };
+      if (!isSuperAdmin) return { tenants: [] };
       
       const token = localStorage.getItem('supabase_token');
       const res = await fetch('/api/admin/tenants', {
@@ -45,14 +48,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { tenants: [] };
       return res.json();
     },
-    enabled: isAuthenticated && user?.isAdmin === true,
+    enabled: isAuthenticated && isSuperAdmin,
   });
 
   // Fetch user's own tenant (for regular users)
   const { data: userTenantData, isLoading: userTenantLoading } = useQuery({
     queryKey: ['user-tenant'],
     queryFn: async () => {
-      if (user?.isAdmin) return { tenant: null }; // Admins use tenant switcher
+      if (isSuperAdmin) return { tenant: null }; // System admins use tenant switcher
       
       const token = localStorage.getItem('supabase_token');
       const res = await fetch('/api/user/tenant', {
@@ -64,15 +67,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { tenant: null };
       return res.json();
     },
-    enabled: isAuthenticated && user?.isAdmin === false,
+    enabled: isAuthenticated && !isSuperAdmin,
   });
 
   const isLoading = tenantsLoading || userTenantLoading;
   const tenants = tenantsData?.tenants || [];
   
-  // For admins: Auto-select first tenant if none selected
+  // For system admins: Auto-select first tenant if none selected
   useEffect(() => {
-    if (user?.isAdmin && tenants.length > 0 && !currentTenantId) {
+    if (isSuperAdmin && tenants.length > 0 && !currentTenantId) {
       const savedTenantId = localStorage.getItem('selected_tenant_id');
       if (savedTenantId && tenants.find((t: Tenant) => t.id === savedTenantId)) {
         setCurrentTenantId(savedTenantId);
@@ -80,12 +83,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         setCurrentTenantId(tenants[0].id);
       }
     }
-  }, [user?.isAdmin, tenants, currentTenantId]);
+  }, [isSuperAdmin, tenants, currentTenantId]);
 
   // Determine current tenant based on user role
   let currentTenant: Tenant | null = null;
-  if (user?.isAdmin) {
-    // Admins use the tenant switcher
+  if (isSuperAdmin) {
+    // System admins use the tenant switcher
     currentTenant = tenants.find((t: Tenant) => t.id === currentTenantId) || null;
   } else {
     // Regular users use their assigned tenant

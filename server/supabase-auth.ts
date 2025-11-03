@@ -65,7 +65,7 @@ export async function createAdminUser(email: string, password: string): Promise<
       tenant_id: akkushopTenant?.id,
       subscription_status: 'trial',
       plan_id: 'trial',
-      api_calls_limit: 3000, // 3000 GPT-4o-mini = same cost as 100 GPT-4o
+      api_calls_limit: 50, // Trial limit: 50 calls per tool
       api_calls_used: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

@@ -106,6 +106,11 @@ export function AppSidebar() {
       return tenantFeatures.urlScraper !== false;
     }
     
+    // Show PDF Auto-Scraper if URL Scraper is enabled (uses same feature)
+    if (item.url === '/pdf-auto-scraper') {
+      return tenantFeatures.urlScraper !== false;
+    }
+    
     return true;
   });
 
