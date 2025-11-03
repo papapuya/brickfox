@@ -864,6 +864,7 @@ export default function URLScraper() {
     // Get the selected supplier to find the SupplNr
     const selectedSupplier = suppliersData?.suppliers?.find(s => s.id === selectedSupplierId);
     const supplNr = selectedSupplier?.pixiSupplierNumber;
+    const supplierName = selectedSupplier?.name || 'Unbekannt';
 
     // STRICT VALIDATION: Supplier with SupplNr is required
     if (!supplNr || selectedSupplierId === '__none__') {
@@ -875,8 +876,11 @@ export default function URLScraper() {
       return;
     }
 
-    // Convert scraped products to Brickfox CSV format for Pixi Compare
+    // Convert scraped products to COMPLETE Brickfox CSV format for Pixi Compare
     const csvData = scrapedProducts.map(product => {
+      // Get AI-generated description if available
+      const generatedContent = generatedDescriptions.get(product.articleNumber);
+      
       // Extract images from localImagePaths (downloaded images) or images array
       const imageUrls = product.localImagePaths || product.images || [];
       
@@ -886,14 +890,119 @@ export default function URLScraper() {
         imageColumns[`p_image[${i}]`] = imageUrls[i - 1] || '';
       }
       
+      // Helper: Parse price (EXACT backend logic - returns number | null)
+      // Handles "UVP: 1.234,56 €" → 1234.56, "EUR 9,92" → 9.92, "–" → null, 0 → 0
+      const parsePrice = (price: string | number | null | undefined): number | null => {
+        if (price === null || price === undefined) return null;
+        if (typeof price === 'number') return price;  // Early return for numbers (0 is valid!)
+        
+        const priceStr = String(price);
+        
+        // Remove ALL non-numeric characters except comma, dot, minus (like backend)
+        // Handles "UVP: 39,75 €", "EUR 1.234,56", "Preis: 9,92 €" etc.
+        let str = priceStr.replace(/[^\d,.-]/g, '').trim();
+        
+        // German decimal format handling:
+        // - Comma = decimal separator
+        // - Dot = thousand separator
+        // Examples: "1.234,56" → 1234.56, "39,75" → 39.75, "9,92" → 9.92
+        let normalized = str;
+        if (str.includes(',')) {
+          // Has comma → German format with decimal
+          // Remove all dots (thousand separators), replace comma with dot
+          // "1.234,56" → "1234.56", "39,75" → "39.75"
+          normalized = str.replace(/\./g, '').replace(',', '.');
+        } else if (str.includes('.')) {
+          // Has dot but no comma → Could be German thousand separator OR English decimal
+          // Heuristic: Dot followed by exactly 3 digits → German thousand separator
+          // "1.234" → 1234 (thousand)
+          // "2.500" → 2500 (thousand)
+          // "15.99" → 15.99 (decimal, only 2 digits)
+          const dotMatch = str.match(/\.(\d+)$/);
+          if (dotMatch && dotMatch[1].length === 3) {
+            // Exactly 3 digits after last dot → German thousand separator
+            normalized = str.replace(/\./g, '');
+          }
+          // Otherwise keep dot as decimal: "15.99", "10.50"
+        }
+        // No dot or comma: "101" → "101", "250" → "250"
+        
+        // Convert to number and return null if invalid (like backend)
+        const value = parseFloat(normalized);
+        return isNaN(value) ? null : value;
+      };
+      
+      // Helper: Calculate net sales price (EK * 2)
+      const calculateVKNetto = (ek: number): number => {
+        return ek * 2;
+      };
+      
+      // Helper: Calculate gross sales price (EK * 2 * 1.19, rounded to .95)
+      const calculateVKBrutto = (ek: number): number => {
+        return Math.floor(ek * 2 * 1.19) + 0.95;
+      };
+      
+      const ekPrice = parsePrice(product.price);
+      const vkPriceNetto = ekPrice !== null ? calculateVKNetto(ekPrice) : null;
+      const vkPriceBrutto = ekPrice !== null ? calculateVKBrutto(ekPrice) : null;
+      
       return {
+        // === PRODUCT FIELDS ===
         'p_item_number': product.articleNumber || '',
-        'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '', // Remove ANS prefix
-        'p_name[de]': product.productName || '',
-        'v_ean': product.ean || '',
+        'p_group_path[de]': product.category || '',
         'p_brand': product.manufacturer || '',
-        'v_price_net': product.price?.replace(/[€\s]/g, '').replace(',', '.') || '',
-        ...imageColumns,  // Add p_image[1] to p_image[10]
+        'p_status': 'Aktiv',
+        'p_name[de]': product.productName || '',
+        'p_tax_class': 'Regelsteuersatz (19%)',
+        'p_never_out_of_stock': 'false',
+        'p_condition': 'Neu',
+        'p_country': 'China',
+        'p_description[de]': generatedContent?.description || product.description || product.longDescription || '',
+        ...imageColumns,  // p_image[1] to p_image[10]
+        
+        // === VARIANT FIELDS ===
+        'v_item_number': product.articleNumber || '',
+        'v_ean': product.ean || '',
+        'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '',
+        'v_supplier_item_number': product.articleNumber || '',
+        'v_status': 'aktiv',
+        'v_classification': 'X',
+        'v_delivery_time[de]': '3-5 Tage',
+        'v_supplier[Eur]': supplierName,
+        'v_purchase_price': ekPrice !== null ? ekPrice.toFixed(2) : '',
+        'v_price[Eur]': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',
+        'v_price_net': vkPriceNetto !== null ? vkPriceNetto.toFixed(2) : '',  // EK * 2 (Netto-VK)
+        'v_price_gross': vkPriceBrutto !== null ? vkPriceBrutto.toFixed(2) : '',  // EK * 2 * 1.19 + 0.95 (Brutto-VK)
+        'v_never_out_of_stock[standard]': 'true',
+        'v_weight': product.weight || product.gewicht || '',
+        'v_length': product.length || product.laenge || '',
+        'v_width': product.bodyDiameter || product.breite || '',
+        'v_height': product.headDiameter || product.hoehe || '',
+        
+        // === ANSMANN-SPEZIFISCHE FELDER ===
+        'v_capacity_mah': product.nominalkapazitaet || '',
+        'v_voltage': product.nominalspannung || '',
+        'v_max_discharge_current': product.maxEntladestrom || '',
+        'v_cell_chemistry': product.zellenchemie || '',
+        'v_energy': product.energie || '',
+        'v_color': product.farbe || '',
+        
+        // === NITECORE-SPEZIFISCHE FELDER ===
+        'v_power_supply': product.powerSupply || '',
+        'v_led_1': product.led1 || '',
+        'v_led_2': product.led2 || '',
+        'v_spot_intensity': product.spotIntensity || '',
+        'v_max_luminosity': product.maxLuminosity || '',
+        'v_max_beam_distance': product.maxBeamDistance || '',
+        'v_runtime_high': product.runtimeHigh || '',
+        'v_runtime_low': product.runtimeLow || '',
+        'v_impact_resistance': product.impactResistance || '',
+        'v_waterproof_rating': product.waterproofRating || '',
+        
+        // === SEO FELDER (wenn AI-generiert) ===
+        'p_seo_title[de]': generatedContent?.seoTitle || '',
+        'p_seo_description[de]': generatedContent?.seoDescription || '',
+        'p_seo_keywords[de]': generatedContent?.seoKeywords || '',
       };
     });
 
