@@ -41,6 +41,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface TenantSettings {
   features: {
@@ -96,6 +97,7 @@ export default function AdminDashboard() {
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [selectedTenantIds, setSelectedTenantIds] = useState<string[]>([]);
   const [newTenantName, setNewTenantName] = useState('');
   const { toast } = useToast();
 
@@ -237,18 +239,20 @@ export default function AdminDashboard() {
     },
   });
 
-  const deleteAllTenantsMutation = useMutation({
-    mutationFn: async () => {
+  const deleteSelectedTenantsMutation = useMutation({
+    mutationFn: async (tenantIds: string[]) => {
       const token = localStorage.getItem('supabase_token');
       const res = await fetch('/api/admin/tenants/bulk-delete', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ tenantIds }),
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to delete all tenants');
+        throw new Error(error.error || 'Failed to delete selected tenants');
       }
       return res.json();
     },
@@ -258,6 +262,7 @@ export default function AdminDashboard() {
         description: `${data.deletedCount} Kunden wurden erfolgreich gelöscht!`,
       });
       setIsBulkDeleteDialogOpen(false);
+      setSelectedTenantIds([]);
       queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
       queryClient.invalidateQueries({ queryKey: ['admin-kpis'] });
     },
@@ -328,6 +333,24 @@ export default function AdminDashboard() {
       t.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleToggleTenant = (tenantId: string) => {
+    setSelectedTenantIds(prev => 
+      prev.includes(tenantId) 
+        ? prev.filter(id => id !== tenantId)
+        : [...prev, tenantId]
+    );
+  };
+
+  const handleToggleAll = () => {
+    if (selectedTenantIds.length === filteredTenants.length) {
+      setSelectedTenantIds([]);
+    } else {
+      setSelectedTenantIds(filteredTenants.map(t => t.id));
+    }
+  };
+
+  const isAllSelected = filteredTenants.length > 0 && selectedTenantIds.length === filteredTenants.length;
+
   const kpis = kpisData?.kpis;
   const lastPixiSync = kpis?.lastPixiSync ? new Date(kpis.lastPixiSync) : null;
 
@@ -348,16 +371,21 @@ export default function AdminDashboard() {
         <div className="flex gap-3">
           <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="lg" variant="destructive" className="gap-2">
+              <Button 
+                size="lg" 
+                variant="destructive" 
+                className="gap-2"
+                disabled={selectedTenantIds.length === 0}
+              >
                 <Trash2 className="h-5 w-5" />
-                Alle Kunden löschen
+                Ausgewählte löschen ({selectedTenantIds.length})
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Alle Kunden löschen?</DialogTitle>
+                <DialogTitle>Ausgewählte Kunden löschen?</DialogTitle>
                 <DialogDescription>
-                  Diese Aktion löscht ALLE Test-Kunden unwiderruflich (außer Ihrem eigenen Account).
+                  Diese Aktion löscht die ausgewählten Kunden unwiderruflich.
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4">
@@ -366,7 +394,7 @@ export default function AdminDashboard() {
                     <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div className="space-y-2">
                       <p className="font-semibold text-red-900">
-                        Gefundene Kunden: {tenants.length}
+                        Ausgewählte Kunden: {selectedTenantIds.length}
                       </p>
                       <p className="text-sm text-red-800">
                         Alle Kundendaten (User, Projekte, Lieferanten) werden unwiderruflich gelöscht.
@@ -384,10 +412,10 @@ export default function AdminDashboard() {
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => deleteAllTenantsMutation.mutate()}
-                  disabled={deleteAllTenantsMutation.isPending}
+                  onClick={() => deleteSelectedTenantsMutation.mutate(selectedTenantIds)}
+                  disabled={deleteSelectedTenantsMutation.isPending}
                 >
-                  {deleteAllTenantsMutation.isPending ? 'Wird gelöscht...' : 'Alle löschen'}
+                  {deleteSelectedTenantsMutation.isPending ? 'Wird gelöscht...' : `${selectedTenantIds.length} Kunden löschen`}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -550,6 +578,12 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
+                      <TableHead className="w-12">
+                        <Checkbox 
+                          checked={isAllSelected}
+                          onCheckedChange={handleToggleAll}
+                        />
+                      </TableHead>
                       <TableHead className="font-semibold">Kundenname</TableHead>
                       <TableHead className="font-semibold">Slug</TableHead>
                       <TableHead className="font-semibold">Abo-Status</TableHead>
@@ -563,13 +597,19 @@ export default function AdminDashboard() {
                   <TableBody>
                     {filteredTenants.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                           {searchQuery ? 'Keine Kunden gefunden' : 'Noch keine Kunden angelegt'}
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredTenants.map((tenant) => (
                         <TableRow key={tenant.id} className="hover:bg-gray-50">
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedTenantIds.includes(tenant.id)}
+                              onCheckedChange={() => handleToggleTenant(tenant.id)}
+                            />
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-indigo-600" />

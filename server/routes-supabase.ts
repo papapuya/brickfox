@@ -793,7 +793,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
-  // Bulk delete all tenants (except super-admin's own tenant)
+  // Bulk delete selected tenants
   app.delete('/api/admin/tenants/bulk-delete', requireSuperAdmin, async (req, res) => {
     try {
       const currentUser = (req as any).user;
@@ -801,13 +801,18 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
         return res.status(401).json({ error: 'Nicht authentifiziert' });
       }
 
-      // Get all tenants except the super-admin's own tenant
-      const allTenants = await supabaseStorage.getAllTenants();
-      const tenantsToDelete = allTenants.filter(t => t.id !== currentUser.tenant_id);
+      const { tenantIds } = req.body;
+
+      if (!tenantIds || !Array.isArray(tenantIds) || tenantIds.length === 0) {
+        return res.status(400).json({ error: 'Keine Tenant-IDs angegeben' });
+      }
+
+      // Prevent deleting super-admin's own tenant
+      const tenantsToDelete = tenantIds.filter(id => id !== currentUser.tenant_id);
 
       let deletedCount = 0;
-      for (const tenant of tenantsToDelete) {
-        const success = await supabaseStorage.deleteTenant(tenant.id);
+      for (const tenantId of tenantsToDelete) {
+        const success = await supabaseStorage.deleteTenant(tenantId);
         if (success) {
           deletedCount++;
         }
