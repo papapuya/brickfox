@@ -150,7 +150,6 @@ export default function URLScraper() {
     { key: 'description', label: 'AI_Produktbeschreibung_HTML', enabled: true },
     { key: 'pdfManualUrl', label: 'PDF_Bedienungsanleitung_URL', enabled: false },
     { key: 'images', label: 'Bild_URLs', enabled: true },
-    { key: 'localImagePaths', label: 'Lokale_Bildpfade', enabled: true },
   ]);
   
   // SEO Title Preview Dialog
@@ -1146,12 +1145,6 @@ export default function URLScraper() {
         
         if (key === 'images' && Array.isArray(value)) {
           return value.join(' | ');
-        }
-        
-        if (key === 'localImagePaths' && Array.isArray(value)) {
-          // Convert local paths to full URLs
-          const baseUrl = window.location.origin;
-          return value.map(path => `${baseUrl}${path}`).join(' | ');
         }
         
         // Return empty string if field is missing
