@@ -191,20 +191,31 @@ function getFieldValue(
   const fieldMeta = getBrickfoxField(brickfoxField);
   if (!fieldMeta) return null;
   
-  // SPECIAL CASE: p_description[de] soll IMMER htmlCode verwenden (nicht Auto-Mapping!)
+  // SPECIAL CASE: p_description[de] soll IMMER Beschreibung verwenden (nicht Auto-Mapping!)
   if (brickfoxField === 'p_description[de]') {
-    // Verwende direkt das htmlCode-Feld aus dem Product
+    // Priority 1: htmlCode Feld (AI-generierter HTML-Code)
     const htmlCode = (product as any).htmlCode;
-    if (htmlCode) {
+    if (htmlCode && htmlCode.trim()) {
       debugLog(`[SPECIAL] p_description[de] → htmlCode (${htmlCode.length} chars)`);
       return htmlCode;
     }
-    // Fallback: Versuche description aus extractedData
+    
+    // Priority 2: autoExtractedDescription aus extractedData
     if (product.extractedData && product.extractedData.length > 0) {
+      const autoExtracted = product.extractedData.find((item: any) => 
+        item.key === 'autoExtractedDescription'
+      );
+      if (autoExtracted && autoExtracted.value) {
+        debugLog(`[SPECIAL] p_description[de] → autoExtractedDescription (${autoExtracted.value.length} chars)`);
+        return autoExtracted.value;
+      }
+      
+      // Priority 3: Fallback auf "Produktbeschreibung" Label
       const descItem = product.extractedData.find((item: any) => 
         item.label && item.label.toLowerCase().includes('produktbeschreibung')
       );
       if (descItem && descItem.value) {
+        debugLog(`[SPECIAL] p_description[de] → Produktbeschreibung label (${descItem.value.length} chars)`);
         return descItem.value;
       }
     }
