@@ -228,14 +228,73 @@ function detectType(value: any): string {
 function formatFieldLabel(key: string): string {
   // Common field mappings for better labels
   const fieldLabels: Record<string, string> = {
-    'ean': 'EAN (Barcode)',
+    // Basis-Daten
+    'ean': 'EAN',
     'articleNumber': 'Artikelnummer',
     'productName': 'Produktname',
+    'name': 'Produktname',
+    'exactProductName': 'Exakter Produktname',
+    
+    // Preise
     'price': 'Preis',
+    'ekPrice': 'EK-Preis',
+    'vkPrice': 'VK-Preis',
+    'uvp': 'UVP',
+    'vk': 'VK (Verkaufspreis)',
+    'ek': 'EK (Einkaufspreis)',
+    
+    // Hersteller & Marke
     'manufacturer': 'Hersteller',
+    'manufacturerArticleNumber': 'Hersteller-Artikelnummer',
+    'brand': 'Marke',
+    
+    // Beschreibungen
     'description': 'Beschreibung',
-    'images': 'Bilder',
+    'htmlCode': 'HTML-Beschreibung',
+    'previewText': 'Fließtext',
+    'kurzbeschreibung': 'Kurzbeschreibung',
+    'seoBeschreibung': 'SEO-Beschreibung',
+    'seoTitle': 'SEO-Titel',
+    'seoDescription': 'SEO-Beschreibung',
+    'seoKeywords': 'SEO-Keywords',
+    
+    // Bilder & Medien
+    'images': 'Bilder (URLs)',
+    'files': 'Produktbilder',
+    'localImagePaths': 'Lokale Bildpfade',
+    'pdfManualUrl': 'PDF-Bedienungsanleitung',
+    
+    // Maße & Gewicht
     'weight': 'Gewicht',
+    'gewicht': 'Gewicht',
+    'height': 'Höhe',
+    'hoehe': 'Höhe',
+    'width': 'Breite',
+    'breite': 'Breite',
+    'length': 'Länge',
+    'laenge': 'Länge',
+    
+    // Technische Daten (ANSMANN)
+    'nominalspannung': 'Nominalspannung (V)',
+    'nominalkapazitaet': 'Nominalkapazität (mAh)',
+    'maxEntladestrom': 'Max. Entladestrom (A)',
+    'zellenchemie': 'Zellenchemie',
+    'energie': 'Energie (Wh)',
+    'farbe': 'Farbe',
+    
+    // Technische Daten (Nitecore)
+    'bodyDiameter': 'Gehäusedurchmesser',
+    'headDiameter': 'Kopfdurchmesser',
+    'led1': 'LED 1',
+    'led2': 'LED 2',
+    'maxLuminosity': 'Max. Helligkeit (Lumen)',
+    'spotIntensity': 'Spotintensität',
+    'maxBeamDistance': 'Max. Leuchtweite (m)',
+    'powerSupply': 'Stromversorgung',
+    'totalWeight': 'Gesamtgewicht',
+    'weightWithoutBattery': 'Gewicht ohne Batterie',
+    
+    // Sonstige
     'category': 'Kategorie',
     'stock': 'Lagerbestand',
     'sku': 'SKU',
@@ -244,24 +303,19 @@ function formatFieldLabel(key: string): string {
   // Check for exact matches first
   const lowerKey = key.toLowerCase();
   for (const [fieldKey, label] of Object.entries(fieldLabels)) {
-    if (lowerKey.includes(fieldKey.toLowerCase())) {
-      // If it's an array element like [0].ean, add array info
-      const arrayMatch = key.match(/\[(\d+)\]/);
-      if (arrayMatch) {
-        return `${label} (Element ${parseInt(arrayMatch[1]) + 1})`;
-      }
+    if (lowerKey === fieldKey.toLowerCase() || lowerKey.endsWith(`.${fieldKey.toLowerCase()}`)) {
       return label;
     }
   }
 
-  // Default formatting
+  // Remove array indices and format nicely
   let formatted = key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/[._]/g, ' ')
-    .replace(/\[(\d+)\]/g, (match, index) => ` (Element ${parseInt(index) + 1})`)
+    .replace(/\[\d+\]\./g, '') // Remove [0]. [1]. etc.
+    .replace(/([A-Z])/g, ' $1') // Add space before capitals
+    .replace(/[._]/g, ' ') // Replace dots and underscores with spaces
     .trim()
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 
   return formatted;
