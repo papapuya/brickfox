@@ -1215,6 +1215,8 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
           (product as any).downloadedImages = downloadedImages;
           
           console.log(`[Image Download] ✅ ${downloadedImages.length} Bilder erfolgreich heruntergeladen`);
+          console.log(`[Image Download] 🔍 downloadedImages Array Length: ${downloadedImages.length}`);
+          console.log(`[Image Download] 📂 Lokale Pfade Array Length: ${(product as any).localImagePaths.length}`);
           console.log(`[Image Download] 📂 Lokale Pfade:`, (product as any).localImagePaths);
         } catch (error) {
           console.error('[Image Download] ❌ Fehler beim Herunterladen der Bilder:', error);
