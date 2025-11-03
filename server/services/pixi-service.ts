@@ -123,6 +123,19 @@ export class PixiService {
   }
 
   /**
+   * Helper function to extract column value with flexible column name matching
+   */
+  private getColumnValue(product: any, possibleNames: string[]): string {
+    for (const name of possibleNames) {
+      const value = product[name];
+      if (value !== undefined && value !== null && value !== '') {
+        return typeof value === 'string' ? value.trim() : value.toString().trim();
+      }
+    }
+    return '';
+  }
+
+  /**
    * Compare CSV products with Pixi inventory
    * @param products Array of products from CSV
    * @param supplNr Supplier number
@@ -130,6 +143,12 @@ export class PixiService {
    */
   async compareProducts(products: CSVProduct[], supplNr: string): Promise<PixiComparisonSummary> {
     try {
+      // Log the column names from the first product to help debug
+      if (products.length > 0) {
+        const columnNames = Object.keys(products[0]);
+        console.log(`[Pixi Service] CSV columns detected:`, columnNames);
+      }
+
       // Fetch all items from Pixi for this supplier
       const pixiResponse = await this.searchItems(supplNr);
       const pixiItems = pixiResponse.data || [];
@@ -153,10 +172,32 @@ export class PixiService {
       let vorhandenCount = 0;
 
       for (const product of products) {
-        const artikelnummer = product.Artikelnummer?.trim() || '';
-        const produktname = product.Produktname?.trim() || '';
-        const ean = product.EAN?.toString().trim() || '';
-        const hersteller = product.Hersteller?.trim() || '';
+        // Flexible column name matching (supports German, English, various casings)
+        const artikelnummer = this.getColumnValue(product, [
+          'Artikelnummer', 'artikelnummer', 'ARTIKELNUMMER',
+          'Article Number', 'ArticleNumber', 'article_number',
+          'Item Number', 'ItemNumber', 'item_number',
+          'SKU', 'sku', 'Art.-Nr.', 'Art.Nr.'
+        ]);
+        
+        const produktname = this.getColumnValue(product, [
+          'Produktname', 'produktname', 'PRODUKTNAME',
+          'Product Name', 'ProductName', 'product_name',
+          'Name', 'name', 'Bezeichnung', 'bezeichnung',
+          'Description', 'description'
+        ]);
+        
+        const ean = this.getColumnValue(product, [
+          'EAN', 'ean', 'EAN-Code', 'EAN Code',
+          'GTIN', 'gtin', 'Barcode', 'barcode',
+          'UPC', 'upc', 'EAN/UPC'
+        ]);
+        
+        const hersteller = this.getColumnValue(product, [
+          'Hersteller', 'hersteller', 'HERSTELLER',
+          'Manufacturer', 'manufacturer', 'Brand', 'brand',
+          'Marke', 'marke', 'Supplier', 'supplier'
+        ]);
 
         // Check if product exists in Pixi by article number
         const pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
