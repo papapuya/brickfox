@@ -881,8 +881,23 @@ export default function URLScraper() {
       // Get AI-generated description if available
       const generatedContent = generatedDescriptions.get(product.articleNumber);
       
-      // Extract images from localImagePaths (downloaded images) or images array
-      const imageUrls = product.localImagePaths || product.images || [];
+      // Extract images: Prioritize URLs over local paths
+      // 1. Use direct image URLs from scraping (images array)
+      // 2. Fallback: Convert local paths to full URLs
+      let imageUrls: string[] = [];
+      
+      if (product.images && product.images.length > 0) {
+        // Use direct URLs from scraping
+        imageUrls = product.images;
+      } else if (product.localImagePaths && product.localImagePaths.length > 0) {
+        // Convert local paths to full URLs
+        const domain = window.location.hostname === 'localhost' 
+          ? 'localhost:5000'
+          : window.location.host;
+        imageUrls = product.localImagePaths.map(path => 
+          `https://${domain}${path.startsWith('/') ? path : '/' + path}`
+        );
+      }
       
       // Create separate p_image[1] to p_image[10] columns
       const imageColumns: Record<string, string> = {};
@@ -1332,8 +1347,21 @@ export default function URLScraper() {
         
         const value = product[key as keyof ScrapedProduct];
         
-        if (key === 'images' && Array.isArray(value)) {
-          return value.join(' | ');
+        if (key === 'images') {
+          // Return URLs, not local paths
+          let urls: string[] = [];
+          if (product.images && product.images.length > 0) {
+            urls = product.images;
+          } else if (product.localImagePaths && product.localImagePaths.length > 0) {
+            // Convert local paths to full URLs
+            const domain = window.location.hostname === 'localhost' 
+              ? 'localhost:5000'
+              : window.location.host;
+            urls = product.localImagePaths.map(path => 
+              `https://${domain}${path.startsWith('/') ? path : '/' + path}`
+            );
+          }
+          return urls.join(' | ');
         }
         
         // Return empty string if field is missing
