@@ -389,8 +389,22 @@ Vielen Dank im Voraus!`);
 
     // Convert PDF products to Brickfox CSV format for Pixi Compare
     const csvData = allProducts.map(product => {
-      // Extract images from localImagePaths (downloaded images) or images array
-      const imageUrls = product.localImagePaths || product.images || [];
+      // PRIORITY: Use original image URLs, convert local paths to URLs only as fallback
+      let imageUrls: string[] = [];
+      
+      // First try: Original image URLs from scraping
+      if (product.images && product.images.length > 0) {
+        imageUrls = product.images;
+      }
+      // Second try: Convert local paths to full URLs
+      else if (product.localImagePaths && product.localImagePaths.length > 0) {
+        const domain = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000'
+          : `https://${window.location.host}`;
+        imageUrls = product.localImagePaths.map(path => 
+          `${domain}${path.startsWith('/') ? path : '/' + path}`
+        );
+      }
       
       // Create separate p_image[1] to p_image[10] columns
       const imageColumns: Record<string, string> = {};
