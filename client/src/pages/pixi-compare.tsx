@@ -636,12 +636,18 @@ export default function PixiComparePage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead className="bg-background">Status</TableHead>
-                        <TableHead className="bg-background">Artikelnummer</TableHead>
-                        <TableHead className="bg-background">Produktname</TableHead>
-                        <TableHead className="bg-background">EAN</TableHead>
-                        <TableHead className="bg-background">Hersteller</TableHead>
-                        <TableHead className="bg-background">Pixi EAN</TableHead>
+                        {/* Pixi Status columns first */}
+                        <TableHead className="bg-background sticky left-0 z-20 border-r">Pixi_Status</TableHead>
+                        <TableHead className="bg-background">Pixi_EAN</TableHead>
+                        
+                        {/* Original CSV columns */}
+                        {result.products.length > 0 && result.products[0].originalData && 
+                          Object.keys(result.products[0].originalData).map((columnName, idx) => (
+                            <TableHead key={idx} className="bg-background whitespace-nowrap">
+                              {columnName}
+                            </TableHead>
+                          ))
+                        }
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -649,7 +655,8 @@ export default function PixiComparePage() {
                         .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
                         .map((product, idx) => (
                         <TableRow key={idx}>
-                          <TableCell>
+                          {/* Pixi Status columns */}
+                          <TableCell className="sticky left-0 bg-background z-10 border-r">
                             <Badge
                               variant={product.pixi_status === 'NEU' ? 'default' : 'secondary'}
                               className={
@@ -666,17 +673,18 @@ export default function PixiComparePage() {
                               {product.pixi_status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="font-mono text-sm whitespace-nowrap">
-                            {product.artikelnummer}
-                          </TableCell>
-                          <TableCell className="min-w-[300px]">
-                            {product.produktname}
-                          </TableCell>
-                          <TableCell className="font-mono text-sm whitespace-nowrap">{product.ean}</TableCell>
-                          <TableCell className="whitespace-nowrap">{product.hersteller}</TableCell>
                           <TableCell className="font-mono text-sm text-muted-foreground whitespace-nowrap">
                             {product.pixi_ean || '-'}
                           </TableCell>
+                          
+                          {/* Original CSV data columns */}
+                          {product.originalData && 
+                            Object.keys(result.products[0].originalData || {}).map((columnName, colIdx) => (
+                              <TableCell key={colIdx} className="whitespace-nowrap text-sm">
+                                {product.originalData[columnName] || '-'}
+                              </TableCell>
+                            ))
+                          }
                         </TableRow>
                       ))}
                     </TableBody>
