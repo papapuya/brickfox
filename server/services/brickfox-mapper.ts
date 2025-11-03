@@ -163,13 +163,14 @@ function autoMapFieldByLabel(
 
   // Suche nach passendem Label in extractedData
   for (const item of product.extractedData) {
-    if (!item.label) continue;
-    
-    const labelLower = item.label.toLowerCase().trim();
+    // Prüfe sowohl 'label' als auch 'key' Felder
+    const labelLower = item.label ? item.label.toLowerCase().trim() : '';
+    const keyLower = item.key ? item.key.toLowerCase().trim() : '';
     
     // Exakte Übereinstimmung oder enthält das Schlüsselwort
     for (const keyword of possibleLabels) {
-      if (labelLower === keyword || labelLower.includes(keyword)) {
+      if (labelLower === keyword || labelLower.includes(keyword) ||
+          keyLower === keyword || keyLower.includes(keyword)) {
         return item.value;
       }
     }
