@@ -177,7 +177,15 @@ function extractFieldsRecursive(
   if (Array.isArray(obj)) {
     obj.forEach((item, index) => {
       if (typeof item === 'object' && item !== null) {
-        extractFieldsRecursive(item, prefix ? `${prefix}[${index}]` : `[${index}]`, fieldMap);
+        // SPECIAL CASE: If item has 'label' and 'value', use label as field name
+        if (item.label && 'value' in item) {
+          const fieldName = item.label;
+          const fieldValue = item.value;
+          const fieldType = item.type || detectType(fieldValue);
+          addOrUpdateField(fieldMap, fieldName, fieldValue, fieldType);
+        } else {
+          extractFieldsRecursive(item, prefix ? `${prefix}[${index}]` : `[${index}]`, fieldMap);
+        }
       } else {
         const key = prefix ? `${prefix}[${index}]` : `[${index}]`;
         addOrUpdateField(fieldMap, key, item, detectType(item));
