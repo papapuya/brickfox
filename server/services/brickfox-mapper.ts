@@ -132,6 +132,53 @@ function parsePrice(price: string | number | null): number | null {
 }
 
 /**
+ * Intelligentes Auto-Mapping: Erkennt automatisch Felder aus den Produktdaten
+ * basierend auf Label-Namen (z.B. "Produktbeschreibung", "VK (Verkaufspreis)", "Länge")
+ */
+function autoMapFieldByLabel(
+  product: ProductInProject,
+  brickfoxField: string
+): string | number | boolean | null {
+  if (!product.extractedData || product.extractedData.length === 0) {
+    return null;
+  }
+
+  // Mapping von Brickfox-Feldern zu möglichen Label-Namen (case-insensitive)
+  const labelMappings: Record<string, string[]> = {
+    'p_item_number': ['artikelnummer', 'art.-nr', 'art.nr', 'artnr', 'item number', 'sku'],
+    'p_name[de]': ['produktname', 'name', 'bezeichnung', 'product name', 'title'],
+    'p_description[de]': ['produktbeschreibung', 'beschreibung', 'description', 'langtext', 'long text'],
+    'v_ean': ['ean', 'ean-code', 'ean code', 'barcode', 'gtin'],
+    'v_price[Eur]': ['vk (verkaufspreis)', 'vk', 'verkaufspreis', 'uvp', 'preis', 'price', 'rrp'],
+    'v_purchase_price': ['ek-preis', 'ek', 'einkaufspreis', 'purchase price', 'cost'],
+    'v_weight': ['gewicht', 'weight', 'netto-gewicht', 'bruttogewicht'],
+    'v_width': ['breite', 'width', 'b'],
+    'v_height': ['höhe', 'hoehe', 'height', 'h'],
+    'v_depth': ['länge', 'laenge', 'tiefe', 'length', 'depth', 'l'],
+    'v_brand': ['hersteller', 'marke', 'brand', 'manufacturer'],
+  };
+
+  const possibleLabels = labelMappings[brickfoxField];
+  if (!possibleLabels) return null;
+
+  // Suche nach passendem Label in extractedData
+  for (const item of product.extractedData) {
+    if (!item.label) continue;
+    
+    const labelLower = item.label.toLowerCase().trim();
+    
+    // Exakte Übereinstimmung oder enthält das Schlüsselwort
+    for (const keyword of possibleLabels) {
+      if (labelLower === keyword || labelLower.includes(keyword)) {
+        return item.value;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Get value from product data using field mapping
  */
 function getFieldValue(
@@ -141,10 +188,29 @@ function getFieldValue(
   supplierName?: string
 ): string | number | boolean | null {
   const config = mapping[brickfoxField];
-  if (!config) return null;
-  
   const fieldMeta = getBrickfoxField(brickfoxField);
   if (!fieldMeta) return null;
+  
+  // STEP 1: Versuche intelligentes Auto-Mapping ZUERST (Priorität!)
+  const autoMappedValue = autoMapFieldByLabel(product, brickfoxField);
+  if (autoMappedValue !== null && autoMappedValue !== undefined && autoMappedValue !== '') {
+    let value: any = autoMappedValue;
+    
+    // Parse based on field type
+    if (fieldMeta.type === 'number' || fieldMeta.key === 'v_weight') {
+      value = parseWeight(value);
+    } else if (fieldMeta.type === 'price') {
+      value = parsePrice(value);
+    }
+    
+    debugLog(`[AUTO-MAPPED] ${brickfoxField} → ${value}`);
+    return value;
+  }
+  
+  // STEP 2: Falls kein Config vorhanden, Default-Wert verwenden
+  if (!config) {
+    return fieldMeta.defaultValue || null;
+  }
   
   // Special handling for v_supplier[Eur] - always use supplierName if available
   if (brickfoxField === 'v_supplier[Eur]') {
