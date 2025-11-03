@@ -334,10 +334,30 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       }
 
       // User created successfully in Supabase Auth
-      // The webhook will handle creating the user record in Helium DB automatically
       console.log(`[Register] User created in Supabase Auth: ${validatedData.email}`);
       console.log(`[Register] User assigned to tenant: ${newTenant.id} (${validatedData.companyName})`);
-      console.log('[Register] Webhook will sync user to Helium DB automatically');
+      
+      // Insert user directly into Helium DB (don't wait for webhook)
+      // First user of tenant becomes admin
+      const { users: usersTable } = await import('@shared/schema');
+      const { db: heliumDb } = await import('./db');
+      
+      await heliumDb.insert(usersTable).values({
+        id: data.user.id,
+        email: validatedData.email,
+        username: validatedData.username || validatedData.email.split('@')[0],
+        tenantId: newTenant.id,
+        isAdmin: true, // First user is always admin
+        role: 'admin',
+        subscriptionStatus: 'trial',
+        planId: 'trial',
+        apiCallsLimit: 3000,
+        apiCallsUsed: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      console.log(`✅ [Register] User ${validatedData.email} created in Helium DB (admin role)`);
 
       const { data: sessionData } = await supabase.auth.signInWithPassword({
         email: validatedData.email,
@@ -732,7 +752,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       
       const suppliers = await suppliersQuery;
       const activeSuppliers = suppliers.length;
-      const successfulSuppliers = suppliers.filter(s => s.lastVerifiedAt).length;
+      const successfulSuppliers = suppliers.filter((s: any) => s.lastVerifiedAt).length;
       const errorSuppliers = activeSuppliers - successfulSuppliers;
       
       // Get last Pixi sync (mock for now - you can implement real sync tracking later)
