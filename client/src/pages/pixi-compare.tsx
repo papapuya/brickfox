@@ -103,15 +103,21 @@ export default function PixiComparePage() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('[Pixi Compare] File input changed:', e.target.files);
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      console.log('[Pixi Compare] File selected:', selectedFile.name, selectedFile.size, 'bytes');
       if (!selectedFile.name.endsWith('.csv')) {
+        console.error('[Pixi Compare] Invalid file type:', selectedFile.name);
         setError('Bitte wählen Sie eine CSV-Datei aus');
         return;
       }
       setFile(selectedFile);
       setError(null);
       setResult(null);
+      console.log('[Pixi Compare] File set successfully');
+    } else {
+      console.log('[Pixi Compare] No file selected');
     }
   };
 
