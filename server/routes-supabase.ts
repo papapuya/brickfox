@@ -793,6 +793,37 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
+  // Bulk delete all tenants (except super-admin's own tenant)
+  app.delete('/api/admin/tenants/bulk-delete', requireSuperAdmin, async (req, res) => {
+    try {
+      const currentUser = (req as any).user;
+      if (!currentUser) {
+        return res.status(401).json({ error: 'Nicht authentifiziert' });
+      }
+
+      // Get all tenants except the super-admin's own tenant
+      const allTenants = await supabaseStorage.getAllTenants();
+      const tenantsToDelete = allTenants.filter(t => t.id !== currentUser.tenant_id);
+
+      let deletedCount = 0;
+      for (const tenant of tenantsToDelete) {
+        const success = await supabaseStorage.deleteTenant(tenant.id);
+        if (success) {
+          deletedCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        deletedCount,
+        message: `${deletedCount} Kunden wurden gelöscht`,
+      });
+    } catch (error: any) {
+      console.error('Bulk delete tenants error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Löschen der Tenants' });
+    }
+  });
+
   app.delete('/api/admin/tenants/:id', requireSuperAdmin, async (req, res) => {
     try {
       const { id} = req.params;

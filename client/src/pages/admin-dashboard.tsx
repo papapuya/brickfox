@@ -93,6 +93,7 @@ export default function AdminDashboard() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
   const [newTenantName, setNewTenantName] = useState('');
@@ -236,6 +237,39 @@ export default function AdminDashboard() {
     },
   });
 
+  const deleteAllTenantsMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('supabase_token');
+      const res = await fetch('/api/admin/tenants/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete all tenants');
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Kunden gelöscht',
+        description: `${data.deletedCount} Kunden wurden erfolgreich gelöscht!`,
+      });
+      setIsBulkDeleteDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-kpis'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Fehler',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleOpenSettings = (tenant: Tenant) => {
     const defaultSettings: TenantSettings = {
       features: {
@@ -311,13 +345,61 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Systemübersicht und Kundenverwaltung</p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="lg" className="gap-2">
-              <Plus className="h-5 w-5" />
-              Neuen Kunden anlegen
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-3">
+          <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" variant="destructive" className="gap-2">
+                <Trash2 className="h-5 w-5" />
+                Alle Kunden löschen
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Alle Kunden löschen?</DialogTitle>
+                <DialogDescription>
+                  Diese Aktion löscht ALLE Test-Kunden unwiderruflich (außer Ihrem eigenen Account).
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-2">
+                      <p className="font-semibold text-red-900">
+                        Gefundene Kunden: {tenants.length}
+                      </p>
+                      <p className="text-sm text-red-800">
+                        Alle Kundendaten (User, Projekte, Lieferanten) werden unwiderruflich gelöscht.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBulkDeleteDialogOpen(false)}
+                >
+                  Abbrechen
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteAllTenantsMutation.mutate()}
+                  disabled={deleteAllTenantsMutation.isPending}
+                >
+                  {deleteAllTenantsMutation.isPending ? 'Wird gelöscht...' : 'Alle löschen'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                Neuen Kunden anlegen
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Neuen Kunden anlegen</DialogTitle>
@@ -359,6 +441,7 @@ export default function AdminDashboard() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">

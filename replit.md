@@ -28,6 +28,10 @@ Premium-Features (Pixi, SAP) können über das Admin-Dashboard pro Kunde individ
 - **Kunden Löschen**: Rote Trash-Button mit Bestätigungs-Dialog
   - Warnung vor unwiderruflicher Löschung aller Daten
   - Übersicht: Anzahl User, Projekte, Lieferanten
+- **Bulk-Delete**: Roter "Alle Kunden löschen" Button für schnelles Cleanup
+  - Löscht alle Test-Kunden (außer Super-Admin Account)
+  - Bestätigungs-Dialog mit Anzahl der zu löschenden Kunden
+  - Perfekt für Entwicklung und Testing
 - **Feature-Flags**: Individuelle Feature-Freischaltung pro Kunde
 - **KPI-Übersicht**: System-weite Metriken und Statistiken
 
