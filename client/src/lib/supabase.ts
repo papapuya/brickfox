@@ -8,7 +8,7 @@ if (!supabaseAnonKey) {
 }
 
 // Dynamic storage adapter that respects "Remember Me" preference
-class DynamicStorage {
+class DynamicStorage implements Storage {
   private getRememberMe(): boolean {
     const saved = localStorage.getItem('rememberMe');
     // Default to true if not set (matches login page default)
@@ -17,6 +17,14 @@ class DynamicStorage {
 
   private getStorage(): Storage {
     return this.getRememberMe() ? localStorage : sessionStorage;
+  }
+
+  get length(): number {
+    return this.getStorage().length;
+  }
+
+  key(index: number): string | null {
+    return this.getStorage().key(index);
   }
 
   getItem(key: string): string | null {
@@ -50,6 +58,12 @@ class DynamicStorage {
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
   }
+
+  clear(): void {
+    // Clear both storages
+    localStorage.clear();
+    sessionStorage.clear();
+  }
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -57,7 +71,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storage: new DynamicStorage() as any,
+    storage: new DynamicStorage(),
+    storageKey: 'sb-auth-token',
   },
 });
 
