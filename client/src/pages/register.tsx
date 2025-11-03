@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const registerSchema = z.object({
   companyName: z.string().min(2, 'Firmenname muss mindestens 2 Zeichen lang sein'),
@@ -52,8 +53,22 @@ export default function Register() {
       
       return res.json();
     },
-    onSuccess: (data) => {
-      // Store access token for Supabase Auth
+    onSuccess: async (data) => {
+      // Set Supabase session properly
+      if (data.session) {
+        const { error } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        if (error) {
+          console.error('Failed to set Supabase session:', error);
+        } else {
+          console.log('✅ Supabase session set successfully');
+        }
+      }
+      
+      // Store access token for backward compatibility
       if (data.access_token) {
         localStorage.setItem('supabase_token', data.access_token);
       }
@@ -63,10 +78,10 @@ export default function Register() {
         description: 'Sie haben jetzt Zugriff auf alle Basis-Features (URL-Scraper, CSV-Import, KI-Beschreibungen)',
       });
       
-      // Redirect to projects after successful registration
+      // Small delay to ensure session is set before redirect
       setTimeout(() => {
         setLocation('/projects');
-      }, 1000);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
