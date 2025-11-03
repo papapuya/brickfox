@@ -21,6 +21,7 @@ interface ComparisonResult {
   hersteller: string;
   pixi_status: 'NEU' | 'VORHANDEN';
   pixi_ean: string | null;
+  originalData?: any;
 }
 
 interface ComparisonResponse {
@@ -236,20 +237,59 @@ export default function PixiComparePage() {
   const downloadResults = () => {
     if (!result) return;
 
-    const csvContent = [
-      ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status', 'Pixi EAN'].join(','),
-      ...result.products.map(p => 
-        [
-          p.artikelnummer,
-          `"${p.produktname}"`,
-          p.ean,
-          p.hersteller,
-          p.pixi_status,
-          p.pixi_ean || ''
-        ].join(',')
-      )
-    ].join('\n');
+    // Helper function to escape CSV values
+    const escapeCsvValue = (value: any): string => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      // Escape quotes and wrap in quotes if contains comma, quote, or newline
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
 
+    let csvRows: string[] = [];
+
+    // Check if we have originalData (Brickfox format)
+    if (result.products.length > 0 && result.products[0].originalData) {
+      // Get all column names from the first product's originalData
+      const firstProduct = result.products[0].originalData;
+      const columnNames = Object.keys(firstProduct);
+      
+      // Create header with original columns + Pixi Status + Pixi EAN
+      const headers = [...columnNames, 'Pixi_Status', 'Pixi_EAN'];
+      csvRows.push(headers.join(','));
+
+      // Create data rows with all original data + Pixi columns
+      result.products.forEach(product => {
+        if (product.originalData) {
+          const rowValues = columnNames.map(col => 
+            escapeCsvValue(product.originalData[col])
+          );
+          // Add Pixi status and EAN
+          rowValues.push(escapeCsvValue(product.pixi_status));
+          rowValues.push(escapeCsvValue(product.pixi_ean || ''));
+          csvRows.push(rowValues.join(','));
+        }
+      });
+    } else {
+      // Fallback: Simple format if no originalData available
+      csvRows = [
+        ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status', 'Pixi EAN'].join(','),
+        ...result.products.map(p => 
+          [
+            escapeCsvValue(p.artikelnummer),
+            escapeCsvValue(p.produktname),
+            escapeCsvValue(p.ean),
+            escapeCsvValue(p.hersteller),
+            escapeCsvValue(p.pixi_status),
+            escapeCsvValue(p.pixi_ean || '')
+          ].join(',')
+        )
+      ];
+    }
+
+    const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

@@ -26,6 +26,7 @@ interface PixiComparisonResult {
   hersteller: string;
   pixi_status: 'NEU' | 'VORHANDEN';
   pixi_ean: string | null;
+  originalData?: any; // Complete original CSV row data
 }
 
 interface PixiComparisonSummary {
@@ -238,6 +239,7 @@ export class PixiService {
           hersteller,
           pixi_status: status,
           pixi_ean: matchedEan,
+          originalData: product, // Store complete original CSV row
         });
       }
 
