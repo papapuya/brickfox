@@ -222,11 +222,22 @@ function getFieldValue(
     }
   }
   
-  // SPECIAL CASE: p_image[1] bis p_image[10] - Extrahiere Bilder aus localImagePaths oder extractedData
+  // SPECIAL CASE: p_image[1] bis p_image[10] - Extrahiere Bilder aus Original-URLs oder lokalen Pfaden
   if (brickfoxField.startsWith('p_image[')) {
     const imageIndex = parseInt(brickfoxField.match(/\[(\d+)\]/)?.[1] || '0') - 1; // p_image[1] → Index 0
     
-    // Priority 1: localImagePaths aus extractedData (heruntergeladene Bilder)
+    // PRIORITY 1: Original image URLs direkt aus product.images (vom URL-Scraper)
+    // Diese sind die Original-URLs von der Lieferanten-Website
+    const productImages = (product as any).images;
+    if (productImages && Array.isArray(productImages) && productImages.length > 0) {
+      if (productImages[imageIndex]) {
+        debugLog(`[SPECIAL] ${brickfoxField} → Original product.images[${imageIndex}]: ${productImages[imageIndex]}`);
+        return productImages[imageIndex];
+      }
+    }
+    
+    // PRIORITY 2: localImagePaths aus extractedData (heruntergeladene Bilder als Fallback)
+    // Nur wenn keine Original-URLs vorhanden sind, verwenden wir lokale Pfade
     if (product.extractedData && product.extractedData.length > 0) {
       const localImagesItem = product.extractedData.find((item: any) => 
         item.key === 'localImagePaths'
@@ -248,7 +259,7 @@ function getFieldValue(
       }
     }
     
-    // Priority 2: Direkt aus product.extractedData nach "images" oder ähnlichen Feldern suchen
+    // PRIORITY 3: Direkt aus product.extractedData nach "images" oder ähnlichen Feldern suchen
     if (product.extractedData && product.extractedData.length > 0) {
       const imagesItem = product.extractedData.find((item: any) => 
         item.key === 'images' || item.key === 'productImages' || item.key === 'downloadedImages'
