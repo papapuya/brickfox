@@ -621,6 +621,26 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
+  app.delete('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const success = await supabaseStorage.deleteTenant(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Tenant nicht gefunden oder konnte nicht gelöscht werden' });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Tenant erfolgreich gelöscht',
+      });
+    } catch (error: any) {
+      console.error('Delete tenant error:', error);
+      res.status(500).json({ error: error.message || 'Fehler beim Löschen des Tenants' });
+    }
+  });
+
   app.patch('/api/admin/tenants/:id', requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;

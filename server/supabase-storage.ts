@@ -1333,10 +1333,12 @@ export class SupabaseStorage implements IStorage {
     userCount: number;
     projectCount: number;
     supplierCount: number;
+    subscriptionStatus?: string;
+    planId?: string;
   }> {
     const { data: users } = await db
       .from('users')
-      .select('id')
+      .select('id, subscription_status, plan_id')
       .eq('tenant_id', tenantId);
 
     const { data: projects } = await db
@@ -1349,10 +1351,14 @@ export class SupabaseStorage implements IStorage {
       .select('id')
       .eq('tenant_id', tenantId);
 
+    const owner = users?.[0];
+
     return {
       userCount: users?.length || 0,
       projectCount: projects?.length || 0,
       supplierCount: suppliers?.length || 0,
+      subscriptionStatus: owner?.subscription_status || 'trial',
+      planId: owner?.plan_id || 'trial',
     };
   }
 }
