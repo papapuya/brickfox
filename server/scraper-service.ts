@@ -138,6 +138,66 @@ export async function performLogin(config: LoginConfig): Promise<string> {
 }
 
 /**
+ * Extract dealer price from analytics JSON embedded in HTML
+ * Searches <script> tags for Google Analytics/Tag Manager data with price information
+ * Returns price in German format (e.g., "87,50") or undefined if not found
+ */
+function extractDealerPriceFromAnalytics(html: string, articleNumber?: string): string | undefined {
+  try {
+    const $ = cheerio.load(html);
+    
+    // Search all script tags for analytics data
+    const scriptTags = $('script');
+    
+    for (let i = 0; i < scriptTags.length; i++) {
+      const scriptContent = $(scriptTags[i]).html();
+      if (!scriptContent) continue;
+      
+      // Look for JSON patterns containing "price" field
+      // Common patterns: dataLayer.push(...), gtag(...), window.dataLayer = [...]
+      const jsonPatterns = [
+        /"price":\s*([0-9.]+)/g,  // Simple: "price":87.5
+        /\{"price":([0-9.]+),"index":/g,  // GA4 ecommerce items
+      ];
+      
+      for (const pattern of jsonPatterns) {
+        const matches = Array.from(scriptContent.matchAll(pattern));
+        
+        for (const match of matches) {
+          const priceValue = parseFloat(match[1]);
+          if (!isNaN(priceValue) && priceValue > 0) {
+            // Additional validation: if articleNumber provided, check if it's nearby in the JSON
+            if (articleNumber) {
+              const contextStart = Math.max(0, match.index! - 200);
+              const contextEnd = Math.min(scriptContent.length, match.index! + 200);
+              const context = scriptContent.substring(contextStart, contextEnd);
+              
+              // Check if article number appears in the same JSON object
+              if (context.includes(`"item_id":"${articleNumber}"`)) {
+                const germanPrice = priceValue.toFixed(2).replace('.', ',');
+                console.log(`[Analytics Price] Found dealer price for ${articleNumber}: ${germanPrice}€`);
+                return germanPrice;
+              }
+            } else {
+              // No article number validation, return first valid price found
+              const germanPrice = priceValue.toFixed(2).replace('.', ',');
+              console.log(`[Analytics Price] Found dealer price: ${germanPrice}€`);
+              return germanPrice;
+            }
+          }
+        }
+      }
+    }
+    
+    console.log('[Analytics Price] No dealer price found in analytics data');
+    return undefined;
+  } catch (error) {
+    console.log('[Analytics Price] Error extracting price:', error);
+    return undefined;
+  }
+}
+
+/**
  * Helper function: Convert measurement to German format (comma, no units)
  * Automatically converts to millimeters (mm) for length measurements
  * Examples: 
@@ -338,8 +398,20 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     product.manufacturer = 'ANSMANN';
   }
 
-  // Price - Format for Brickfox: English decimal format (19.99)
-  if (selectors.price) {
+  // Price - Try analytics JSON extraction first (for dealer prices when logged in)
+  let priceFound = false;
+  if (cookies) {
+    // When logged in, try to extract dealer price from analytics JSON first
+    const analyticsPrice = extractDealerPriceFromAnalytics(html, product.articleNumber);
+    if (analyticsPrice) {
+      product.price = analyticsPrice;
+      priceFound = true;
+      console.log(`✅ Using dealer price from analytics: ${analyticsPrice}€`);
+    }
+  }
+
+  // Fallback to CSS selector if analytics extraction didn't find a price
+  if (!priceFound && selectors.price) {
     const element = $(selectors.price).first();
     let priceText = element.text().trim() || element.attr('content')?.trim() || '';
     
