@@ -9,7 +9,8 @@ import { sql, eq, and, isNotNull } from 'drizzle-orm';
 import { 
   productsInProjects as productsInProjectsTable, 
   suppliers as suppliersTable,
-  scrapeSession as scrapeSessionTable 
+  scrapeSession as scrapeSessionTable,
+  users as usersTable
 } from '@shared/schema';
 import Stripe from 'stripe';
 import { 
@@ -339,9 +340,6 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       
       // Insert user directly into Helium DB (don't wait for webhook)
       // First user of tenant becomes admin
-      const { users: usersTable } = await import('@shared/schema');
-      const { db: heliumDb } = await import('./db');
-      
       await heliumDb.insert(usersTable).values({
         id: data.user.id,
         email: validatedData.email,
