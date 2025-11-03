@@ -73,6 +73,41 @@ export default function PixiComparePage() {
     }
   }, [activeTab]);
 
+  // Check if data from PDF-Scraper exists and auto-load
+  useEffect(() => {
+    const pdfData = sessionStorage.getItem('pixi_compare_data');
+    const pdfSource = sessionStorage.getItem('pixi_compare_source');
+    const pdfSupplNr = sessionStorage.getItem('pixi_compare_supplNr');
+    
+    if (pdfData && pdfSource === 'pdf-scraper') {
+      try {
+        const csvData = JSON.parse(pdfData);
+        console.log('[Pixi Compare] Auto-loading data from PDF-Scraper:', csvData.length, 'products');
+        
+        if (!pdfSupplNr) {
+          console.error('[Pixi Compare] Missing supplier number from PDF-Scraper');
+          setError('Lieferantennummer fehlt. Bitte wählen Sie im PDF-Scraper einen Lieferanten aus.');
+          // Clear sessionStorage
+          sessionStorage.removeItem('pixi_compare_data');
+          sessionStorage.removeItem('pixi_compare_source');
+          return;
+        }
+        
+        console.log('[Pixi Compare] Using supplier number:', pdfSupplNr);
+        
+        // Auto-trigger comparison with the stored supplier number
+        handleDirectDataCompare(csvData, pdfSupplNr);
+        
+        // Clear sessionStorage after loading
+        sessionStorage.removeItem('pixi_compare_data');
+        sessionStorage.removeItem('pixi_compare_source');
+        sessionStorage.removeItem('pixi_compare_supplNr');
+      } catch (error) {
+        console.error('[Pixi Compare] Failed to parse PDF-Scraper data:', error);
+      }
+    }
+  }, []);
+
   const loadProjectsAndSuppliers = async () => {
     setLoadingData(true);
     try {
@@ -226,6 +261,55 @@ export default function PixiComparePage() {
 
       setResult(data);
       console.log('[Pixi Compare] Comparison successful!');
+    } catch (err: any) {
+      console.error('[Pixi Compare] Error:', err);
+      setError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDirectDataCompare = async (csvData: any[], supplierNumber: string) => {
+    console.log('[Pixi Compare] Direct data comparison with', csvData.length, 'products');
+    
+    if (!supplierNumber) {
+      setError('Bitte geben Sie eine Lieferantennummer ein');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setActiveTab('csv'); // Switch to CSV tab to show results
+
+    try {
+      const token = localStorage.getItem('supabase_token');
+      if (!token) {
+        throw new Error('Nicht authentifiziert. Bitte melden Sie sich erneut an.');
+      }
+      
+      // Send JSON data instead of FormData
+      const response = await fetch('/api/pixi/compare-direct', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          products: csvData,
+          supplNr: supplierNumber,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Vergleich fehlgeschlagen');
+      }
+
+      setResult(data);
+      setSupplNr(supplierNumber); // Update the UI with the supplier number
+      console.log('[Pixi Compare] Direct comparison successful!');
     } catch (err: any) {
       console.error('[Pixi Compare] Error:', err);
       setError(err.message || 'Ein Fehler ist aufgetreten');

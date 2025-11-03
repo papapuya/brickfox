@@ -1615,6 +1615,44 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
+  // Direct comparison from PDF-Scraper (alias for compare-json)
+  app.post('/api/pixi/compare-direct', requireAuth, requireFeature('pixiIntegration'), async (req: any, res) => {
+    try {
+      const { products, supplNr } = req.body;
+
+      if (!supplNr) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Supplier number (supplNr) is required' 
+        });
+      }
+
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Products array is required and must not be empty' 
+        });
+      }
+
+      console.log(`[Pixi Compare Direct] Processing ${products.length} products from PDF-Scraper for supplier ${supplNr}`);
+
+      const comparisonResult = await pixiService.compareProducts(products, supplNr);
+
+      console.log(
+        `[Pixi Compare Direct] Comparison complete: ${comparisonResult.summary.total} total, ` +
+        `${comparisonResult.summary.neu} new, ${comparisonResult.summary.vorhanden} existing`
+      );
+
+      res.json(comparisonResult);
+    } catch (error: any) {
+      console.error('[Pixi Compare Direct] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Failed to compare products with Pixi API' 
+      });
+    }
+  });
+
   app.delete('/api/pixi/cache', requireAuth, async (req: any, res) => {
     try {
       pixiService.clearCache();
