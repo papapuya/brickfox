@@ -43,10 +43,39 @@ export default function ProjectDetail() {
   const productsPerPage = 6;
 
   const defaultColumns: ExportColumn[] = [
+    // Basis-Informationen
+    { id: 'articleNumber', label: 'Artikelnummer', field: 'articleNumber', enabled: true },
     { id: 'name', label: 'Produktname', field: 'name', enabled: true },
+    { id: 'exactProductName', label: 'Exakter Produktname', field: 'exactProductName', enabled: false },
+    
+    // Beschreibungen
     { id: 'htmlCode', label: 'HTML-Beschreibung', field: 'htmlCode', enabled: true },
     { id: 'previewText', label: 'Fließtext', field: 'previewText', enabled: false },
-    { id: 'createdAt', label: 'Erstellt am', field: 'createdAt', enabled: true },
+    { id: 'seoBeschreibung', label: 'SEO Beschreibung', field: 'seoBeschreibung', enabled: false },
+    { id: 'kurzbeschreibung', label: 'Kurzbeschreibung', field: 'kurzbeschreibung', enabled: false },
+    
+    // Produktdaten
+    { id: 'ean', label: 'EAN', field: 'ean', enabled: false },
+    { id: 'manufacturer', label: 'Hersteller', field: 'manufacturer', enabled: false },
+    { id: 'category', label: 'Kategorie', field: 'category', enabled: false },
+    
+    // Preise
+    { id: 'vk', label: 'VK (Verkaufspreis)', field: 'vk', enabled: false },
+    { id: 'ek', label: 'EK (Einkaufspreis)', field: 'ek', enabled: false },
+    { id: 'uvp', label: 'UVP', field: 'uvp', enabled: false },
+    
+    // Bilder & Medien
+    { id: 'files', label: 'Produktbilder (URLs)', field: 'files', enabled: true },
+    
+    // Maße & Gewicht
+    { id: 'weight', label: 'Gewicht', field: 'weight', enabled: false },
+    { id: 'height', label: 'Höhe', field: 'height', enabled: false },
+    { id: 'width', label: 'Breite', field: 'width', enabled: false },
+    { id: 'length', label: 'Länge', field: 'length', enabled: false },
+    
+    // Meta-Daten
+    { id: 'createdAt', label: 'Erstellt am', field: 'createdAt', enabled: false },
+    { id: 'status', label: 'Status', field: 'status', enabled: false },
   ];
 
   const [selectedColumns, setSelectedColumns] = useState<ExportColumn[]>(defaultColumns);
@@ -356,6 +385,8 @@ export default function ProjectDetail() {
           row[col.label] = customAttr?.value || '';
         } else {
           const value = product[col.field as keyof ProductInProject];
+          
+          // Special handling for specific fields
           if (col.field === 'createdAt' && value) {
             row[col.label] = format(new Date(value as string), "dd.MM.yyyy HH:mm");
           } else if (col.field === 'files' && Array.isArray(value)) {
@@ -367,6 +398,20 @@ export default function ProjectDetail() {
               }
               return '';
             }).filter(url => url).join(', ');
+          } else if (col.field === 'ean' || col.field === 'manufacturer' || col.field === 'category' || 
+                     col.field === 'vk' || col.field === 'ek' || col.field === 'uvp' ||
+                     col.field === 'weight' || col.field === 'height' || col.field === 'width' || col.field === 'length') {
+            // Try to extract from extractedData first
+            if (product.extractedData && product.extractedData.length > 0) {
+              try {
+                const extracted = JSON.parse(product.extractedData[0].extractedText || '{}');
+                row[col.label] = extracted[col.field] || '';
+              } catch {
+                row[col.label] = '';
+              }
+            } else {
+              row[col.label] = '';
+            }
           } else {
             row[col.label] = String(value || '');
           }

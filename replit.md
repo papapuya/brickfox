@@ -81,6 +81,27 @@ The application employs a modular subprompt architecture for specialized AI task
 
 ## Recent Changes
 
+### 2025-11-03: Erweiterte CSV-Spaltenauswahl für PIM-Mapping 📋
+**Feature**: Standardisierte Spaltenauswahl mit allen relevanten PIM-Feldern für einfacheres Mapping.
+
+**Implementierung**:
+- **22 Standard-Spalten**: Alle wichtigen Produktfelder in strukturierten Kategorien
+- **Kategorien**: Basis-Informationen, Beschreibungen, Produktdaten, Preise, Bilder, Maße, Meta-Daten
+- **Datenextraktion**: Automatische Extraktion aus `extractedData` für EAN, Hersteller, Preise, Maße
+- **Custom Attributes**: Dynamisch generierte Spalten für produktspezifische Attribute
+
+**Verfügbare Spalten**:
+- Basis: Artikelnummer, Produktname, Exakter Produktname
+- Beschreibungen: HTML-Beschreibung, Fließtext, SEO, Kurzbeschreibung
+- Produktdaten: EAN, Hersteller, Kategorie
+- Preise: VK, EK, UVP
+- Bilder: Produktbilder (URLs)
+- Maße: Gewicht, Höhe, Breite, Länge
+- Meta: Erstellt am, Status
+
+**Betroffene Dateien**:
+- `client/src/pages/project-detail.tsx` - Erweiterte Spaltenauswahl und Datenextraktion
+
 ### 2025-11-03: CSV-Export mit vollständigen Bild-URLs 🖼️
 **Feature**: Alle Produktbilder werden jetzt als vollständige URLs in CSV-Exporten exportiert.
 
@@ -89,16 +110,6 @@ The application employs a modular subprompt architecture for specialized AI task
 - **Brickfox CSV-Export**: `product_image`, `product_media`, `variant_image`, `variant_media` verwenden vollständige URLs
 - **URL-Format**: `https://[DOMAIN]/product-images/[filename]`
 - **Base-URL**: Verwendet `window.location.origin` für korrekte Domain
-
-**Vorher**:
-```csv
-files: "image1.jpg, image2.jpg"
-```
-
-**Nachher**:
-```csv
-files: "https://example.replit.dev/product-images/image1.jpg, https://example.replit.dev/product-images/image2.jpg"
-```
 
 **Betroffene Dateien**:
 - `client/src/pages/project-detail.tsx` - Standard CSV-Export mit Bild-URLs
