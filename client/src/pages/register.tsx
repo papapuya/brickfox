@@ -59,13 +59,13 @@ export default function Register() {
       }
       
       toast({
-        title: 'Erfolgreich registriert',
-        description: 'Wählen Sie jetzt Ihren Plan...',
+        title: 'Willkommen bei PIMPilot! 🎉',
+        description: 'Sie haben jetzt Zugriff auf alle Basis-Features (URL-Scraper, CSV-Import, KI-Beschreibungen)',
       });
       
-      // Redirect to pricing after successful registration
+      // Redirect to projects after successful registration
       setTimeout(() => {
-        setLocation('/pricing');
+        setLocation('/projects');
       }, 1000);
     },
     onError: (error: Error) => {
