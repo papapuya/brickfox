@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     retry: false,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   // Listen for auth changes
