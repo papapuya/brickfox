@@ -571,42 +571,42 @@ export default function Suppliers() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="loginUsernameField" className="text-xs">Benutzername-Feld</Label>
+                      <Label htmlFor="loginUsernameField" className="text-xs">🔍 Benutzername-Feld (CSS-Selektor)</Label>
                       <Input
                         id="loginUsernameField"
                         value={formData.loginUsernameField}
                         onChange={(e) => setFormData({ ...formData, loginUsernameField: e.target.value })}
-                        placeholder="input[name='username']"
-                        className="text-sm"
+                        placeholder="z.B. input[name='email']"
+                        className="text-sm font-mono"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="loginPasswordField" className="text-xs">Passwort-Feld</Label>
+                      <Label htmlFor="loginPasswordField" className="text-xs">🔍 Passwort-Feld (CSS-Selektor)</Label>
                       <Input
                         id="loginPasswordField"
                         value={formData.loginPasswordField}
                         onChange={(e) => setFormData({ ...formData, loginPasswordField: e.target.value })}
-                        placeholder="input[name='password']"
-                        className="text-sm"
+                        placeholder="z.B. input[name='password']"
+                        className="text-sm font-mono"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="loginUsername" className="text-xs">Benutzername</Label>
+                      <Label htmlFor="loginUsername" className="text-xs">👤 Benutzername (Ihre Login-Daten)</Label>
                       <Input
                         id="loginUsername"
                         value={formData.loginUsername}
                         onChange={(e) => setFormData({ ...formData, loginUsername: e.target.value })}
-                        placeholder="Ihr Benutzername"
+                        placeholder="z.B. kundenservice@shop.de"
                         className="text-sm"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="loginPassword" className="text-xs">Passwort</Label>
+                      <Label htmlFor="loginPassword" className="text-xs">🔑 Passwort (Ihre Login-Daten)</Label>
                       <Input
                         id="loginPassword"
                         type="password"

@@ -284,39 +284,50 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="loginUsernameField">Benutzername-Feld (CSS-Selektor)</Label>
+              <Label htmlFor="loginUsernameField">🔍 Benutzername-Feld (CSS-Selektor)</Label>
               <Input
                 id="loginUsernameField"
                 value={formData.loginUsernameField}
                 onChange={(e) => setFormData({ ...formData, loginUsernameField: e.target.value })}
-                placeholder="input[name='username']"
+                placeholder="z.B. input[name='email'] oder #username"
+                className="font-mono"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Der CSS-Selektor für das Benutzername-Eingabefeld im Login-Formular
+              </p>
             </div>
 
             <div>
-              <Label htmlFor="loginPasswordField">Passwort-Feld (CSS-Selektor)</Label>
+              <Label htmlFor="loginPasswordField">🔍 Passwort-Feld (CSS-Selektor)</Label>
               <Input
                 id="loginPasswordField"
                 value={formData.loginPasswordField}
                 onChange={(e) => setFormData({ ...formData, loginPasswordField: e.target.value })}
-                placeholder="input[name='password']"
+                placeholder="z.B. input[name='password'] oder #password"
+                className="font-mono"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Der CSS-Selektor für das Passwort-Eingabefeld im Login-Formular
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="loginUsername">Benutzername</Label>
+              <Label htmlFor="loginUsername">👤 Benutzername (Ihre Login-Daten)</Label>
               <Input
                 id="loginUsername"
                 value={formData.loginUsername}
                 onChange={(e) => setFormData({ ...formData, loginUsername: e.target.value })}
-                placeholder="Ihr Benutzername"
+                placeholder="z.B. kundenservice@shop.de"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Ihr tatsächlicher Benutzername für den Login
+              </p>
             </div>
 
             <div>
-              <Label htmlFor="loginPassword">Passwort</Label>
+              <Label htmlFor="loginPassword">🔑 Passwort (Ihre Login-Daten)</Label>
               <Input
                 id="loginPassword"
                 type="password"
@@ -324,6 +335,9 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
                 onChange={(e) => setFormData({ ...formData, loginPassword: e.target.value })}
                 placeholder="Ihr Passwort"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Ihr tatsächliches Passwort für den Login
+              </p>
             </div>
           </div>
         </div>
