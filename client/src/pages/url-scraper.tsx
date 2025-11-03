@@ -804,6 +804,25 @@ export default function URLScraper() {
 
       setScrapedProducts(products);
       
+      // Save scraped products back to PDF-Auto-Scraper sessionStorage
+      // Create URL→Product map for easy merging in PDF-Auto-Scraper
+      const urlToScrapedData: Record<string, any> = {};
+      products.forEach(product => {
+        if (product.url) {
+          urlToScrapedData[product.url] = {
+            images: product.images || [],
+            localImagePaths: product.localImagePaths || [],
+            articleNumber: product.articleNumber,
+            eanCode: product.ean,
+            productName: product.productName,
+            description: product.description,
+            longDescription: product.longDescription,
+          };
+        }
+      });
+      sessionStorage.setItem('pdf_url_scraped_data', JSON.stringify(urlToScrapedData));
+      console.log(`💾 Saved ${Object.keys(urlToScrapedData).length} scraped products to sessionStorage for PDF-Auto-Scraper`);
+      
       if (abortScrapingRef.current) {
         setBatchProgress({ current: products.length, total: urls.length, status: "Abgebrochen" });
         toast({

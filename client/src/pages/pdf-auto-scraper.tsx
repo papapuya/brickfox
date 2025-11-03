@@ -24,6 +24,8 @@ interface PDFProduct {
   marke: string | null;
   ve: string | null;
   liefermenge: string | null;
+  images?: string[];  // Bild-URLs vom URL-Scraper
+  localImagePaths?: string[];  // Lokale Bildpfade
 }
 
 interface PDFPreviewResult {
@@ -66,10 +68,42 @@ Vielen Dank im Voraus!`);
     const savedProducts = sessionStorage.getItem('pdf_auto_scraper_extracted_products');
     const savedProductsWithoutURL = sessionStorage.getItem('pdf_auto_scraper_products_without_url');
     const savedSupplierId = sessionStorage.getItem('pdf_auto_scraper_selected_supplier');
+    const scrapedData = sessionStorage.getItem('pdf_url_scraped_data');
     
     if (savedProducts) {
       try {
-        const products = JSON.parse(savedProducts);
+        let products = JSON.parse(savedProducts);
+        
+        // Merge scraped data (images, descriptions, etc.) if available
+        if (scrapedData) {
+          const urlToScrapedData = JSON.parse(scrapedData);
+          console.log(`🔄 Merging scraped data for ${Object.keys(urlToScrapedData).length} products`);
+          
+          products = products.map((product: PDFProduct) => {
+            if (product.url && urlToScrapedData[product.url]) {
+              const scraped = urlToScrapedData[product.url];
+              return {
+                ...product,
+                images: scraped.images || [],
+                localImagePaths: scraped.localImagePaths || [],
+                description: scraped.description || product.description,
+              };
+            }
+            return product;
+          });
+          
+          // CRITICAL: Save merged data back to sessionStorage so images persist across navigation
+          sessionStorage.setItem('pdf_auto_scraper_extracted_products', JSON.stringify(products));
+          
+          // Clear scraped data after merging
+          sessionStorage.removeItem('pdf_url_scraped_data');
+          
+          toast({
+            title: 'Scraping-Daten übernommen',
+            description: `Bilder und Beschreibungen wurden von ${Object.keys(urlToScrapedData).length} Produkten übernommen`,
+          });
+        }
+        
         setExtractedProducts(products);
       } catch (error) {
         console.error('Failed to parse saved products:', error);
@@ -354,14 +388,26 @@ Vielen Dank im Voraus!`);
     }
 
     // Convert PDF products to Brickfox CSV format for Pixi Compare
-    const csvData = allProducts.map(product => ({
-      'p_item_number': product.articleNumber || '',
-      'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '', // Remove ANS prefix
-      'p_name[de]': product.productName || '',
-      'v_ean': product.eanCode || '',
-      'p_brand': product.marke || '',
-      'v_price_net': product.ekPrice?.replace('€', '').trim() || '',
-    }));
+    const csvData = allProducts.map(product => {
+      // Extract images from localImagePaths (downloaded images) or images array
+      const imageUrls = product.localImagePaths || product.images || [];
+      
+      // Create separate p_image[1] to p_image[10] columns
+      const imageColumns: Record<string, string> = {};
+      for (let i = 1; i <= 10; i++) {
+        imageColumns[`p_image[${i}]`] = imageUrls[i - 1] || '';
+      }
+      
+      return {
+        'p_item_number': product.articleNumber || '',
+        'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '', // Remove ANS prefix
+        'p_name[de]': product.productName || '',
+        'v_ean': product.eanCode || '',
+        'p_brand': product.marke || '',
+        'v_price_net': product.ekPrice?.replace('€', '').trim() || '',
+        ...imageColumns,  // Add p_image[1] to p_image[10]
+      };
+    });
 
     // Store data AND supplier number in sessionStorage for Pixi Compare
     sessionStorage.setItem('pixi_compare_data', JSON.stringify(csvData));
