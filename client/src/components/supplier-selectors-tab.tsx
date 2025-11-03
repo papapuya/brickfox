@@ -306,9 +306,18 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
                 placeholder="z.B. input[name='email'] oder #username"
                 className="font-mono"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Der CSS-Selektor für das Benutzername-Eingabefeld im Login-Formular
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-muted-foreground flex-1">
+                  Der CSS-Selektor für das Benutzername-Eingabefeld im Login-Formular
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, loginUsernameField: "input[name='email'], input[name='username'], #email, #username" })}
+                  className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                >
+                  📝 Standard setzen
+                </button>
+              </div>
             </div>
 
             <div>
@@ -320,9 +329,18 @@ export default function SupplierSelectorsTab({ supplier, onUpdate }: SupplierSel
                 placeholder="z.B. input[name='password'] oder #password"
                 className="font-mono"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Der CSS-Selektor für das Passwort-Eingabefeld im Login-Formular
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-muted-foreground flex-1">
+                  Der CSS-Selektor für das Passwort-Eingabefeld im Login-Formular
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, loginPasswordField: "input[name='password'], input[type='password'], #password" })}
+                  className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                >
+                  📝 Standard setzen
+                </button>
+              </div>
             </div>
           </div>
 

@@ -576,9 +576,16 @@ export default function Suppliers() {
                         id="loginUsernameField"
                         value={formData.loginUsernameField}
                         onChange={(e) => setFormData({ ...formData, loginUsernameField: e.target.value })}
-                        placeholder="z.B. input[name='email']"
+                        placeholder="input[name='email']"
                         className="text-sm font-mono"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, loginUsernameField: "input[name='email'], input[name='username'], #email, #username" })}
+                        className="text-xs text-blue-600 hover:underline mt-1"
+                      >
+                        📝 Standard-Werte setzen
+                      </button>
                     </div>
 
                     <div>
@@ -587,9 +594,16 @@ export default function Suppliers() {
                         id="loginPasswordField"
                         value={formData.loginPasswordField}
                         onChange={(e) => setFormData({ ...formData, loginPasswordField: e.target.value })}
-                        placeholder="z.B. input[name='password']"
+                        placeholder="input[name='password']"
                         className="text-sm font-mono"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, loginPasswordField: "input[name='password'], input[type='password'], #password" })}
+                        className="text-xs text-blue-600 hover:underline mt-1"
+                      >
+                        📝 Standard-Werte setzen
+                      </button>
                     </div>
                   </div>
 
