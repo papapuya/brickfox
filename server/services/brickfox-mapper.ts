@@ -221,6 +221,56 @@ function getFieldValue(
     }
   }
   
+  // SPECIAL CASE: p_image[1] bis p_image[10] - Extrahiere Bilder aus localImagePaths oder extractedData
+  if (brickfoxField.startsWith('p_image[')) {
+    const imageIndex = parseInt(brickfoxField.match(/\[(\d+)\]/)?.[1] || '0') - 1; // p_image[1] → Index 0
+    
+    // Priority 1: localImagePaths aus extractedData (heruntergeladene Bilder)
+    if (product.extractedData && product.extractedData.length > 0) {
+      const localImagesItem = product.extractedData.find((item: any) => 
+        item.key === 'localImagePaths'
+      );
+      if (localImagesItem && localImagesItem.value) {
+        // localImagePaths kann ein String "/path/to/image.jpg" oder ein Array sein
+        let imagePaths: string[] = [];
+        if (typeof localImagesItem.value === 'string') {
+          // Einzelner Pfad oder komma-separierte Liste
+          imagePaths = localImagesItem.value.split(',').map((p: string) => p.trim()).filter(Boolean);
+        } else if (Array.isArray(localImagesItem.value)) {
+          imagePaths = localImagesItem.value.filter(Boolean);
+        }
+        
+        if (imagePaths[imageIndex]) {
+          debugLog(`[SPECIAL] ${brickfoxField} → localImagePaths[${imageIndex}]: ${imagePaths[imageIndex]}`);
+          return imagePaths[imageIndex];
+        }
+      }
+    }
+    
+    // Priority 2: Direkt aus product.extractedData nach "images" oder ähnlichen Feldern suchen
+    if (product.extractedData && product.extractedData.length > 0) {
+      const imagesItem = product.extractedData.find((item: any) => 
+        item.key === 'images' || item.key === 'productImages' || item.key === 'downloadedImages'
+      );
+      if (imagesItem && imagesItem.value) {
+        let images: string[] = [];
+        if (typeof imagesItem.value === 'string') {
+          images = imagesItem.value.split(',').map((p: string) => p.trim()).filter(Boolean);
+        } else if (Array.isArray(imagesItem.value)) {
+          images = imagesItem.value.filter(Boolean);
+        }
+        
+        if (images[imageIndex]) {
+          debugLog(`[SPECIAL] ${brickfoxField} → images[${imageIndex}]: ${images[imageIndex]}`);
+          return images[imageIndex];
+        }
+      }
+    }
+    
+    // Kein Bild für diesen Index gefunden
+    return null;
+  }
+  
   // STEP 1: Versuche intelligentes Auto-Mapping für andere Felder
   const autoMappedValue = autoMapFieldByLabel(product, brickfoxField);
   if (autoMappedValue !== null && autoMappedValue !== undefined && autoMappedValue !== '') {

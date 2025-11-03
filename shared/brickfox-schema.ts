@@ -265,6 +265,87 @@ export const BRICKFOX_FIELDS: BrickfoxFieldMeta[] = [
     sourceType: 'scraped',
     description: 'Beschreibung des Zolltarifs'
   },
+  // Produktbilder (bis zu 10 Bilder)
+  {
+    key: 'p_image[1]',
+    label: 'Produktbild 1',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum ersten Produktbild'
+  },
+  {
+    key: 'p_image[2]',
+    label: 'Produktbild 2',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum zweiten Produktbild'
+  },
+  {
+    key: 'p_image[3]',
+    label: 'Produktbild 3',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum dritten Produktbild'
+  },
+  {
+    key: 'p_image[4]',
+    label: 'Produktbild 4',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum vierten Produktbild'
+  },
+  {
+    key: 'p_image[5]',
+    label: 'Produktbild 5',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum fünften Produktbild'
+  },
+  {
+    key: 'p_image[6]',
+    label: 'Produktbild 6',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum sechsten Produktbild'
+  },
+  {
+    key: 'p_image[7]',
+    label: 'Produktbild 7',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum siebten Produktbild'
+  },
+  {
+    key: 'p_image[8]',
+    label: 'Produktbild 8',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum achten Produktbild'
+  },
+  {
+    key: 'p_image[9]',
+    label: 'Produktbild 9',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum neunten Produktbild'
+  },
+  {
+    key: 'p_image[10]',
+    label: 'Produktbild 10',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL oder Pfad zum zehnten Produktbild'
+  },
 ];
 
 // Helper: Get all fields by scope
@@ -318,6 +399,18 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   
   // Product fields - AI
   'p_description[de]': { source: 'scraped', field: 'htmlCode' },  // Use scraped HTML description
+  
+  // Produktbilder - scraped (werden automatisch aus localImagePaths extrahiert)
+  'p_image[1]': { source: 'scraped', field: 'localImagePaths[0]' },
+  'p_image[2]': { source: 'scraped', field: 'localImagePaths[1]' },
+  'p_image[3]': { source: 'scraped', field: 'localImagePaths[2]' },
+  'p_image[4]': { source: 'scraped', field: 'localImagePaths[3]' },
+  'p_image[5]': { source: 'scraped', field: 'localImagePaths[4]' },
+  'p_image[6]': { source: 'scraped', field: 'localImagePaths[5]' },
+  'p_image[7]': { source: 'scraped', field: 'localImagePaths[6]' },
+  'p_image[8]': { source: 'scraped', field: 'localImagePaths[7]' },
+  'p_image[9]': { source: 'scraped', field: 'localImagePaths[8]' },
+  'p_image[10]': { source: 'scraped', field: 'localImagePaths[9]' },
   
   // Variant fields - scraped
   'v_item_number': { source: 'scraped', field: 'articleNumber' },

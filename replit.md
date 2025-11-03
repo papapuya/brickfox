@@ -2,6 +2,19 @@
 
 ## Recent Changes
 
+### 2025-11-03: Brickfox CSV Export - Separate Bild-Spalten
+**Änderung**: Brickfox CSV Export erstellt jetzt separate Spalten für jede Bild-URL (p_image[1] bis p_image[10]).
+
+**Neue Features**:
+- ✅ 10 separate Bild-Spalten: `p_image[1]`, `p_image[2]`, ..., `p_image[10]`
+- ✅ Automatische Extraktion aus `localImagePaths` (heruntergeladene Bilder)
+- ✅ Fallback auf `images` Array aus Produktdaten
+- ✅ Produktbeschreibung (`p_description[de]`) nutzt jetzt `autoExtractedDescription` wenn `htmlCode` leer ist
+
+**Betroffene Dateien**: 
+- `shared/brickfox-schema.ts` - 10 neue p_image Felder im Schema + Default-Mapping
+- `server/services/brickfox-mapper.ts` - Logik für Bild-Extraktion aus Produktdaten
+
 ### 2025-11-03: Selektoren neu strukturiert für Händler-Shops
 **Änderung**: Komplette Neustrukturierung der CSS-Selektoren für bessere Datenerfassung im eingeloggten Zustand.
 
