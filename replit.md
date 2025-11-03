@@ -6,6 +6,31 @@ PIMPilot is a multi-tenant B2B SaaS platform designed to automate AI-powered pro
 ## User Preferences
 Keine spezifischen Präferenzen dokumentiert.
 
+## Demo-Modus & Tenant-Verwaltung
+
+### Demo-Kunden erkennen
+Demo-Kunden (Trial-Accounts) werden im Admin-Dashboard durch:
+- **Abo-Status Badge**: Blauer "Trial" Badge mit Krone-Icon
+- **Default Features**: Alle neuen Kunden starten standardmäßig mit Trial-Status
+
+### Standard-Features für neue Kunden
+Jeder neu registrierte Kunde erhält automatisch diese Features:
+- ✅ **URL Web-Scraper** (urlScraper: true)
+- ✅ **CSV Massenimport** (csvBulkImport: true)
+- ✅ **KI-Produktbeschreibungen** (aiDescriptions: true)
+- ❌ **Pixi ERP Integration** (pixiIntegration: false)
+- ❌ **SAP Integration** (sapIntegration: false)
+
+Premium-Features (Pixi, SAP) können über das Admin-Dashboard pro Kunde individuell freigeschaltet werden.
+
+### Admin-Dashboard Features (seit 2025-11-03)
+- **Abo-Status Anzeige**: Farbcodierte Badges zeigen Subscription-Status (Trial, Professional, Enterprise)
+- **Kunden Löschen**: Rote Trash-Button mit Bestätigungs-Dialog
+  - Warnung vor unwiderruflicher Löschung aller Daten
+  - Übersicht: Anzahl User, Projekte, Lieferanten
+- **Feature-Flags**: Individuelle Feature-Freischaltung pro Kunde
+- **KPI-Übersicht**: System-weite Metriken und Statistiken
+
 ## System Architecture
 
 ### UI/UX Decisions
