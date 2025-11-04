@@ -150,35 +150,33 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User & { passwordHash: string } | null> {
-    if (!supabaseAdmin) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-    }
+    // CRITICAL: Query Helium DB directly (local PostgreSQL), not Supabase remote DB!
+    const users = await heliumDb.select()
+      .from(usersTable)
+      .where(eq(usersTable.username, username))
+      .limit(1);
 
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single();
+    if (!users || users.length === 0) return null;
 
-    if (error || !user) return null;
+    const user = users[0];
 
     return {
       id: user.id,
       email: user.email,
       username: user.username || undefined,
-      isAdmin: user.is_admin || false,
-      tenantId: user.tenant_id || undefined,
+      isAdmin: user.isAdmin || false,
+      tenantId: user.tenantId || undefined,
       role: user.role || 'member',
       passwordHash: '', // Not used with Supabase Auth
-      stripeCustomerId: user.stripe_customer_id || undefined,
-      subscriptionStatus: user.subscription_status || undefined,
-      subscriptionId: user.subscription_id || undefined,
-      planId: user.plan_id || undefined,
-      currentPeriodEnd: user.current_period_end || undefined,
-      apiCallsUsed: user.api_calls_used || 0,
-      apiCallsLimit: user.api_calls_limit || 50,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
+      stripeCustomerId: user.stripeCustomerId || undefined,
+      subscriptionStatus: user.subscriptionStatus || undefined,
+      subscriptionId: user.subscriptionId || undefined,
+      planId: user.planId || undefined,
+      currentPeriodEnd: user.currentPeriodEnd ? user.currentPeriodEnd.toISOString() : undefined,
+      apiCallsUsed: user.apiCallsUsed || 0,
+      apiCallsLimit: user.apiCallsLimit || 50,
+      createdAt: user.createdAt ? user.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: user.updatedAt ? user.updatedAt.toISOString() : new Date().toISOString(),
     };
   }
 
