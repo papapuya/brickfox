@@ -593,6 +593,31 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     console.error('[Magento Gallery] Error parsing gallery JSON:', error);
   }
 
+  // ANSMANN: Extract high-resolution images from Downloads tab (better quality than gallery!)
+  // The Downloads tab contains JPG files in a table, often 3-5 product images + PDF manuals
+  try {
+    const downloadImages: string[] = [];
+    
+    // Find all links in the Downloads tab that point to image files
+    $('#product-info-downloads a[href$=".jpg"], #product-info-downloads a[href$=".JPG"], #product-info-downloads a[href$=".png"], #product-info-downloads a[href$=".PNG"]').each((_, link) => {
+      const href = $(link).attr('href');
+      if (href && href.startsWith('http')) {
+        downloadImages.push(href);
+      }
+    });
+    
+    // If we found download images, prefer them over gallery images (higher quality!)
+    if (downloadImages.length > 0) {
+      console.log(`[ANSMANN Downloads] ✅ Extracted ${downloadImages.length} high-res images from Downloads tab`);
+      // Merge with existing gallery images, prioritizing download images (remove duplicates)
+      const allImages = [...downloadImages, ...(product.images || [])];
+      product.images = Array.from(new Set(allImages)); // Remove duplicates
+      console.log(`[ANSMANN Downloads] 🖼️  Total unique images: ${product.images.length}`);
+    }
+  } catch (error) {
+    console.error('[ANSMANN Downloads] Error extracting download images:', error);
+  }
+
   // Weight - Format for Brickfox: German format with comma, NO units (e.g., 250 or 1,5)
   if (selectors.weight) {
     const element = $(selectors.weight).first();
