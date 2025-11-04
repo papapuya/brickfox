@@ -42,6 +42,11 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdminBackupManagement } from '@/components/admin-backup-management';
+import { AdminPermissionManagement } from '@/components/admin-permission-management';
+import { AdminAuditLogViewer } from '@/components/admin-audit-log-viewer';
+import { Database, Shield, FileText } from 'lucide-react';
 
 interface TenantSettings {
   features: {
@@ -365,7 +370,7 @@ export default function AdminDashboard() {
               Admin Dashboard
             </h1>
           </div>
-          <p className="text-gray-600">Systemübersicht und Kundenverwaltung</p>
+          <p className="text-gray-600">Enterprise-Management & Sicherheit</p>
         </div>
         
         <div className="flex gap-3">
@@ -471,6 +476,27 @@ export default function AdminDashboard() {
       </div>
     </div>
 
+      <Tabs defaultValue="tenants" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="tenants" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Tenant-Verwaltung
+          </TabsTrigger>
+          <TabsTrigger value="backups" className="gap-2">
+            <Database className="h-4 w-4" />
+            Backups
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-2">
+            <Shield className="h-4 w-4" />
+            Berechtigungen
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Audit-Logs
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tenants" className="space-y-6">
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -887,6 +913,22 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  )}
+  </TabsContent>
+
+        <TabsContent value="backups">
+          <AdminBackupManagement />
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <AdminPermissionManagement />
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <AdminAuditLogViewer />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
