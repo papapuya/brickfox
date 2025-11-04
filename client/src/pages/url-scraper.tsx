@@ -244,6 +244,96 @@ export default function URLScraper() {
     return null;
   };
 
+  // ===== SCRAPE SESSION PERSISTENCE =====
+  // Save scraped data to server session (persists across page navigation)
+  const saveScrapeSession = async () => {
+    try {
+      const token = localStorage.getItem('supabase_token');
+      if (!token) return;
+      
+      await fetch('/api/scrape-session', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          urlScraper: {
+            scrapedProducts: scrapedProducts.length > 0 ? scrapedProducts : [],
+            scrapedProduct: scrapedProduct,
+            generatedDescription: generatedDescription || null,
+          },
+        }),
+      });
+      
+      console.log('💾 URL Scrape session saved to server');
+    } catch (error) {
+      console.error('Failed to save URL scrape session:', error);
+    }
+  };
+
+  // Load scraped data from server session on mount
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const loadScrapeSession = async () => {
+      try {
+        const token = localStorage.getItem('supabase_token');
+        if (!token) return;
+        
+        const response = await fetch('/api/scrape-session', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) return;
+        
+        const { success, session } = await response.json();
+        
+        if (success && session && session.scrapedProducts) {
+          const urlScraperData = session.scrapedProducts.urlScraper;
+          
+          if (urlScraperData) {
+            if (urlScraperData.scrapedProducts && Array.isArray(urlScraperData.scrapedProducts) && urlScraperData.scrapedProducts.length > 0) {
+              setScrapedProducts(urlScraperData.scrapedProducts);
+              console.log(`✅ Restored ${urlScraperData.scrapedProducts.length} URL products from server session`);
+              
+              toast({
+                title: "URL-Daten wiederhergestellt",
+                description: `${urlScraperData.scrapedProducts.length} Produkte aus vorheriger Sitzung geladen`,
+              });
+            }
+            
+            if (urlScraperData.scrapedProduct) {
+              setScrapedProduct(urlScraperData.scrapedProduct);
+            }
+            
+            if (urlScraperData.generatedDescription) {
+              setGeneratedDescription(urlScraperData.generatedDescription);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load URL scrape session:', error);
+      }
+    };
+    
+    loadScrapeSession();
+  }, [isAuthenticated]);
+
+  // Auto-save session when scraped data changes
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (scrapedProducts.length === 0 && !scrapedProduct) return;
+    
+    const timeoutId = setTimeout(() => {
+      saveScrapeSession();
+    }, 1000); // Debounce 1 second
+    
+    return () => clearTimeout(timeoutId);
+  }, [scrapedProducts, scrapedProduct, generatedDescription, isAuthenticated]);
+
   // Check for PDF-extracted URLs on component mount (only when authenticated)
   useEffect(() => {
     // Wait until user is authenticated
@@ -1650,6 +1740,22 @@ export default function URLScraper() {
       setProjectName("");
       setSelectedProjectId("new");
 
+      // Clear scrape session after saving to project
+      try {
+        const token = localStorage.getItem('supabase_token');
+        if (token) {
+          await fetch('/api/scrape-session', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          console.log('🗑️ Scrape session cleared after project save');
+        }
+      } catch (error) {
+        console.error('Failed to clear scrape session:', error);
+      }
+
       // Redirect to projects page
       setTimeout(() => {
         setLocation('/projects');
@@ -1817,6 +1923,22 @@ export default function URLScraper() {
       setShowBulkSaveDialog(false);
       setProjectName("");
       setSelectedProjectId("new");
+
+      // Clear scrape session after saving to project
+      try {
+        const token = localStorage.getItem('supabase_token');
+        if (token) {
+          await fetch('/api/scrape-session', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          console.log('🗑️ Scrape session cleared after bulk project save');
+        }
+      } catch (error) {
+        console.error('Failed to clear scrape session:', error);
+      }
 
       // Redirect to projects page
       setTimeout(() => {

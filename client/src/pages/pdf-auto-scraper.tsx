@@ -63,6 +63,34 @@ Vielen Dank im Voraus!`);
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 6;
 
+  // ===== SCRAPE SESSION PERSISTENCE =====
+  // Save scraped data to server session (persists across page navigation)
+  const saveScrapeSession = async (products: PDFProduct[], productsNoUrl: PDFProduct[]) => {
+    try {
+      const token = localStorage.getItem('supabase_token');
+      if (!token) return;
+      
+      await fetch('/api/scrape-session', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          pdfScraper: {
+            withURL: products,
+            withoutURL: productsNoUrl,
+            supplierId: selectedSupplierId,
+          },
+        }),
+      });
+      
+      console.log('💾 PDF Scrape session saved to server');
+    } catch (error) {
+      console.error('Failed to save PDF scrape session:', error);
+    }
+  };
+
   // Load extracted products from sessionStorage on mount (when returning from URL-Scraper)
   useEffect(() => {
     const savedProducts = sessionStorage.getItem('pdf_auto_scraper_extracted_products');
@@ -123,6 +151,72 @@ Vielen Dank im Voraus!`);
       setSelectedSupplierId(savedSupplierId);
     }
   }, []);
+
+  // Load scraped data from server session on mount (restore after navigation)
+  useEffect(() => {
+    const loadScrapeSession = async () => {
+      try {
+        const token = localStorage.getItem('supabase_token');
+        if (!token) return;
+        
+        // Don't load if we already have sessionStorage data
+        const hasSessionStorage = sessionStorage.getItem('pdf_auto_scraper_extracted_products');
+        if (hasSessionStorage) return;
+        
+        const response = await fetch('/api/scrape-session', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) return;
+        
+        const { success, session } = await response.json();
+        
+        if (success && session && session.scrapedProducts) {
+          const pdfScraperData = session.scrapedProducts.pdfScraper;
+          
+          if (pdfScraperData) {
+            if (pdfScraperData.withURL && Array.isArray(pdfScraperData.withURL) && pdfScraperData.withURL.length > 0) {
+              setExtractedProducts(pdfScraperData.withURL);
+              console.log(`✅ Restored ${pdfScraperData.withURL.length} PDF products from server session`);
+            }
+            
+            if (pdfScraperData.withoutURL && Array.isArray(pdfScraperData.withoutURL)) {
+              setProductsWithoutURL(pdfScraperData.withoutURL);
+            }
+            
+            if (pdfScraperData.supplierId) {
+              setSelectedSupplierId(pdfScraperData.supplierId);
+            }
+            
+            const totalProducts = (pdfScraperData.withURL?.length || 0) + (pdfScraperData.withoutURL?.length || 0);
+            if (totalProducts > 0) {
+              toast({
+                title: "PDF-Daten wiederhergestellt",
+                description: `${totalProducts} Produkte aus vorheriger Sitzung geladen`,
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load PDF scrape session:', error);
+      }
+    };
+    
+    loadScrapeSession();
+  }, []);
+
+  // Auto-save session when PDF products change
+  useEffect(() => {
+    if (extractedProducts.length === 0 && productsWithoutURL.length === 0) return;
+    
+    const timeoutId = setTimeout(() => {
+      saveScrapeSession(extractedProducts, productsWithoutURL);
+    }, 1000); // Debounce 1 second
+    
+    return () => clearTimeout(timeoutId);
+  }, [extractedProducts, productsWithoutURL, selectedSupplierId]);
 
   // Auto-save selected supplier to sessionStorage whenever it changes
   useEffect(() => {

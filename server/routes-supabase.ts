@@ -2082,7 +2082,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     try {
       const userId = (req as any).userId;
       const tenantId = (req as any).tenantId;
-      const { scrapedProducts, scrapedProduct, generatedDescription } = req.body;
+      const { urlScraper, pdfScraper, generatedDescription } = req.body;
       
       // Check if session already exists
       const [existingSession] = await heliumDb
@@ -2100,19 +2100,25 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       let session;
       
       if (existingSession) {
+        // Merge existing data with new data (preserve both scrapers' data)
+        const existingData = (existingSession.scrapedProducts as any) || {};
+        const mergedData = {
+          urlScraper: urlScraper || existingData.urlScraper || null,
+          pdfScraper: pdfScraper || existingData.pdfScraper || null,
+        };
+        
         // Update existing session
         [session] = await heliumDb
           .update(scrapeSessionTable)
           .set({
-            scrapedProducts: scrapedProducts || existingSession.scrapedProducts,
-            scrapedProduct: scrapedProduct || existingSession.scrapedProduct,
+            scrapedProducts: mergedData,
             generatedDescription: generatedDescription || existingSession.generatedDescription,
             updatedAt: new Date(),
           })
           .where(eq(scrapeSessionTable.id, existingSession.id))
           .returning();
         
-        console.log(`[Scrape Session] Updated session ${session.id} for user ${userId}`);
+        console.log(`[Scrape Session] Updated session ${session.id} for user ${userId} (urlScraper: ${!!urlScraper}, pdfScraper: ${!!pdfScraper})`);
       } else {
         // Create new session
         [session] = await heliumDb
@@ -2120,8 +2126,10 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
           .values({
             userId,
             tenantId: tenantId || null,
-            scrapedProducts: scrapedProducts || [],
-            scrapedProduct: scrapedProduct || null,
+            scrapedProducts: {
+              urlScraper: urlScraper || null,
+              pdfScraper: pdfScraper || null,
+            },
             generatedDescription: generatedDescription || null,
           })
           .returning();
