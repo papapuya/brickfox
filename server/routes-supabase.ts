@@ -422,19 +422,27 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       
       let emailToUse = req.body.email;
       
+      console.log(`[LOGIN] Input: "${emailToUse}", contains @: ${emailToUse.includes('@')}`);
+      
       if (!emailToUse.includes('@')) {
+        console.log(`[LOGIN] Looking up username: "${emailToUse}"`);
         const userByUsername = await supabaseStorage.getUserByUsername(emailToUse);
+        console.log(`[LOGIN] Username lookup result:`, userByUsername ? `Found: ${userByUsername.email}` : 'Not found');
         if (userByUsername) {
           emailToUse = userByUsername.email;
+        } else {
+          console.log(`[LOGIN] ⚠️ Username "${emailToUse}" not found in database`);
         }
       }
       
+      console.log(`[LOGIN] Attempting Supabase auth with email: "${emailToUse}"`);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToUse,
         password: req.body.password,
       });
 
       if (error || !data.user) {
+        console.log(`[LOGIN] ❌ Supabase auth failed:`, error?.message || 'No user returned');
         return res.status(401).json({ error: 'Ungültiger Benutzername/E-Mail oder Passwort' });
       }
 
