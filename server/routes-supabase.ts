@@ -10,7 +10,10 @@ import {
   productsInProjects as productsInProjectsTable, 
   suppliers as suppliersTable,
   scrapeSession as scrapeSessionTable,
-  users as usersTable
+  users as usersTable,
+  auditLogs as auditLogsTable,
+  backups as backupsTable,
+  permissions as permissionsTable,
 } from '@shared/schema';
 import Stripe from 'stripe';
 import { 
@@ -2163,6 +2166,112 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       res.json({ success: true });
     } catch (error: any) {
       console.error('[Scrape Session] DELETE error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ===== BACKUP SYSTEM API ENDPOINTS =====
+  
+  // Create manual backup
+  app.post('/api/backups', requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const tenantId = (req as any).tenantId;
+      const { backupType = 'manual' } = req.body;
+      
+      const { backupService } = await import('./services/backup-service');
+      
+      const backup = await backupService.createBackup({
+        tenantId,
+        userId,
+        backupType,
+        expiresInDays: 30,
+      });
+      
+      res.json({ success: true, backup });
+    } catch (error: any) {
+      console.error('[Backup API] Create failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // List all backups for tenant
+  app.get('/api/backups', requireAuth, async (req, res) => {
+    try {
+      const tenantId = (req as any).tenantId;
+      
+      const { backupService } = await import('./services/backup-service');
+      const backupsList = await backupService.listBackups(tenantId);
+      
+      res.json({ success: true, backups: backupsList });
+    } catch (error: any) {
+      console.error('[Backup API] List failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // Restore from backup
+  app.post('/api/backups/:id/restore', requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const tenantId = (req as any).tenantId;
+      const { id } = req.params;
+      
+      const { backupService } = await import('./services/backup-service');
+      const result = await backupService.restoreBackup({
+        backupId: id,
+        tenantId,
+        userId,
+      });
+      
+      res.json({ success: true, ...result });
+    } catch (error: any) {
+      console.error('[Backup API] Restore failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // Delete backup
+  app.delete('/api/backups/:id', requireAuth, async (req, res) => {
+    try {
+      const tenantId = (req as any).tenantId;
+      const { id } = req.params;
+      
+      const { backupService } = await import('./services/backup-service');
+      await backupService.deleteBackup(id, tenantId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[Backup API] Delete failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // Get audit logs (Admin only)
+  app.get('/api/audit-logs', requireSuperAdmin, async (req, res) => {
+    try {
+      const { limit = 100, offset = 0, resourceType, userId } = req.query;
+      
+      let query = heliumDb
+        .select()
+        .from(auditLogsTable)
+        .orderBy(sql`${auditLogsTable.createdAt} DESC`)
+        .limit(Number(limit))
+        .offset(Number(offset));
+      
+      if (resourceType) {
+        query = query.where(eq(auditLogsTable.resourceType, String(resourceType)));
+      }
+      
+      if (userId) {
+        query = query.where(eq(auditLogsTable.userId, String(userId)));
+      }
+      
+      const logs = await query;
+      
+      res.json({ success: true, logs });
+    } catch (error: any) {
+      console.error('[Audit API] List failed:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });

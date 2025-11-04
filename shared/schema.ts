@@ -301,6 +301,46 @@ export const scrapeSession = pgTable("scrape_session", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+// Backups table for automated database snapshots
+export const backups = pgTable("backups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  backupType: text("backup_type").notNull(), // 'manual', 'scheduled', 'pre_migration'
+  status: text("status").notNull().default('pending'), // 'pending', 'in_progress', 'completed', 'failed'
+  backupData: jsonb("backup_data").notNull(), // Complete snapshot of tenant data
+  size: integer("size"), // Size in bytes
+  createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }), // Auto-delete old backups
+  metadata: jsonb("metadata"), // Additional info: table counts, duration, etc.
+});
+
+// Audit log table for RBAC compliance
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  action: text("action").notNull(), // 'create', 'update', 'delete', 'export', 'restore'
+  resourceType: text("resource_type").notNull(), // 'product', 'project', 'supplier', 'user', 'backup'
+  resourceId: text("resource_id"), // UUID of affected resource
+  changes: jsonb("changes"), // Before/after snapshot for updates
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+// Permissions table for granular RBAC
+export const permissions = pgTable("permissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  resource: text("resource").notNull(), // 'products', 'projects', 'suppliers', 'backups', 'users'
+  action: text("action").notNull(), // 'read', 'create', 'update', 'delete', 'export'
+  scope: text("scope").default('all'), // 'all', 'own', 'team', 'none'
+  conditions: jsonb("conditions"), // Additional constraints (e.g., project_id, status)
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // Relations
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
