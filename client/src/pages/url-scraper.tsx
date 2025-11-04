@@ -2297,14 +2297,16 @@ export default function URLScraper() {
                   <Save className="w-4 h-4 mr-2" />
                   Als Projekt speichern
                 </Button>
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                >
-                  <Settings2 className="w-4 h-4 mr-2" />
-                  Spalten auswählen
-                </Button>
+                {!isFromPdfAutoScraper && (
+                  <Button
+                    variant="outline"
+                    size="default"
+                    onClick={() => setShowColumnSelector(!showColumnSelector)}
+                  >
+                    <Settings2 className="w-4 h-4 mr-2" />
+                    Spalten auswählen
+                  </Button>
+                )}
                 <Button onClick={downloadCSV} variant="outline">
                   <Download className="w-4 h-4 mr-2" />
                   CSV Exportieren

@@ -360,83 +360,6 @@ Vielen Dank im Voraus!`);
     setLocation('/url-scraper?from=pdf-auto-scraper');
   };
 
-  const handlePixiCompare = () => {
-    // Combine both products with and without URL
-    const allProducts = [...extractedProducts, ...productsWithoutURL];
-    
-    if (allProducts.length === 0) {
-      toast({
-        title: 'Keine Produkte',
-        description: 'Bitte extrahieren Sie zuerst Produkte aus dem PDF',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Get the selected supplier to find the SupplNr
-    const selectedSupplier = suppliersData?.suppliers?.find(s => s.id === selectedSupplierId);
-    const supplNr = selectedSupplier?.pixiSupplierNumber;
-
-    // STRICT VALIDATION: Supplier with SupplNr is required
-    if (!supplNr || selectedSupplierId === '__none__') {
-      toast({
-        title: 'Lieferant erforderlich',
-        description: 'Bitte wählen Sie einen Lieferanten mit hinterlegter Pixi-Lieferantennummer aus. Sie können diese im Lieferanten-Menü konfigurieren.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Convert PDF products to Brickfox CSV format for Pixi Compare
-    const csvData = allProducts.map(product => {
-      // PRIORITY: Use original image URLs, convert local paths to URLs only as fallback
-      let imageUrls: string[] = [];
-      
-      // First try: Original image URLs from scraping
-      if (product.images && product.images.length > 0) {
-        imageUrls = product.images;
-      }
-      // Second try: Convert local paths to full URLs
-      else if (product.localImagePaths && product.localImagePaths.length > 0) {
-        const domain = window.location.hostname === 'localhost' 
-          ? 'http://localhost:5000'
-          : `https://${window.location.host}`;
-        imageUrls = product.localImagePaths.map(path => 
-          `${domain}${path.startsWith('/') ? path : '/' + path}`
-        );
-      }
-      
-      // Create separate p_image[1] to p_image[10] columns
-      const imageColumns: Record<string, string> = {};
-      for (let i = 1; i <= 10; i++) {
-        imageColumns[`p_image[${i}]`] = imageUrls[i - 1] || '';
-      }
-      
-      return {
-        'p_item_number': product.articleNumber || '',
-        'v_manufacturers_item_number': product.articleNumber?.replace(/^ANS/, '') || '', // Remove ANS prefix
-        'p_name[de]': product.productName || '',
-        'v_ean': product.eanCode || '',
-        'p_brand': product.marke || '',
-        'v_price_net': product.ekPrice?.replace('€', '').trim() || '',
-        ...imageColumns,  // Add p_image[1] to p_image[10]
-      };
-    });
-
-    // Store data AND supplier number in sessionStorage for Pixi Compare
-    sessionStorage.setItem('pixi_compare_data', JSON.stringify(csvData));
-    sessionStorage.setItem('pixi_compare_source', 'pdf-scraper');
-    sessionStorage.setItem('pixi_compare_supplNr', supplNr);
-    
-    toast({
-      title: 'Daten vorbereitet',
-      description: `${allProducts.length} Produkte werden zum Pixi-Vergleich übertragen (Lieferant ${selectedSupplier.name}: ${supplNr})`,
-    });
-    
-    // Navigate to Pixi Compare
-    setLocation('/pixi-compare?from=pdf-scraper');
-  };
-
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6">
@@ -739,57 +662,30 @@ Vielen Dank im Voraus!`);
               </CardContent>
             </Card>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-blue-200 bg-blue-50/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ArrowRight className="h-5 w-5 text-blue-600" />
-                    3a. Mit URL-Scraper weiterverarbeiten
-                  </CardTitle>
-                  <CardDescription>
-                    Nutzen Sie den URL-Scraper, um vollständige Produktdaten von den extrahierten URLs zu laden
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    onClick={handleScrapeWithURLScraper}
-                    className="w-full"
-                    size="lg"
-                  >
-                    Zum URL-Scraper wechseln
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Die extrahierten URLs und EK-Preise werden automatisch übernommen
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-green-200 bg-green-50/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5 text-green-600" />
-                    3b. Mit Pixi vergleichen
-                  </CardTitle>
-                  <CardDescription>
-                    Vergleichen Sie die extrahierten Produkte direkt mit Ihrem Pixi ERP-System
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    onClick={handlePixiCompare}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    Mit Pixi vergleichen
-                    <Database className="ml-2 h-4 w-4" />
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Prüfen Sie, welche Produkte bereits in Pixi vorhanden sind
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowRight className="h-5 w-5 text-blue-600" />
+                  3. Mit URL-Scraper weiterverarbeiten
+                </CardTitle>
+                <CardDescription>
+                  Nutzen Sie den URL-Scraper, um vollständige Produktdaten von den extrahierten URLs zu laden
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleScrapeWithURLScraper}
+                  className="w-full"
+                  size="lg"
+                >
+                  Zum URL-Scraper wechseln
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Die extrahierten URLs und EK-Preise werden automatisch übernommen
+                </p>
+              </CardContent>
+            </Card>
           </>
         )}
       </div>
