@@ -132,6 +132,8 @@ export class MappingService {
       result[column] = '';
     }
 
+    const pendingMappings: Record<string, Array<{ sourceField: string; value: string; priority: number }>> = {};
+
     for (const [sourceField, targetFields] of Object.entries(this.rules.mapping)) {
       const sourceValue = sourceRow[sourceField];
 
@@ -140,17 +142,30 @@ export class MappingService {
       }
 
       for (const targetField of targetFields) {
+        if (!pendingMappings[targetField]) {
+          pendingMappings[targetField] = [];
+        }
+
+        let priority = 999;
         if (this.rules.mappingPriority[targetField]) {
           const priorityFields = this.rules.mappingPriority[targetField];
-          if (priorityFields[0] === sourceField && !result[targetField]) {
-            result[targetField] = String(sourceValue);
-          } else if (priorityFields.includes(sourceField) && !result[targetField]) {
-            result[targetField] = String(sourceValue);
+          const priorityIndex = priorityFields.indexOf(sourceField);
+          if (priorityIndex !== -1) {
+            priority = priorityIndex;
           }
-        } else {
-          result[targetField] = String(sourceValue);
         }
+
+        pendingMappings[targetField].push({
+          sourceField,
+          value: String(sourceValue),
+          priority,
+        });
       }
+    }
+
+    for (const [targetField, candidates] of Object.entries(pendingMappings)) {
+      candidates.sort((a, b) => a.priority - b.priority);
+      result[targetField] = candidates[0].value;
     }
 
     for (const [field, value] of Object.entries(this.rules.fixedValues)) {
@@ -177,8 +192,12 @@ export class MappingService {
         try {
           const value = parseFloat(result[field]);
           if (!isNaN(value)) {
-            const transformed = eval(transformation.formula.replace('value', String(value)));
-            result[field] = String(transformed);
+            const transformed = this.applyTransformation(value, transformation.formula);
+            if (transformed !== null) {
+              result[field] = String(transformed);
+            } else {
+              warnings.push(`Unsupported transformation formula for ${field}: ${transformation.formula}`);
+            }
           }
         } catch (error) {
           warnings.push(`Failed to transform ${field}: ${error}`);
@@ -192,6 +211,33 @@ export class MappingService {
     }
 
     return result;
+  }
+
+  private applyTransformation(value: number, formula: string): number | null {
+    const match = formula.match(/value\s*([+\-*/])\s*([\d.]+)/);
+    if (!match) {
+      return null;
+    }
+
+    const operator = match[1];
+    const operand = parseFloat(match[2]);
+
+    if (isNaN(operand)) {
+      return null;
+    }
+
+    switch (operator) {
+      case '+':
+        return value + operand;
+      case '-':
+        return value - operand;
+      case '*':
+        return value * operand;
+      case '/':
+        return operand !== 0 ? value / operand : null;
+      default:
+        return null;
+    }
   }
 
   private validateRow(row: Record<string, string>): string[] {
