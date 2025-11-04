@@ -953,7 +953,7 @@ export default function URLScraper() {
 
     // Get the selected supplier to find the SupplNr
     const selectedSupplier = suppliersData?.suppliers?.find(s => s.id === selectedSupplierId);
-    const supplNr = selectedSupplier?.pixiSupplierNumber;
+    const supplNr = selectedSupplier?.supplNr;
     const supplierName = selectedSupplier?.name || 'Unbekannt';
 
     // STRICT VALIDATION: Supplier with SupplNr is required
