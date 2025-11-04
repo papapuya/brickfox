@@ -73,20 +73,20 @@ export default function PixiComparePage() {
     }
   }, [activeTab]);
 
-  // Check if data from PDF-Scraper exists and auto-load
+  // Check if data from Scrapers exists and auto-load
   useEffect(() => {
     const pdfData = sessionStorage.getItem('pixi_compare_data');
     const pdfSource = sessionStorage.getItem('pixi_compare_source');
     const pdfSupplNr = sessionStorage.getItem('pixi_compare_supplNr');
     
-    if (pdfData && pdfSource === 'pdf-scraper') {
+    if (pdfData && (pdfSource === 'pdf-scraper' || pdfSource === 'url-scraper')) {
       try {
         const csvData = JSON.parse(pdfData);
-        console.log('[Pixi Compare] Auto-loading data from PDF-Scraper:', csvData.length, 'products');
+        console.log(`[Pixi Compare] Auto-loading data from ${pdfSource}:`, csvData.length, 'products');
         
         if (!pdfSupplNr) {
-          console.error('[Pixi Compare] Missing supplier number from PDF-Scraper');
-          setError('Lieferantennummer fehlt. Bitte wählen Sie im PDF-Scraper einen Lieferanten aus.');
+          console.error(`[Pixi Compare] Missing supplier number from ${pdfSource}`);
+          setError('Lieferantennummer fehlt. Bitte wählen Sie einen Lieferanten aus.');
           // Clear sessionStorage
           sessionStorage.removeItem('pixi_compare_data');
           sessionStorage.removeItem('pixi_compare_source');
@@ -103,7 +103,7 @@ export default function PixiComparePage() {
         sessionStorage.removeItem('pixi_compare_source');
         sessionStorage.removeItem('pixi_compare_supplNr');
       } catch (error) {
-        console.error('[Pixi Compare] Failed to parse PDF-Scraper data:', error);
+        console.error(`[Pixi Compare] Failed to parse ${pdfSource} data:`, error);
       }
     }
   }, []);
