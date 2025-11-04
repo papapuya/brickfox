@@ -2,6 +2,37 @@
 
 ## Recent Changes
 
+### 2025-11-04: Automatisches Mapping-Modul für Brickfox-CSV-Export
+**Änderung**: Neues Mapping-System für automatische Konvertierung von Produktdaten in Brickfox-Format!
+
+**Neue Features:**
+
+**1. mappingRules.json - Zentrale Mapping-Konfiguration**
+- ✅ Automatisches Mapping von PDF-Scraper-Daten → Brickfox-CSV
+- ✅ Prioritätslogik für mehrfache Mappings (z.B. HTML-Beschreibung > SEO-Text)
+- ✅ Fixed Values: 11 Pflichtfelder automatisch hinzugefügt (Gefahrgut, Tax Class, Zolltarif, etc.)
+- ✅ Auto-Generate: Kategoriepfad wird aus Spannung generiert (z.B. "Akkus ##||## 7.2 Volt")
+- ✅ Validierung: Required-Fields, Datentypen, Ranges (z.B. Spannung 0-100V)
+- ✅ Transformationen: Automatische Unit-Conversion (mm→cm, g→kg)
+
+**2. Mapping-Schema**
+- **Basis-Felder**: Artikelnummer → p_item_number + v_manufacturers_item_number
+- **Hersteller**: Wird auf p_brand UND v_supplier[Eur] gemappt
+- **Energie**: Energie (Wh) → p_attributes[energie_wh][de] (korrekt als Attribut)
+- **Beschreibungen**: HTML-Beschreibung als Hauptfeld, SEO-Text als Fallback
+- **Schutzschaltung**: Neues Mapping für Li-Ion-Schutzschaltung
+
+**3. Verbesserungen gegenüber Original**
+- ✅ Doppeltes Mapping aufgelöst: p_description[de] jetzt mit Prioritätslogik
+- ✅ Fehlende Defaults ergänzt: v_status = "1", v_supplier aus Hersteller
+- ✅ Energie_Wh korrigiert: Jetzt als Brickfox-Attribut p_attributes[energie_wh][de]
+- ✅ SEO-Felder hinzugefügt: meta_title, keywords, p_short_description in Ausgabe
+
+**Betroffene Dateien**:
+- `mappingRules.json` - Zentrale Mapping-Konfiguration
+- (Pending) `server/services/mapping-service.ts` - Mapping-Engine
+- (Pending) `server/routes-supabase.ts` - API-Endpoint /api/mapping/apply
+
 ### 2025-11-04: Enterprise-Sicherheits-Features implementiert
 **Änderung**: Umfassende Sicherheits-Upgrades für Enterprise-Readiness!
 
