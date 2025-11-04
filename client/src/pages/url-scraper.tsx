@@ -1695,7 +1695,7 @@ export default function URLScraper() {
         const generatedContent = generatedDescriptions.get(product.articleNumber);
         
         // Extract ALL fields dynamically (exclude metadata fields)
-        const excludeFields = ['articleNumber', 'productName', 'description', 'images'];
+        const excludeFields = ['articleNumber', 'productName', 'description', 'images', 'localImagePaths'];
         const extractedDataArray: any[] = [];
         
         Object.entries(product).forEach(([key, value]) => {
@@ -1710,6 +1710,14 @@ export default function URLScraper() {
             extractedDataArray.push({ key: mappedKey, value: String(value), type: 'text' as const });
           }
         });
+        
+        // CRITICAL: Add images and localImagePaths to extractedData for Brickfox export
+        if (product.images && product.images.length > 0) {
+          extractedDataArray.push({ key: 'images', value: JSON.stringify(product.images), type: 'text' as const });
+        }
+        if (product.localImagePaths && product.localImagePaths.length > 0) {
+          extractedDataArray.push({ key: 'localImagePaths', value: JSON.stringify(product.localImagePaths), type: 'text' as const });
+        }
         
         // Helper: Extract product type word directly from product name
         const extractProductTypeFromName = (productName: string): string => {
@@ -1767,6 +1775,9 @@ export default function URLScraper() {
             product.manufacturer ? { key: 'hersteller', value: product.manufacturer, type: 'text' as const } : null,
             product.price ? { key: 'preis', value: product.price, type: 'text' as const } : null,
             product.weight ? { key: 'gewicht', value: product.weight, type: 'text' as const } : null,
+            // CRITICAL: Add images for Brickfox export (original URLs have priority)
+            product.images && product.images.length > 0 ? { key: 'images', value: JSON.stringify(product.images), type: 'text' as const } : null,
+            product.localImagePaths && product.localImagePaths.length > 0 ? { key: 'localImagePaths', value: JSON.stringify(product.localImagePaths), type: 'text' as const } : null,
           ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
 
           await apiPost(`/api/projects/${selectedProjectId}/products`, {
@@ -1775,6 +1786,7 @@ export default function URLScraper() {
             htmlCode: generatedContent?.description || '',
             previewText: generatedContent?.seoDescription || product.description?.substring(0, 200) || '',
             exactProductName: product.productName,
+            images: product.images || [], // CRITICAL: Store original image URLs directly
             extractedData: extractedDataArray.length > 0 ? extractedDataArray : undefined,
             customAttributes: [
               { key: 'source_url', value: url, type: 'text' },
