@@ -346,6 +346,23 @@ export const BRICKFOX_FIELDS: BrickfoxFieldMeta[] = [
     sourceType: 'scraped',
     description: 'URL oder Pfad zum zehnten Produktbild'
   },
+  // PDF Media Files
+  {
+    key: 'p_media[1][pdf]',
+    label: 'PDF-Datei 1 (MSDS/Manual)',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL zur ersten PDF-Datei (z.B. MSDS, Bedienungsanleitung)'
+  },
+  {
+    key: 'p_media[2][pdf]',
+    label: 'PDF-Datei 2 (Manual/PIB)',
+    scope: 'product',
+    type: 'string',
+    sourceType: 'scraped',
+    description: 'URL zur zweiten PDF-Datei (z.B. Produktinformationsblatt)'
+  }
 ];
 
 // Helper: Get all fields by scope

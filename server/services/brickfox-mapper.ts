@@ -283,6 +283,39 @@ function getFieldValue(
     return null;
   }
   
+  // SPECIAL CASE: p_media[1][pdf] und p_media[2][pdf] - Extrahiere PDFs aus extractedData
+  if (brickfoxField.startsWith('p_media[') && brickfoxField.endsWith('[pdf]')) {
+    const mediaIndex = parseInt(brickfoxField.match(/\[(\d+)\]/)?.[1] || '0') - 1; // p_media[1][pdf] → Index 0
+    
+    // Extract PDFs from extractedData.pdfFiles
+    if (product.extractedData && product.extractedData.length > 0) {
+      const pdfFilesItem = product.extractedData.find((item: any) => 
+        item.key === 'pdfFiles'
+      );
+      if (pdfFilesItem && pdfFilesItem.value) {
+        let pdfUrls: string[] = [];
+        try {
+          // pdfFiles ist ein JSON-Array von URLs
+          if (typeof pdfFilesItem.value === 'string') {
+            pdfUrls = JSON.parse(pdfFilesItem.value);
+          } else if (Array.isArray(pdfFilesItem.value)) {
+            pdfUrls = pdfFilesItem.value;
+          }
+          
+          if (pdfUrls[mediaIndex]) {
+            debugLog(`[SPECIAL] ${brickfoxField} → pdfFiles[${mediaIndex}]: ${pdfUrls[mediaIndex]}`);
+            return pdfUrls[mediaIndex];
+          }
+        } catch (error) {
+          console.error(`[Brickfox] Error parsing pdfFiles:`, error);
+        }
+      }
+    }
+    
+    // Kein PDF für diesen Index gefunden
+    return null;
+  }
+  
   // STEP 1: Versuche intelligentes Auto-Mapping für andere Felder
   const autoMappedValue = autoMapFieldByLabel(product, brickfoxField);
   if (autoMappedValue !== null && autoMappedValue !== undefined && autoMappedValue !== '') {

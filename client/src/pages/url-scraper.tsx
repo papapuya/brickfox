@@ -1711,12 +1711,15 @@ export default function URLScraper() {
           }
         });
         
-        // CRITICAL: Add images and localImagePaths to extractedData for Brickfox export
+        // CRITICAL: Add images, localImagePaths, and pdfFiles to extractedData for Brickfox export
         if (product.images && product.images.length > 0) {
           extractedDataArray.push({ key: 'images', value: JSON.stringify(product.images), type: 'text' as const });
         }
         if (product.localImagePaths && product.localImagePaths.length > 0) {
           extractedDataArray.push({ key: 'localImagePaths', value: JSON.stringify(product.localImagePaths), type: 'text' as const });
+        }
+        if ((product as any).pdfFiles && (product as any).pdfFiles.length > 0) {
+          extractedDataArray.push({ key: 'pdfFiles', value: JSON.stringify((product as any).pdfFiles), type: 'text' as const });
         }
         
         // Helper: Extract product type word directly from product name
@@ -1775,9 +1778,10 @@ export default function URLScraper() {
             product.manufacturer ? { key: 'hersteller', value: product.manufacturer, type: 'text' as const } : null,
             product.price ? { key: 'preis', value: product.price, type: 'text' as const } : null,
             product.weight ? { key: 'gewicht', value: product.weight, type: 'text' as const } : null,
-            // CRITICAL: Add images for Brickfox export (original URLs have priority)
+            // CRITICAL: Add images and PDFs for Brickfox export (original URLs have priority)
             product.images && product.images.length > 0 ? { key: 'images', value: JSON.stringify(product.images), type: 'text' as const } : null,
             product.localImagePaths && product.localImagePaths.length > 0 ? { key: 'localImagePaths', value: JSON.stringify(product.localImagePaths), type: 'text' as const } : null,
+            (product as any).pdfFiles && (product as any).pdfFiles.length > 0 ? { key: 'pdfFiles', value: JSON.stringify((product as any).pdfFiles), type: 'text' as const } : null,
           ].filter((item): item is { key: string; value: string; type: 'text' } => item !== null);
 
           await apiPost(`/api/projects/${selectedProjectId}/products`, {

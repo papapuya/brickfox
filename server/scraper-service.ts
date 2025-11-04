@@ -593,16 +593,26 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     console.error('[Magento Gallery] Error parsing gallery JSON:', error);
   }
 
-  // ANSMANN: Extract high-resolution images from Downloads tab (better quality than gallery!)
-  // The Downloads tab contains JPG files in a table, often 3-5 product images + PDF manuals
+  // ANSMANN: Extract high-resolution images AND PDFs from Downloads tab
+  // The Downloads tab contains JPG files and PDF manuals (MSDS, PIB, Bedienungsanleitung)
   try {
     const downloadImages: string[] = [];
+    const downloadPdfs: string[] = [];
     
     // Find all links in the Downloads tab that point to image files
     $('#product-info-downloads a[href$=".jpg"], #product-info-downloads a[href$=".JPG"], #product-info-downloads a[href$=".png"], #product-info-downloads a[href$=".PNG"]').each((_, link) => {
       const href = $(link).attr('href');
       if (href && href.startsWith('http')) {
         downloadImages.push(href);
+      }
+    });
+    
+    // Find all links in the Downloads tab that point to PDF files
+    $('#product-info-downloads a[href$=".pdf"], #product-info-downloads a[href$=".PDF"]').each((_, link) => {
+      const href = $(link).attr('href');
+      const text = $(link).text().trim().toLowerCase();
+      if (href && href.startsWith('http')) {
+        downloadPdfs.push(href);
       }
     });
     
@@ -614,8 +624,14 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
       product.images = Array.from(new Set(allImages)); // Remove duplicates
       console.log(`[ANSMANN Downloads] 🖼️  Total unique images: ${product.images.length}`);
     }
+    
+    // Store PDFs for Brickfox export (MSDS, Manuals, etc.)
+    if (downloadPdfs.length > 0) {
+      (product as any).pdfFiles = downloadPdfs;
+      console.log(`[ANSMANN Downloads] 📄 Extracted ${downloadPdfs.length} PDF files from Downloads tab`);
+    }
   } catch (error) {
-    console.error('[ANSMANN Downloads] Error extracting download images:', error);
+    console.error('[ANSMANN Downloads] Error extracting download files:', error);
   }
 
   // Weight - Format for Brickfox: German format with comma, NO units (e.g., 250 or 1,5)
