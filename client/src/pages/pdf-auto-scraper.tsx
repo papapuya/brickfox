@@ -454,6 +454,102 @@ Vielen Dank im Voraus!`);
     setLocation('/url-scraper?from=pdf-auto-scraper');
   };
 
+  const handleBrickfoxAutoMapping = async () => {
+    if (extractedProducts.length === 0) {
+      toast({
+        title: 'Keine Produkte',
+        description: 'Bitte extrahieren Sie zuerst Produkte aus dem PDF',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: 'Mapping wird durchgeführt...',
+        description: 'Ihre Daten werden in Brickfox-Format konvertiert',
+      });
+
+      const sourceData = extractedProducts.map(product => ({
+        'Artikelnummer': product.articleNumber || '',
+        'Produktname': product.productName || '',
+        'EAN': product.eanCode || '',
+        'Hersteller': product.marke || '',
+        'EK (netto) €': product.ekPrice || '',
+        'Nominalspannung (V)': '',
+        'Nominalkapazität (mAh)': '',
+        'Länge (mm)': '',
+        'Breite (mm)': '',
+        'Höhe (mm)': '',
+        'Gewicht (g)': '',
+        'Energie (Wh)': '',
+        'Zellenchemie': '',
+        'SEO Titel': '',
+        'SEO Produktbeschreibung': product.description || '',
+        'SEO Keywords': '',
+        'Produktbeschreibung (HTML)': product.description || '',
+        'Schutzschaltung (Li-Ion)': '',
+      }));
+
+      const token = localStorage.getItem('supabase_token');
+      if (!token) {
+        toast({
+          title: 'Nicht authentifiziert',
+          description: 'Bitte melden Sie sich an',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const response = await fetch('/api/mapping/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sourceData,
+          exportToCsv: true,
+          filename: 'brickfox_pdf_export',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        toast({
+          title: 'Mapping fehlgeschlagen',
+          description: result.error || 'Ein Fehler ist aufgetreten',
+          variant: 'destructive',
+        });
+        console.error('Mapping errors:', result.errors);
+        return;
+      }
+
+      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `brickfox_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+
+      toast({
+        title: 'Export erfolgreich!',
+        description: `${result.stats.validRows} Produkte wurden in Brickfox-Format exportiert`,
+      });
+
+      if (result.warnings && result.warnings.length > 0) {
+        console.warn('Mapping warnings:', result.warnings);
+      }
+    } catch (error) {
+      console.error('Brickfox mapping error:', error);
+      toast({
+        title: 'Fehler beim Export',
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6">
@@ -777,6 +873,32 @@ Vielen Dank im Voraus!`);
                 </Button>
                 <p className="text-sm text-muted-foreground mt-2">
                   Die extrahierten URLs und EK-Preise werden automatisch übernommen
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 bg-green-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-green-600" />
+                  4. Automatischer Brickfox-Export
+                </CardTitle>
+                <CardDescription>
+                  Konvertieren Sie die PDF-Daten automatisch in Brickfox-CSV-Format
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleBrickfoxAutoMapping}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  disabled={extractedProducts.length === 0}
+                >
+                  <Database className="mr-2 h-4 w-4" />
+                  Brickfox-CSV generieren
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Automatisches Mapping: Spannung → Kategorie, Preise, Attribute, Bilder uvm.
                 </p>
               </CardContent>
             </Card>

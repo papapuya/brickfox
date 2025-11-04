@@ -335,4 +335,65 @@ router.get('/presets', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+router.post('/mapping/apply', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { sourceData, exportToCsv = false, filename = 'brickfox_export' } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!sourceData || !Array.isArray(sourceData) || sourceData.length === 0) {
+      return res.status(400).json({ 
+        error: 'sourceData is required and must be a non-empty array' 
+      });
+    }
+
+    const { mappingService } = await import('./services/mapping-service');
+    const result = await mappingService.applyMapping(sourceData);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mapping failed',
+        errors: result.errors,
+        warnings: result.warnings,
+        stats: result.stats,
+      });
+    }
+
+    if (exportToCsv && result.csv) {
+      const filePath = await mappingService.exportToFile(result.csv, filename);
+      
+      return res.json({
+        success: true,
+        message: 'Mapping erfolgreich angewendet und als CSV exportiert',
+        data: result.data,
+        csv: result.csv,
+        filePath,
+        errors: result.errors,
+        warnings: result.warnings,
+        stats: result.stats,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Mapping erfolgreich angewendet',
+      data: result.data,
+      csv: result.csv,
+      errors: result.errors,
+      warnings: result.warnings,
+      stats: result.stats,
+    });
+  } catch (error) {
+    console.error('[POST /mapping/apply] Error:', error);
+    res.status(500).json({ 
+      error: 'Mapping failed',
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 export default router;
