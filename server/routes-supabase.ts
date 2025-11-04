@@ -2037,6 +2037,128 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
+  // ===== SCRAPE SESSION MANAGEMENT =====
+  // GET current scrape session for user (persists data between page navigation)
+  app.get('/api/scrape-session', requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const tenantId = (req as any).tenantId;
+      
+      // Get the most recent scrape session for this user
+      const [session] = await heliumDb
+        .select()
+        .from(scrapeSessionTable)
+        .where(
+          and(
+            eq(scrapeSessionTable.userId, userId),
+            tenantId ? eq(scrapeSessionTable.tenantId, tenantId) : undefined
+          )
+        )
+        .orderBy(sql`${scrapeSessionTable.updatedAt} DESC`)
+        .limit(1);
+      
+      if (!session) {
+        return res.json({ success: true, session: null });
+      }
+      
+      res.json({
+        success: true,
+        session: {
+          id: session.id,
+          scrapedProducts: session.scrapedProducts,
+          scrapedProduct: session.scrapedProduct,
+          generatedDescription: session.generatedDescription,
+          updatedAt: session.updatedAt,
+        },
+      });
+    } catch (error: any) {
+      console.error('[Scrape Session] GET error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // PUT/UPDATE scrape session (auto-save during scraping)
+  app.put('/api/scrape-session', requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const tenantId = (req as any).tenantId;
+      const { scrapedProducts, scrapedProduct, generatedDescription } = req.body;
+      
+      // Check if session already exists
+      const [existingSession] = await heliumDb
+        .select()
+        .from(scrapeSessionTable)
+        .where(
+          and(
+            eq(scrapeSessionTable.userId, userId),
+            tenantId ? eq(scrapeSessionTable.tenantId, tenantId) : undefined
+          )
+        )
+        .orderBy(sql`${scrapeSessionTable.updatedAt} DESC`)
+        .limit(1);
+      
+      let session;
+      
+      if (existingSession) {
+        // Update existing session
+        [session] = await heliumDb
+          .update(scrapeSessionTable)
+          .set({
+            scrapedProducts: scrapedProducts || existingSession.scrapedProducts,
+            scrapedProduct: scrapedProduct || existingSession.scrapedProduct,
+            generatedDescription: generatedDescription || existingSession.generatedDescription,
+            updatedAt: new Date(),
+          })
+          .where(eq(scrapeSessionTable.id, existingSession.id))
+          .returning();
+        
+        console.log(`[Scrape Session] Updated session ${session.id} for user ${userId}`);
+      } else {
+        // Create new session
+        [session] = await heliumDb
+          .insert(scrapeSessionTable)
+          .values({
+            userId,
+            tenantId: tenantId || null,
+            scrapedProducts: scrapedProducts || [],
+            scrapedProduct: scrapedProduct || null,
+            generatedDescription: generatedDescription || null,
+          })
+          .returning();
+        
+        console.log(`[Scrape Session] Created new session ${session.id} for user ${userId}`);
+      }
+      
+      res.json({ success: true, session });
+    } catch (error: any) {
+      console.error('[Scrape Session] PUT error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // DELETE scrape session (when user saves to project)
+  app.delete('/api/scrape-session', requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const tenantId = (req as any).tenantId;
+      
+      await heliumDb
+        .delete(scrapeSessionTable)
+        .where(
+          and(
+            eq(scrapeSessionTable.userId, userId),
+            tenantId ? eq(scrapeSessionTable.tenantId, tenantId) : undefined
+          )
+        );
+      
+      console.log(`[Scrape Session] Deleted session for user ${userId}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[Scrape Session] DELETE error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Mount webhook routes
   app.use('/api/webhooks', webhooksRouter);
 
