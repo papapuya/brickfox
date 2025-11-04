@@ -2,6 +2,50 @@
 
 ## Recent Changes
 
+### 2025-11-04: Enterprise-Sicherheits-Features implementiert
+**Änderung**: Umfassende Sicherheits-Upgrades für Enterprise-Readiness!
+
+**Neue Features:**
+
+**1. Automatisches Backup-System**
+- ✅ DB-Tabellen: `backups`, `audit_logs`, `permissions`
+- ✅ Backup-Service: Create, Restore, List, Delete Backups
+- ✅ API-Endpoints: `/api/backups` (POST/GET/DELETE), `/api/backups/:id/restore`
+- ✅ Point-in-Time Recovery für Geschäftsdaten (users, projects, products, suppliers, templates, permissions)
+- ✅ Automatische Expiration (30 Tage default)
+- ✅ Multi-Tenant Isolation
+- ✅ Audit-Logging für alle Backup-Operationen
+
+**2. Granulares RBAC-System mit Permissions**
+- ✅ 5 Rollen: `admin`, `editor`, `viewer`, `project_manager`, `member`
+- ✅ Permission-Service mit resource/action/scope-basiertem Zugriff
+- ✅ Middleware: `requirePermission`, `requireAnyPermission`, `requireRole`
+- ✅ Scopes: `all` (global), `own` (nur eigene Ressourcen), `team` (Tenant-weit), `none`
+- ✅ Default-Permissions pro Rolle
+- ✅ API-Endpoints: `/api/permissions` (POST/GET/DELETE), `/api/users/:userId/role` (PUT)
+- ✅ Security: Ownership-Checks aus Datenbank (kein Client-Tampering)
+
+**3. Audit-Log-System**
+- ✅ Protokollierung aller CRUD-Operationen
+- ✅ Tracking: User, Timestamp, Action, ResourceType, ResourceId, Changes, IP, UserAgent
+- ✅ API: `/api/audit-logs` (GET, Super-Admin only)
+
+**Rollen-Hierarchie:**
+- **admin**: Full access (alle Ressourcen, inkl. Backups, Users)
+- **editor**: Create/Update Products, Projects, Suppliers (scope: all)
+- **viewer**: Read-only + Export (scope: all)
+- **project_manager**: Create/Update/Delete eigene Projects/Products (scope: own)
+- **member**: Create/Update eigene Ressourcen (scope: own)
+
+**Betroffene Dateien**:
+- `shared/schema.ts` - Neue Tabellen: backups, audit_logs, permissions
+- `server/services/backup-service.ts` - Backup/Restore-Logik
+- `server/services/permission-service.ts` - RBAC-Logik
+- `server/middleware/permissions.ts` - Permission-Middleware
+- `server/routes-supabase.ts` - API-Endpoints für Backups, Permissions, Audit-Logs
+
+## Recent Changes
+
 ### 2025-11-03: PDF-Scraper → Pixi-Compare Direkt-Integration
 **Änderung**: PDF-Scraper ist jetzt direkt mit dem Pixi-Vergleich verbunden - ohne CSV-Export/Import-Zwischenschritt!
 

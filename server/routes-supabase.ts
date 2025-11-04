@@ -77,6 +77,8 @@ async function requireAuth(req: any, res: any, next: any) {
   }
 
   req.user = user;
+  req.userId = user.id;
+  req.tenantId = user.tenantId || null;
 
   // CRITICAL: Set tenant_id on the ACTUAL Drizzle database connection for RLS
   if (user.tenantId) {
@@ -2272,6 +2274,95 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       res.json({ success: true, logs });
     } catch (error: any) {
       console.error('[Audit API] List failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ===== PERMISSION SYSTEM API ENDPOINTS =====
+  
+  // Grant permission to user
+  app.post('/api/permissions', requireSuperAdmin, async (req, res) => {
+    try {
+      const { userId, resource, action, scope, conditions } = req.body;
+      const tenantId = (req as any).tenantId;
+      
+      const { permissionService } = await import('./services/permission-service');
+      
+      const permission = await permissionService.grantPermission({
+        userId,
+        tenantId,
+        resource,
+        action,
+        scope,
+        conditions,
+      });
+      
+      res.json({ success: true, permission });
+    } catch (error: any) {
+      console.error('[Permission API] Grant failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // List user permissions
+  app.get('/api/permissions/:userId', requireAuth, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const requestingUserId = (req as any).userId;
+      const isAdmin = (req as any).user?.isAdmin;
+      
+      if (!isAdmin && requestingUserId !== userId) {
+        return res.status(403).json({ 
+          success: false, 
+          error: 'Sie können nur Ihre eigenen Berechtigungen einsehen.' 
+        });
+      }
+      
+      const { permissionService } = await import('./services/permission-service');
+      const userPermissions = await permissionService.listUserPermissions(userId);
+      
+      res.json({ success: true, permissions: userPermissions });
+    } catch (error: any) {
+      console.error('[Permission API] List failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // Revoke permission
+  app.delete('/api/permissions/:id', requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const { permissionService } = await import('./services/permission-service');
+      await permissionService.revokePermission(id);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[Permission API] Revoke failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+  
+  // Update user role
+  app.put('/api/users/:userId/role', requireSuperAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+      
+      const allowedRoles = ['admin', 'editor', 'viewer', 'project_manager', 'member'];
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: `Ungültige Rolle. Erlaubt: ${allowedRoles.join(', ')}` 
+        });
+      }
+      
+      const { permissionService } = await import('./services/permission-service');
+      const user = await permissionService.updateUserRole(userId, role);
+      
+      res.json({ success: true, user });
+    } catch (error: any) {
+      console.error('[Permission API] Role update failed:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
