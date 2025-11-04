@@ -654,6 +654,79 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
     }
   });
 
+  // Initial Admin Setup - nur wenn noch KEIN Admin existiert
+  app.post('/api/admin/initial-setup', async (req, res) => {
+    try {
+      const { email, password, username } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'E-Mail und Passwort erforderlich' });
+      }
+
+      // Check if any admin already exists
+      const existingAdmins = await heliumDb.select()
+        .from(usersTable)
+        .where(eq(usersTable.isAdmin, true))
+        .limit(1);
+
+      if (existingAdmins.length > 0) {
+        return res.status(403).json({ error: 'Admin-Benutzer existiert bereits' });
+      }
+
+      // Create the first admin user with custom username
+      if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+      }
+
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+      if (error) throw error;
+
+      const { data: akkushopTenant } = await supabaseAdmin
+        .from('tenants')
+        .select('id')
+        .eq('slug', 'akkushop')
+        .single();
+
+      if (!akkushopTenant) {
+        console.error('AkkuShop tenant not found for admin user');
+      }
+
+      const { error: insertError } = await supabaseAdmin
+        .from('users')
+        .upsert({
+          id: data.user.id,
+          email: email,
+          username: username || 'Admin',
+          is_admin: true,
+          role: 'admin',
+          tenant_id: akkushopTenant?.id,
+          subscription_status: 'trial',
+          plan_id: 'trial',
+          api_calls_limit: 999999, // Admin: unlimited
+          api_calls_used: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'id'
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to create user record: ${insertError.message}`);
+      }
+
+      console.log(`✅ Initial Admin user created: ${email} (Username: ${username || 'Admin'})`);
+      res.json({ success: true, message: `Admin-Benutzer erstellt: ${username || 'Admin'}` });
+    } catch (error: any) {
+      console.error('Initial admin setup error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post('/api/admin/create-admin', requireSuperAdmin, async (req, res) => {
     try {
       const { email, password } = req.body;
