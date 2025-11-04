@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase';
-import { encrypt, decrypt } from './encryption';
+import { encryptionService } from './services/encryption-service';
 import { db as heliumDb } from './db'; // Helium/Neon PostgreSQL client
 import { eq, desc, and } from 'drizzle-orm';
 import { users as usersTable, tenants as tenantsTable, suppliers as suppliersTable, projects as projectsTable, productsInProjects as productsInProjectsTable } from '@shared/schema';
@@ -86,6 +86,15 @@ export interface IStorage {
 }
 
 export class SupabaseStorage implements IStorage {
+  private safeDecrypt(ciphertext: string | null | undefined): string | null {
+    try {
+      return encryptionService.decrypt(ciphertext);
+    } catch (error) {
+      console.error('[Storage] Decryption failed, returning null:', error);
+      return null;
+    }
+  }
+
   async createUser(data: RegisterUser): Promise<User> {
     throw new Error('Use Supabase Auth signUp instead');
   }
@@ -920,7 +929,7 @@ export class SupabaseStorage implements IStorage {
       description: data.description || null,
       selectors: data.selectors || {},
       productLinkSelector: data.productLinkSelector || null,
-      sessionCookies: data.sessionCookies || null,
+      sessionCookies: encryptionService.encrypt(data.sessionCookies) || null,
       userAgent: data.userAgent || null,
       loginUrl: data.loginUrl || null,
       loginUsernameField: data.loginUsernameField || null,
@@ -932,7 +941,7 @@ export class SupabaseStorage implements IStorage {
 
     // SECURITY: Encrypt password before storing
     if (data.loginPassword) {
-      insertData.loginPassword = encrypt(data.loginPassword);
+      insertData.loginPassword = encryptionService.encrypt(data.loginPassword);
     }
 
     // CRITICAL: Use Helium DB with Drizzle (same as reads!)
@@ -1001,7 +1010,7 @@ export class SupabaseStorage implements IStorage {
       description: s.description || undefined,
       selectors: s.selectors as any,
       productLinkSelector: s.productLinkSelector || undefined,
-      sessionCookies: s.sessionCookies || undefined,
+      sessionCookies: this.safeDecrypt(s.sessionCookies) || undefined,
       userAgent: s.userAgent || undefined,
       loginUrl: s.loginUrl || undefined,
       loginUsernameField: s.loginUsernameField || undefined,
@@ -1033,12 +1042,13 @@ export class SupabaseStorage implements IStorage {
       description: supplier.description || undefined,
       selectors: supplier.selectors as any,
       productLinkSelector: supplier.productLinkSelector || undefined,
-      sessionCookies: supplier.sessionCookies || undefined,
+      sessionCookies: this.safeDecrypt(supplier.sessionCookies) || undefined,
       userAgent: supplier.userAgent || undefined,
       loginUrl: supplier.loginUrl || undefined,
       loginUsernameField: supplier.loginUsernameField || undefined,
       loginPasswordField: supplier.loginPasswordField || undefined,
       loginUsername: supplier.loginUsername || undefined,
+      loginPassword: this.safeDecrypt(supplier.loginPassword) || undefined,
       verifiedFields: supplier.verifiedFields || undefined,
       lastVerifiedAt: supplier.lastVerifiedAt || undefined,
       createdAt: supplier.createdAt!,
@@ -1054,7 +1064,7 @@ export class SupabaseStorage implements IStorage {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.selectors !== undefined) updateData.selectors = data.selectors;
     if (data.productLinkSelector !== undefined) updateData.productLinkSelector = data.productLinkSelector;
-    if (data.sessionCookies !== undefined) updateData.sessionCookies = data.sessionCookies;
+    if (data.sessionCookies !== undefined) updateData.sessionCookies = data.sessionCookies ? encryptionService.encrypt(data.sessionCookies) : null;
     if (data.userAgent !== undefined) updateData.userAgent = data.userAgent;
     if (data.loginUrl !== undefined) updateData.loginUrl = data.loginUrl;
     if (data.loginUsernameField !== undefined) updateData.loginUsernameField = data.loginUsernameField;
@@ -1063,9 +1073,9 @@ export class SupabaseStorage implements IStorage {
     if (data.verifiedFields !== undefined) updateData.verifiedFields = data.verifiedFields || null;
     if (data.lastVerifiedAt !== undefined) updateData.lastVerifiedAt = data.lastVerifiedAt;
     
-    // SECURITY: Encrypt password before storing
+    // SECURITY: Encrypt password before storing (or clear if null)
     if (data.loginPassword !== undefined) {
-      updateData.loginPassword = data.loginPassword ? encrypt(data.loginPassword) : null;
+      updateData.loginPassword = data.loginPassword ? encryptionService.encrypt(data.loginPassword) : null;
     }
 
     // CRITICAL: Use Helium DB with Drizzle (same as reads!)

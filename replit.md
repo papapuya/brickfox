@@ -37,12 +37,23 @@
 - **project_manager**: Create/Update/Delete eigene Projects/Products (scope: own)
 - **member**: Create/Update eigene Ressourcen (scope: own)
 
+**4. Field-Level Encryption für sensible Daten**
+- ✅ AES-256-GCM Authenticated Encryption (verhindert Tampering)
+- ✅ Verschlüsselte Felder: `loginPassword`, `sessionCookies`, API-Keys
+- ✅ Automatic Encryption/Decryption bei CREATE/UPDATE/GET
+- ✅ Null-Handling: Secrets können gelöscht werden
+- ✅ Error-Handling: Tampering wird erkannt und geloggt
+- ✅ ENCRYPTION_KEY aus Environment (32+ Zeichen)
+
 **Betroffene Dateien**:
 - `shared/schema.ts` - Neue Tabellen: backups, audit_logs, permissions
 - `server/services/backup-service.ts` - Backup/Restore-Logik
 - `server/services/permission-service.ts` - RBAC-Logik
 - `server/middleware/permissions.ts` - Permission-Middleware
 - `server/routes-supabase.ts` - API-Endpoints für Backups, Permissions, Audit-Logs
+- `server/services/encryption-service.ts` - AES-256-GCM Encryption
+- `server/supabase-storage.ts` - Automatische Encryption bei Supplier-CRUD
+- `server/api-key-manager.ts` - Encrypted API-Key Storage
 
 ## Recent Changes
 

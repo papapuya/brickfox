@@ -29,7 +29,7 @@ class EncryptionService {
   }
 
   encrypt(plaintext: string | null | undefined): string | null {
-    if (!plaintext) {
+    if (plaintext === null || plaintext === undefined || plaintext === '') {
       return null;
     }
 
@@ -57,7 +57,7 @@ class EncryptionService {
   }
 
   decrypt(ciphertext: string | null | undefined): string | null {
-    if (!ciphertext) {
+    if (ciphertext === null || ciphertext === undefined || ciphertext === '') {
       return null;
     }
 
@@ -77,8 +77,8 @@ class EncryptionService {
       
       return decrypted.toString('utf8');
     } catch (error) {
-      console.error('[Encryption] Error decrypting data:', error);
-      return null;
+      console.error('[Encryption] Decryption failed - possible tampering or wrong key:', error);
+      throw new Error('Decryption failed - data may be tampered or encryption key is wrong');
     }
   }
 

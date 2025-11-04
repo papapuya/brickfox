@@ -1,4 +1,4 @@
-import { encryptApiKey, decryptApiKey } from './encryption';
+import { encryptionService } from './services/encryption-service';
 
 interface SecureApiKeys {
   openai?: string;
@@ -8,13 +8,14 @@ interface SecureApiKeys {
 class ApiKeyManager {
   private encryptedKeys: SecureApiKeys = {};
   
-  // API-Schlüssel verschlüsselt speichern
   setApiKey(service: keyof SecureApiKeys, apiKey: string): void {
-    this.encryptedKeys[service] = encryptApiKey(apiKey);
-    console.log(`API-Schlüssel für ${service} verschlüsselt gespeichert`);
+    const encrypted = encryptionService.encrypt(apiKey);
+    if (encrypted) {
+      this.encryptedKeys[service] = encrypted;
+      console.log(`API-Schlüssel für ${service} verschlüsselt gespeichert`);
+    }
   }
   
-  // API-Schlüssel entschlüsselt abrufen
   getApiKey(service: keyof SecureApiKeys): string | null {
     const encryptedKey = this.encryptedKeys[service];
     if (!encryptedKey) {
@@ -22,21 +23,19 @@ class ApiKeyManager {
     }
     
     try {
-      return decryptApiKey(encryptedKey);
+      return encryptionService.decrypt(encryptedKey);
     } catch (error) {
       console.error(`Fehler beim Entschlüsseln des ${service} API-Schlüssels:`, error);
       return null;
     }
   }
   
-  // API-Schlüssel aus Umgebungsvariablen laden (falls verschlüsselt)
   loadFromEnvironment(): void {
     const encryptedOpenAI = process.env.ENCRYPTED_OPENAI_API_KEY;
     const encryptedFirecrawl = process.env.ENCRYPTED_FIRECRAWL_API_KEY;
     
     if (encryptedOpenAI) {
       try {
-        const decrypted = decryptApiKey(encryptedOpenAI);
         this.encryptedKeys.openai = encryptedOpenAI;
         console.log('OpenAI API-Schlüssel aus verschlüsselter Umgebungsvariable geladen');
       } catch (error) {
@@ -46,7 +45,6 @@ class ApiKeyManager {
     
     if (encryptedFirecrawl) {
       try {
-        const decrypted = decryptApiKey(encryptedFirecrawl);
         this.encryptedKeys.firecrawl = encryptedFirecrawl;
         console.log('Firecrawl API-Schlüssel aus verschlüsselter Umgebungsvariable geladen');
       } catch (error) {
@@ -55,17 +53,14 @@ class ApiKeyManager {
     }
   }
   
-  // Alle API-Schlüssel löschen
   clearAllKeys(): void {
     this.encryptedKeys = {};
     console.log('Alle API-Schlüssel gelöscht');
   }
 }
 
-// Singleton-Instanz
 export const apiKeyManager = new ApiKeyManager();
 
-// Hilfsfunktionen für die bestehende AI-Service
 export function getSecureOpenAIKey(): string | null {
   return process.env.OPENAI_API_KEY || apiKeyManager.getApiKey('openai') || null;
 }
