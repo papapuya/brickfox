@@ -36,17 +36,16 @@ import {
   Bot,
   AlertCircle,
   Trash2,
+  Database,
+  Shield,
+  FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'wouter';
 import { queryClient } from '@/lib/queryClient';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AdminBackupManagement } from '@/components/admin-backup-management';
-import { AdminPermissionManagement } from '@/components/admin-permission-management';
-import { AdminAuditLogViewer } from '@/components/admin-audit-log-viewer';
-import { Database, Shield, FileText } from 'lucide-react';
 
 interface TenantSettings {
   features: {
@@ -370,7 +369,7 @@ export default function AdminDashboard() {
               Admin Dashboard
             </h1>
           </div>
-          <p className="text-gray-600">Enterprise-Management & Sicherheit</p>
+          <p className="text-gray-600">Systemübersicht und Kundenverwaltung</p>
         </div>
         
         <div className="flex gap-3">
@@ -476,27 +475,58 @@ export default function AdminDashboard() {
       </div>
     </div>
 
-      <Tabs defaultValue="tenants" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="tenants" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            Tenant-Verwaltung
-          </TabsTrigger>
-          <TabsTrigger value="backups" className="gap-2">
-            <Database className="h-4 w-4" />
-            Backups
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-2">
-            <Shield className="h-4 w-4" />
-            Berechtigungen
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="gap-2">
-            <FileText className="h-4 w-4" />
-            Audit-Logs
-          </TabsTrigger>
-        </TabsList>
+      {/* Enterprise Security Features Navigation */}
+      <div className="mb-8">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-indigo-600" />
+            Enterprise-Sicherheits-Features
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">Verwalten Sie Backups, Berechtigungen und Audit-Logs</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/admin/backups">
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-indigo-100 hover:border-indigo-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-indigo-700">
+                  <Database className="h-5 w-5" />
+                  Backup-Management
+                </CardTitle>
+                <CardDescription>
+                  Erstellen, wiederherstellen und verwalten Sie Daten-Backups mit Point-in-Time Recovery
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link href="/admin/permissions">
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-purple-100 hover:border-purple-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-700">
+                  <Shield className="h-5 w-5" />
+                  Berechtigungen (RBAC)
+                </CardTitle>
+                <CardDescription>
+                  Verwalten Sie Benutzer-Rollen und granulare Zugriffsrechte mit Scope-Kontrolle
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link href="/admin/audit-logs">
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-amber-100 hover:border-amber-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-700">
+                  <FileText className="h-5 w-5" />
+                  Audit-Logs
+                </CardTitle>
+                <CardDescription>
+                  Überwachen Sie alle CRUD-Operationen mit detaillierten Change-Logs und Filterung
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        </div>
+      </div>
 
-        <TabsContent value="tenants" className="space-y-6">
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -913,22 +943,6 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
-  )}
-  </TabsContent>
-
-        <TabsContent value="backups">
-          <AdminBackupManagement />
-        </TabsContent>
-
-        <TabsContent value="permissions">
-          <AdminPermissionManagement />
-        </TabsContent>
-
-        <TabsContent value="audit">
-          <AdminAuditLogViewer />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

@@ -15,6 +15,9 @@ import { useAuth } from "@/lib/auth-context";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminBackups from "@/pages/admin-backups";
+import AdminPermissions from "@/pages/admin-permissions";
+import AdminAuditLogs from "@/pages/admin-audit-logs";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
 import URLScraper from "@/pages/url-scraper";
 import PDFAutoScraper from "@/pages/pdf-auto-scraper";
@@ -53,6 +56,21 @@ function Router() {
       <Route path="/admin/dashboard">
         <AdminProtectedRoute>
           <AdminDashboard />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/backups">
+        <AdminProtectedRoute>
+          <AdminBackups />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/permissions">
+        <AdminProtectedRoute>
+          <AdminPermissions />
+        </AdminProtectedRoute>
+      </Route>
+      <Route path="/admin/audit-logs">
+        <AdminProtectedRoute>
+          <AdminAuditLogs />
         </AdminProtectedRoute>
       </Route>
       <Route path="/csv-bulk-description">
