@@ -7,10 +7,19 @@
   
   "mapping": {
     "Artikelnummer": ["p_item_number", "v_manufacturers_item_number", "v_supplier_item_number"],
+    "articleNumber": ["p_item_number", "v_supplier_item_number"],
+    "manufacturerArticleNumber": ["v_manufacturers_item_number"],
     "Produktname": ["p_name[de]"],
+    "productName": ["p_name[de]"],
     "EAN": ["v_ean"],
-    "Hersteller": ["p_brand", "v_supplier[Eur]"],
+    "ean": ["v_ean"],
+    "eanCode": ["v_ean"],
+    "Hersteller": ["p_brand"],
+    "manufacturer": ["p_brand"],
+    "marke": ["p_brand", "v_supplier[Eur]"],
+    "ekPrice": ["v_purchase_price"],
     "EK (netto) €": ["v_purchase_price"],
+    "vkPrice": ["v_price[Eur]"],
     "VK Preis €": ["v_price[Eur]"],
     "Nominalspannung (V)": ["p_attributes[akku_v][de]"],
     "Nominalkapazität (mAh)": ["p_attributes[akku_mah][de]"],
@@ -34,8 +43,18 @@
       "Produktname"
     ],
     "v_supplier[Eur]": [
+      "marke",
+      "manufacturer",
       "Hersteller",
       "Lieferant"
+    ],
+    "v_purchase_price": [
+      "ekPrice",
+      "EK (netto) €"
+    ],
+    "v_price[Eur]": [
+      "vkPrice",
+      "VK Preis €"
     ]
   },
   
