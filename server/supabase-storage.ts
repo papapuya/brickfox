@@ -584,6 +584,7 @@ export class SupabaseStorage implements IStorage {
           customAttributes: data.customAttributes || null,
           exactProductName: data.exactProductName,
           articleNumber: data.articleNumber,
+          manufacturerArticleNumber: data.manufacturerArticleNumber,
         })
         .returning();
 
@@ -616,6 +617,7 @@ export class SupabaseStorage implements IStorage {
           custom_attributes: data.customAttributes || null,
           exact_product_name: data.exactProductName,
           article_number: data.articleNumber,
+          manufacturer_article_number: data.manufacturerArticleNumber,
         })
         .select()
         .single();
@@ -1234,11 +1236,7 @@ export class SupabaseStorage implements IStorage {
     // Decrypt password for internal use
     let decryptedPassword: string | undefined = undefined;
     if (supplier.loginPassword) {
-      try {
-        decryptedPassword = decrypt(supplier.loginPassword);
-      } catch (error) {
-        console.error('[getSupplierWithCredentials] Failed to decrypt login password:', error);
-      }
+      decryptedPassword = this.safeDecrypt(supplier.loginPassword) || undefined;
     }
 
     return {

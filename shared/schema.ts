@@ -138,7 +138,9 @@ export const productInProjectSchema = z.object({
 
 export type ProductInProject = z.infer<typeof productInProjectSchema>;
 
-export const createProductInProjectSchema = productInProjectSchema.omit({ id: true, createdAt: true, projectId: true });
+export const createProductInProjectSchema = productInProjectSchema.omit({ id: true, createdAt: true, projectId: true }).extend({
+  manufacturerArticleNumber: z.string().optional()
+});
 export type CreateProductInProject = z.infer<typeof createProductInProjectSchema>;
 
 export const updateProductInProjectSchema = productInProjectSchema.partial().omit({ id: true, projectId: true, createdAt: true });
@@ -250,6 +252,7 @@ export const productsInProjects = pgTable("products_in_projects", {
   customAttributes: jsonb("custom_attributes"),
   exactProductName: text("exact_product_name"),
   articleNumber: text("article_number"),
+  manufacturerArticleNumber: text("manufacturer_article_number"),
   pixiStatus: text("pixi_status"),
   pixiEan: text("pixi_ean"),
   pixiCheckedAt: timestamp("pixi_checked_at", { withTimezone: true }),
