@@ -41,7 +41,8 @@ export default function PixiComparePage() {
   
   // CSV Mode State
   const [file, setFile] = useState<File | null>(null);
-  const [supplNr, setSupplNr] = useState('7077');
+  const [supplNr, setSupplNr] = useState('');
+  const [selectedCsvSupplier, setSelectedCsvSupplier] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Project Mode State
@@ -68,7 +69,7 @@ export default function PixiComparePage() {
   const productsPerPage = 100; // Show more products to enable scrolling
 
   useEffect(() => {
-    if (activeTab === 'project') {
+    if (activeTab === 'project' || activeTab === 'csv') {
       loadProjectsAndSuppliers();
     }
   }, [activeTab]);
@@ -582,16 +583,66 @@ export default function PixiComparePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="supplNr">Lieferantennummer</Label>
+                    <Label htmlFor="csvSupplier">Lieferant</Label>
+                    <Select
+                      value={selectedCsvSupplier}
+                      onValueChange={(value) => {
+                        setSelectedCsvSupplier(value);
+                        if (value) {
+                          const supplier = suppliers.find(s => s.id === value);
+                          setSupplNr(supplier?.supplNr || '');
+                        }
+                      }}
+                      disabled={loading || loadingData || !!supplNr}
+                    >
+                      <SelectTrigger id="csvSupplier">
+                        <SelectValue placeholder="Lieferant auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            Keine Lieferanten vorhanden
+                          </div>
+                        ) : (
+                          suppliers.map((supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                              {supplier.supplNr && ` (${supplier.supplNr})`}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Oder
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="supplNr">Lieferantennummer manuell eingeben</Label>
                     <Input
                       id="supplNr"
                       value={supplNr}
-                      onChange={(e) => setSupplNr(e.target.value)}
+                      onChange={(e) => {
+                        setSupplNr(e.target.value);
+                        if (e.target.value) setSelectedCsvSupplier('');
+                      }}
                       placeholder="z.B. 7077"
-                      disabled={loading}
+                      disabled={loading || !!selectedCsvSupplier}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Pixi-Lieferantennummer (z.B. 7077 = Nitecore/KTL, 7117 = Ansmann)
+                    </p>
                   </div>
 
                   <div className="space-y-2">
