@@ -395,9 +395,37 @@ export class PixiService {
         const artikelnummer = product.articleNumber?.trim() || product.name?.trim() || '';
         const produktname = product.name?.trim() || '';
         
-        // Try to get EAN from custom attributes or extractedData
+        // Try to get EAN from extractedData (primary) or customAttributes (fallback)
         let ean = '';
-        if (product.customAttributes) {
+        let hersteller = '';
+        let manufacturerItemNr = '';
+        
+        // extractedData is an array of {key, value, type}
+        if (product.extractedData && Array.isArray(product.extractedData)) {
+          const eanAttr = product.extractedData.find((attr: any) => 
+            attr.key?.toLowerCase() === 'ean'
+          );
+          if (eanAttr) {
+            ean = eanAttr.value?.toString().trim() || '';
+          }
+          
+          const herstellerAttr = product.extractedData.find((attr: any) => 
+            attr.key?.toLowerCase() === 'hersteller'
+          );
+          if (herstellerAttr) {
+            hersteller = herstellerAttr.value?.toString().trim() || '';
+          }
+          
+          const manuItemNrAttr = product.extractedData.find((attr: any) => 
+            attr.key?.toLowerCase() === 'manufacturerarticlenumber'
+          );
+          if (manuItemNrAttr) {
+            manufacturerItemNr = manuItemNrAttr.value?.toString().trim() || '';
+          }
+        }
+        
+        // Fallback to customAttributes if not found in extractedData
+        if (!ean && product.customAttributes) {
           const eanAttr = product.customAttributes.find((attr: any) => 
             attr.key?.toLowerCase() === 'ean' || attr.key?.toLowerCase() === 'ean-nummer'
           );
@@ -418,29 +446,27 @@ export class PixiService {
           vorhandenCount++;
         }
 
-        // Extract hersteller from customAttributes if available
-        let hersteller = '';
-        if (product.customAttributes) {
-          const herstellerAttr = product.customAttributes.find((attr: any) => 
-            attr.key?.toLowerCase() === 'hersteller' || 
-            attr.key?.toLowerCase() === 'manufacturer' ||
-            attr.key?.toLowerCase() === 'p_brand'
-          );
-          if (herstellerAttr) {
-            hersteller = herstellerAttr.value?.toString().trim() || '';
-          }
-        }
-
         // Build Brickfox-formatted originalData
         const brickfoxData: any = {
           p_item_number: artikelnummer,
-          v_manufacturers_item_number: artikelnummer,
+          v_manufacturers_item_number: manufacturerItemNr || artikelnummer,
           'p_name[de]': produktname,
           v_ean: ean,
           p_brand: hersteller,
         };
 
-        // Add all custom attributes as Brickfox fields
+        // Add ALL extractedData fields as Brickfox columns
+        if (product.extractedData && Array.isArray(product.extractedData)) {
+          product.extractedData.forEach((attr: any) => {
+            if (attr.key && attr.value && !['ean', 'hersteller', 'manufacturerarticlenumber'].includes(attr.key.toLowerCase())) {
+              // Map known fields to Brickfox format
+              const fieldName = attr.key;
+              brickfoxData[fieldName] = attr.value;
+            }
+          });
+        }
+
+        // Add custom attributes as additional Brickfox fields
         if (product.customAttributes) {
           product.customAttributes.forEach((attr: any) => {
             if (attr.key && attr.value) {
