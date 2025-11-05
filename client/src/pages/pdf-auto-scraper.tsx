@@ -18,6 +18,7 @@ interface PDFProduct {
   productName: string;
   url: string | null;
   articleNumber: string | null;
+  manufacturerArticleNumber?: string | null;  // Hersteller-Artikelnummer (ohne Präfix)
   eanCode: string | null;
   ekPrice: string | null;
   description: string | null;
@@ -657,6 +658,7 @@ Vielen Dank im Voraus!`);
                         <TableRow>
                           <TableHead className="min-w-[250px]">Produktname (Bezeichnung)</TableHead>
                           <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
+                          <TableHead className="min-w-[150px]">Hersteller-Artikelnr.</TableHead>
                           <TableHead className="min-w-[130px]">EAN</TableHead>
                           <TableHead className="min-w-[100px]">Netto-EK</TableHead>
                           <TableHead className="min-w-[100px]">Liefermenge</TableHead>
@@ -671,6 +673,7 @@ Vielen Dank im Voraus!`);
                           <TableRow key={index}>
                             <TableCell className="font-medium">{product.productName || '-'}</TableCell>
                             <TableCell>{product.articleNumber || '-'}</TableCell>
+                            <TableCell className="text-muted-foreground">{product.manufacturerArticleNumber || '-'}</TableCell>
                             <TableCell>{product.eanCode || '-'}</TableCell>
                             <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
                             <TableCell className="whitespace-nowrap">{product.liefermenge || '1 Stück'}</TableCell>
@@ -742,6 +745,7 @@ Vielen Dank im Voraus!`);
                               <TableHeader>
                                 <TableRow>
                                   <TableHead className="min-w-[120px]">Artikel-Nr.</TableHead>
+                                  <TableHead className="min-w-[150px]">Hersteller-Artikelnr.</TableHead>
                                   <TableHead className="min-w-[130px]">EAN</TableHead>
                                   <TableHead className="min-w-[100px]">Netto-EK</TableHead>
                                   <TableHead className="min-w-[100px]">Liefermenge</TableHead>
@@ -751,6 +755,7 @@ Vielen Dank im Voraus!`);
                                 {productsWithoutURL.map((product, index) => (
                                   <TableRow key={index}>
                                     <TableCell>{product.articleNumber || '-'}</TableCell>
+                                    <TableCell className="text-muted-foreground">{product.manufacturerArticleNumber || '-'}</TableCell>
                                     <TableCell>{product.eanCode || '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.ekPrice ? `${product.ekPrice} €` : '-'}</TableCell>
                                     <TableCell className="whitespace-nowrap">{product.liefermenge || '1 Stück'}</TableCell>
