@@ -368,16 +368,19 @@ export class PixiService {
       const pixiResponse = await this.searchItems(supplNr);
       const pixiItems = pixiResponse.data || [];
 
-      // Create lookup maps
+      // Create lookup maps (normalize by removing hyphens and spaces)
       const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
       const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
       
       pixiItems.forEach(item => {
         if (item.ItemNrSuppl) {
-          pixiByItemNr.set(item.ItemNrSuppl.toUpperCase(), item);
+          // Normalize: Remove hyphens, spaces, and uppercase
+          const normalized = item.ItemNrSuppl.replace(/[-\s]/g, '').toUpperCase();
+          pixiByItemNr.set(normalized, item);
         }
         if (item.EANUPC) {
-          pixiByEan.set(item.EANUPC.toUpperCase(), item);
+          const normalized = item.EANUPC.replace(/[-\s]/g, '').toUpperCase();
+          pixiByEan.set(normalized, item);
         }
       });
 
@@ -449,38 +452,41 @@ export class PixiService {
           }
         }
 
-        // Multi-strategy matching (same as CSV upload)
+        // Multi-strategy matching (normalize by removing hyphens/spaces)
         let pixiItem = null;
         let matchStrategy = '';
         
-        // Strategy 1: Try exact match with full article number
-        pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
+        // Helper: Normalize strings for matching (remove hyphens, spaces, uppercase)
+        const normalize = (str: string) => str.replace(/[-\s]/g, '').toUpperCase();
+        
+        // Strategy 1: Try exact match with full article number (normalized)
+        pixiItem = pixiByItemNr.get(normalize(artikelnummer));
         if (pixiItem) {
           matchStrategy = 'artikelnummer_exact';
         }
         
-        // Strategy 2: Try with manufacturer item number (without prefix)
+        // Strategy 2: Try with manufacturer item number (normalized)
         if (!pixiItem && manufacturerItemNr) {
-          pixiItem = pixiByItemNr.get(manufacturerItemNr.toUpperCase());
+          pixiItem = pixiByItemNr.get(normalize(manufacturerItemNr));
           if (pixiItem) {
             matchStrategy = 'manufacturer_item_nr';
           }
         }
         
-        // Strategy 3: Try removing common prefixes (ANS, etc.)
+        // Strategy 3: Try removing common prefixes (normalized)
         if (!pixiItem && artikelnummer.length > 3) {
           const withoutPrefix = artikelnummer.replace(/^(ANS|BK|VK|ART)/i, '');
           if (withoutPrefix !== artikelnummer) {
-            pixiItem = pixiByItemNr.get(withoutPrefix.toUpperCase());
+            pixiItem = pixiByItemNr.get(normalize(withoutPrefix));
             if (pixiItem) {
               matchStrategy = 'artikelnummer_without_prefix';
             }
           }
         }
         
-        // Strategy 4: Try EAN as fallback
+        // Strategy 4: Try EAN as fallback (normalized)
         if (!pixiItem && ean) {
-          pixiItem = pixiByEan.get(ean.toUpperCase());
+          pixiItem = pixiByEan.get(normalize(ean));
           if (pixiItem) {
             matchStrategy = 'ean';
           }
