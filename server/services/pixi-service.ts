@@ -14,8 +14,8 @@ interface PixiItemSearchRequest {
 
 interface PixiItemSearchResponse {
   data: Array<{
-    ItemNrSuppl: string;
-    EANUPC: string;
+    v_manufacturers_item_number: string;
+    v_ean: string;
   }>;
 }
 
@@ -155,15 +155,15 @@ export class PixiService {
       const pixiItems = pixiResponse.data || [];
 
       // Create lookup maps for fast comparison
-      const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
-      const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      const pixiByItemNr = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
+      const pixiByEan = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
 
       pixiItems.forEach(item => {
-        if (item.ItemNrSuppl) {
-          pixiByItemNr.set(item.ItemNrSuppl.toUpperCase(), item);
+        if (item.v_manufacturers_item_number) {
+          pixiByItemNr.set(item.v_manufacturers_item_number.toUpperCase(), item);
         }
-        if (item.EANUPC) {
-          pixiByEan.set(item.EANUPC, item);
+        if (item.v_ean) {
+          pixiByEan.set(item.v_ean, item);
         }
       });
 
@@ -224,8 +224,8 @@ export class PixiService {
           });
           console.log('[Pixi Match Debug] First 5 Pixi items:', 
             Array.from(pixiByItemNr.entries()).slice(0, 5).map(([key, val]) => ({
-              ItemNrSuppl: key,
-              EANUPC: val.EANUPC
+              v_manufacturers_item_number: key,
+              v_ean: val.v_ean
             }))
           );
         }
@@ -235,9 +235,9 @@ export class PixiService {
           const lookupKey = artikelnummer.toUpperCase();
           pixiItem = pixiByItemNr.get(lookupKey);
           if (pixiItem) {
-            console.log(`[Pixi Match] ✓ Strategy 1 matched: ${artikelnummer} -> ${pixiItem.ItemNrSuppl}`);
+            console.log(`[Pixi Match] ✓ Strategy 1 matched: ${artikelnummer} -> ${pixiItem.v_manufacturers_item_number}`);
             isMatch = true;
-            matchedEan = pixiItem.EANUPC || null;
+            matchedEan = pixiItem.v_ean || null;
           }
           
           // Try without prefix (e.g., "ANS2447304960" -> "2447304960")
@@ -245,9 +245,9 @@ export class PixiService {
             const withoutPrefix = lookupKey.substring(3);
             pixiItem = pixiByItemNr.get(withoutPrefix);
             if (pixiItem) {
-              console.log(`[Pixi Match] ✓ Strategy 1b matched (without prefix): ${artikelnummer} -> ${pixiItem.ItemNrSuppl}`);
+              console.log(`[Pixi Match] ✓ Strategy 1b matched (without prefix): ${artikelnummer} -> ${pixiItem.v_manufacturers_item_number}`);
               isMatch = true;
-              matchedEan = pixiItem.EANUPC || null;
+              matchedEan = pixiItem.v_ean || null;
             }
           }
         }
@@ -257,9 +257,9 @@ export class PixiService {
           const lookupKey = manufacturerItemNr.toUpperCase();
           pixiItem = pixiByItemNr.get(lookupKey);
           if (pixiItem) {
-            console.log(`[Pixi Match] ✓ Strategy 2 matched: ${manufacturerItemNr} -> ${pixiItem.ItemNrSuppl}`);
+            console.log(`[Pixi Match] ✓ Strategy 2 matched: ${manufacturerItemNr} -> ${pixiItem.v_manufacturers_item_number}`);
             isMatch = true;
-            matchedEan = pixiItem.EANUPC || null;
+            matchedEan = pixiItem.v_ean || null;
           }
         }
 
@@ -267,9 +267,9 @@ export class PixiService {
         if (!isMatch && ean) {
           pixiItem = pixiByEan.get(ean);
           if (pixiItem) {
-            console.log(`[Pixi Match] ✓ Strategy 3 matched: ${ean} -> ${pixiItem.ItemNrSuppl}`);
+            console.log(`[Pixi Match] ✓ Strategy 3 matched: ${ean} -> ${pixiItem.v_manufacturers_item_number}`);
             isMatch = true;
-            matchedEan = pixiItem.EANUPC || null;
+            matchedEan = pixiItem.v_ean || null;
           }
         }
 
@@ -369,17 +369,17 @@ export class PixiService {
       const pixiItems = pixiResponse.data || [];
 
       // Create lookup maps (normalize by removing hyphens and spaces)
-      const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
-      const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      const pixiByItemNr = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
+      const pixiByEan = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
       
       pixiItems.forEach(item => {
-        if (item.ItemNrSuppl) {
+        if (item.v_manufacturers_item_number) {
           // Normalize: Remove hyphens, spaces, and uppercase
-          const normalized = item.ItemNrSuppl.replace(/[-\s]/g, '').toUpperCase();
+          const normalized = item.v_manufacturers_item_number.replace(/[-\s]/g, '').toUpperCase();
           pixiByItemNr.set(normalized, item);
         }
-        if (item.EANUPC) {
-          const normalized = item.EANUPC.replace(/[-\s]/g, '').toUpperCase();
+        if (item.v_ean) {
+          const normalized = item.v_ean.replace(/[-\s]/g, '').toUpperCase();
           pixiByEan.set(normalized, item);
         }
       });
@@ -390,8 +390,8 @@ export class PixiService {
       if (pixiItems.length > 0) {
         console.log(`[Pixi Debug] First 5 Pixi items:`, 
           pixiItems.slice(0, 5).map(item => ({
-            ItemNrSuppl: item.ItemNrSuppl,
-            EANUPC: item.EANUPC
+            v_manufacturers_item_number: item.v_manufacturers_item_number,
+            v_ean: item.v_ean
           }))
         );
       }
@@ -493,7 +493,7 @@ export class PixiService {
         }
         
         const isMatch = !!pixiItem;
-        const matchedEan = pixiItem?.EANUPC || null;
+        const matchedEan = pixiItem?.v_ean || null;
         const status: 'NEU' | 'VORHANDEN' = isMatch ? 'VORHANDEN' : 'NEU';
         
         // Debug logging for products that don't match
@@ -518,8 +518,8 @@ export class PixiService {
           console.log(`[Pixi Match Success] First matched product:`, {
             artikelnummer,
             matchStrategy,
-            matchedItemNr: pixiItem?.ItemNrSuppl,
-            matchedEan: pixiItem?.EANUPC,
+            matchedItemNr: pixiItem?.v_manufacturers_item_number,
+            matchedEan: pixiItem?.v_ean,
           });
         }
 
