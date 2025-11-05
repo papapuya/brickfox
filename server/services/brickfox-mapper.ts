@@ -37,12 +37,10 @@ export interface BrickfoxMapperOptions {
 
 /**
  * Calculate sales price from purchase price
- * Formula: floor((EK * 2) * 1.19) + 0.95 (ANSMANN formula)
+ * Formula: (EK * 2) + 19% = EK * 2 * 1.19
  */
 function calculateSalesPrice(purchasePrice: number): number {
-  const margin = purchasePrice * 2;
-  const withTax = margin * 1.19;
-  return Math.floor(withTax) + 0.95; // Floor + 0.95 (ANSMANN standard)
+  return purchasePrice * 2 * 1.19;
 }
 
 /**
