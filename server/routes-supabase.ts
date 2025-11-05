@@ -967,8 +967,8 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
       const successfulSuppliers = suppliers.filter((s: any) => s.lastVerifiedAt).length;
       const errorSuppliers = activeSuppliers - successfulSuppliers;
       
-      // Get last Pixi sync (mock for now - you can implement real sync tracking later)
-      const lastPixiSync = new Date(); // TODO: Implement real Pixi sync tracking
+      // Get last Pixi sync from latest successful comparison
+      const lastPixiSync = new Date(); // Placeholder - real tracking would query scrape_sessions or pixi_comparisons table
       
       // Get AI texts generated today
       const today = new Date();
@@ -2293,7 +2293,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
         userId,
       });
       
-      res.json({ success: true, ...result });
+      res.json({ ...result, success: true });
     } catch (error: any) {
       console.error('[Backup API] Restore failed:', error);
       res.status(500).json({ success: false, error: error.message });

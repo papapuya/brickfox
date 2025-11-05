@@ -311,7 +311,8 @@ function getFieldValue(
             return pdfUrls[mediaIndex];
           }
         } catch (error) {
-          console.error(`[Brickfox] Error parsing pdfFiles:`, error);
+          // Silently handle parse errors - pdfFiles might be a simple string URL instead of JSON array
+          debugLog(`[INFO] pdfFiles is not a JSON array, treating as single value`);
         }
       }
     }
