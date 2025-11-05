@@ -418,15 +418,47 @@ export class PixiService {
           vorhandenCount++;
         }
 
+        // Extract hersteller from customAttributes if available
+        let hersteller = '';
+        if (product.customAttributes) {
+          const herstellerAttr = product.customAttributes.find((attr: any) => 
+            attr.key?.toLowerCase() === 'hersteller' || 
+            attr.key?.toLowerCase() === 'manufacturer' ||
+            attr.key?.toLowerCase() === 'p_brand'
+          );
+          if (herstellerAttr) {
+            hersteller = herstellerAttr.value?.toString().trim() || '';
+          }
+        }
+
+        // Build Brickfox-formatted originalData
+        const brickfoxData: any = {
+          p_item_number: artikelnummer,
+          v_manufacturers_item_number: artikelnummer,
+          'p_name[de]': produktname,
+          v_ean: ean,
+          p_brand: hersteller,
+        };
+
+        // Add all custom attributes as Brickfox fields
+        if (product.customAttributes) {
+          product.customAttributes.forEach((attr: any) => {
+            if (attr.key && attr.value) {
+              brickfoxData[attr.key] = attr.value;
+            }
+          });
+        }
+
         results.push({
           id: product.id,
           artikelnummer,
           produktname,
           ean,
-          hersteller: '', // Could be extracted from customAttributes if needed
+          hersteller,
           pixi_status: status,
           pixi_ean: matchedEan,
           pixi_checked_at: timestamp,
+          originalData: brickfoxData, // Add Brickfox-formatted data
         });
 
         updates.push({
