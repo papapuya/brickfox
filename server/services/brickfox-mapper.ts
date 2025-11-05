@@ -153,8 +153,8 @@ function autoMapFieldByLabel(
     'p_name[de]': ['produktname', 'name', 'bezeichnung', 'product name', 'title'],
     'p_description[de]': ['produktbeschreibung', 'beschreibung', 'description', 'langtext', 'long text'],
     'v_ean': ['ean', 'ean-code', 'ean code', 'barcode', 'gtin'],
-    'v_price[Eur]': ['vk (verkaufspreis)', 'vk', 'verkaufspreis', 'uvp', 'preis', 'price', 'rrp'],
-    'v_purchase_price': ['ek-preis', 'ek', 'einkaufspreis', 'purchase price', 'cost'],
+    'v_price[Eur]': ['vkprice', 'vk (verkaufspreis)', 'vk', 'verkaufspreis', 'uvp', 'preis', 'price', 'rrp'],
+    'v_purchase_price': ['ekprice', 'ek-preis', 'ek', 'einkaufspreis', 'purchase price', 'cost'],
     'v_weight': ['gewicht', 'weight', 'netto-gewicht', 'bruttogewicht'],
     'v_width': ['breite', 'width', 'b'],
     'v_height': ['höhe', 'hoehe', 'height', 'h'],
@@ -377,12 +377,22 @@ function getFieldValue(
     return value ?? null;
   }
   
-  // Calculated value
+  // Calculated value - NUR wenn nicht bereits in extractedData vorhanden
   if (config.source === 'calculated') {
     if (brickfoxField === 'v_price[Eur]') {
+      // PRIORITY 1: Prüfe ob vkPrice bereits in extractedData vorhanden ist
+      const existingVkPrice = autoMapFieldByLabel(product, 'v_price[Eur]');
+      if (existingVkPrice !== null) {
+        debugLog(`[CALCULATED] v_price[Eur] → Existing vkPrice from extractedData: ${existingVkPrice}`);
+        return existingVkPrice;
+      }
+      
+      // PRIORITY 2: Berechne VK aus EK (nur wenn nicht vorhanden)
       const purchasePrice = getFieldValue(product, mapping, 'v_purchase_price', supplierName);
       if (typeof purchasePrice === 'number') {
-        return calculateSalesPrice(purchasePrice);
+        const calculated = calculateSalesPrice(purchasePrice);
+        debugLog(`[CALCULATED] v_price[Eur] → Calculated from EK ${purchasePrice}: ${calculated}`);
+        return calculated;
       }
     }
     return null;
