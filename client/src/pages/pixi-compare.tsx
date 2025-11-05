@@ -791,11 +791,13 @@ export default function PixiComparePage() {
                         
                         {/* Original CSV columns */}
                         {result.products.length > 0 && result.products[0].originalData && 
-                          Object.keys(result.products[0].originalData).map((columnName, idx) => (
-                            <TableHead key={idx} className="bg-background whitespace-nowrap">
-                              {columnName}
-                            </TableHead>
-                          ))
+                          Object.keys(result.products[0].originalData)
+                            .filter(columnName => columnName !== 'pixi_ean') // Remove Pixi_EAN column
+                            .map((columnName, idx) => (
+                              <TableHead key={idx} className="bg-background whitespace-nowrap">
+                                {columnName}
+                              </TableHead>
+                            ))
                         }
                       </TableRow>
                     </TableHeader>
@@ -825,11 +827,13 @@ export default function PixiComparePage() {
                           
                           {/* Original CSV data columns */}
                           {product.originalData && 
-                            Object.keys(result.products[0].originalData || {}).map((columnName, colIdx) => (
-                              <TableCell key={colIdx} className="whitespace-nowrap text-sm">
-                                {product.originalData[columnName] || '-'}
-                              </TableCell>
-                            ))
+                            Object.keys(result.products[0].originalData || {})
+                              .filter(columnName => columnName !== 'pixi_ean') // Remove Pixi_EAN column
+                              .map((columnName, colIdx) => (
+                                <TableCell key={colIdx} className="whitespace-nowrap text-sm">
+                                  {product.originalData[columnName] || '-'}
+                                </TableCell>
+                              ))
                           }
                         </TableRow>
                       ))}
