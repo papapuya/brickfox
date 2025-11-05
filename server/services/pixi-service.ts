@@ -21,6 +21,7 @@ interface PixiItemSearchResponse {
 
 interface PixiComparisonResult {
   artikelnummer: string;
+  manufacturerArticleNumber?: string;
   produktname: string;
   ean: string;
   hersteller: string;
@@ -298,6 +299,7 @@ export class PixiService {
 
         results.push({
           artikelnummer,
+          manufacturerArticleNumber: manufacturerItemNr || undefined,
           produktname,
           ean,
           hersteller,
