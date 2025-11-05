@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, RefreshCw, Eye, Settings } from "lucide-react";
 import type { ProductInProject } from "@shared/schema";
-import Papa from "papaparse";
+import { apiDownload } from "@/lib/api";
 
 interface BrickfoxRow {
   [key: string]: string | number | boolean | null;
@@ -19,7 +19,7 @@ interface BrickfoxRow {
 interface BrickfoxDataPreviewProps {
   products: ProductInProject[];
   projectName?: string;
-  projectId?: string;
+  projectId: string; // Required for backend export
   supplierId?: string;
 }
 
@@ -107,23 +107,24 @@ export default function BrickfoxDataPreview({ products, projectName, projectId, 
     });
   };
 
-  // Export to CSV
-  const handleExport = () => {
-    if (brickfoxData.length === 0) {
-      alert('Keine Daten zum Exportieren vorhanden');
+  // Export to CSV via Backend API (ensures exact parity with preview)
+  const handleExport = async () => {
+    if (!projectId) {
+      alert('Projekt-ID fehlt - Export nicht möglich');
       return;
     }
 
-    const csv = Papa.unparse(brickfoxData, {
-      delimiter: ';',
-      header: true,
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `brickfox-preview-${projectName || 'export'}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    try {
+      // Use same parameters as preview to ensure parity
+      await apiDownload(
+        '/api/brickfox/export',
+        { projectId, supplierId },
+        `brickfox-export-${projectId}.csv`
+      );
+    } catch (error) {
+      console.error('[Brickfox Export] Error:', error);
+      alert('Export fehlgeschlagen');
+    }
   };
 
   // Filtered data (only visible columns)
