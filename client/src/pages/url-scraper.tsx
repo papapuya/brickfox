@@ -852,6 +852,8 @@ export default function URLScraper() {
               pdfArticleNumber: pdfMetadata.articleNumber,
               pdfEanCode: pdfMetadata.eanCode,
               pdfProductName: pdfMetadata.productName,
+              // Preserve manufacturer article number from PDF if available
+              manufacturerArticleNumber: pdfMetadata.manufacturerArticleNumber || data.product.manufacturerArticleNumber,
             } : data.product;
             
             // Calculate VK if EK exists: (EK × 2) + 19% = EK × 2.38, rounded to ,95

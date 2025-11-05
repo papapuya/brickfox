@@ -433,6 +433,7 @@ Vielen Dank im Voraus!`);
         urlToMetadata[product.url] = {
           ekPrice: product.ekPrice,
           articleNumber: product.articleNumber,
+          manufacturerArticleNumber: product.manufacturerArticleNumber,
           eanCode: product.eanCode,
           productName: product.productName,
         };
