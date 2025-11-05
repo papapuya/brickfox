@@ -782,12 +782,13 @@ export default function PixiComparePage() {
                 <CardTitle>Produktliste ({result.products.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-x-auto overflow-y-auto max-h-[600px]">
-                  <Table className="min-w-full">
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                      <TableRow>
-                        {/* Pixi Status column first */}
-                        <TableHead className="bg-background sticky left-0 z-20 border-r">Pixi_Status</TableHead>
+                <div className="rounded-md border overflow-hidden">
+                  <div className="max-h-96 overflow-y-auto overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {/* Pixi Status column first */}
+                          <TableHead className="min-w-[120px]">Status</TableHead>
                         
                         {/* Dynamic columns based on data source */}
                         {result.products.length > 0 && result.products[0].originalData ? (
@@ -795,17 +796,17 @@ export default function PixiComparePage() {
                           Object.keys(result.products[0].originalData)
                             .filter(columnName => columnName !== 'pixi_ean')
                             .map((columnName, idx) => (
-                              <TableHead key={idx} className="bg-background whitespace-nowrap">
+                              <TableHead key={idx} className="min-w-[150px]">
                                 {columnName}
                               </TableHead>
                             ))
                         ) : (
                           // Project-based: Show basic product fields
                           <>
-                            <TableHead className="bg-background whitespace-nowrap">Artikelnummer</TableHead>
-                            <TableHead className="bg-background whitespace-nowrap">Produktname</TableHead>
-                            <TableHead className="bg-background whitespace-nowrap">EAN</TableHead>
-                            <TableHead className="bg-background whitespace-nowrap">Hersteller</TableHead>
+                            <TableHead className="min-w-[150px]">Artikelnummer</TableHead>
+                            <TableHead className="min-w-[300px]">Produktname</TableHead>
+                            <TableHead className="min-w-[130px]">EAN</TableHead>
+                            <TableHead className="min-w-[150px]">Hersteller</TableHead>
                           </>
                         )}
                       </TableRow>
@@ -815,8 +816,8 @@ export default function PixiComparePage() {
                         .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
                         .map((product, idx) => (
                         <TableRow key={idx}>
-                          {/* Pixi Status columns */}
-                          <TableCell className="sticky left-0 bg-background z-10 border-r">
+                          {/* Pixi Status column */}
+                          <TableCell>
                             <Badge
                               variant={product.pixi_status === 'NEU' ? 'default' : 'secondary'}
                               className={
@@ -840,23 +841,24 @@ export default function PixiComparePage() {
                             Object.keys(result.products[0].originalData || {})
                               .filter(columnName => columnName !== 'pixi_ean')
                               .map((columnName, colIdx) => (
-                                <TableCell key={colIdx} className="whitespace-nowrap text-sm">
+                                <TableCell key={colIdx} className="text-sm">
                                   {product.originalData[columnName] || '-'}
                                 </TableCell>
                               ))
                           ) : (
                             // Project-based: Show basic product fields
                             <>
-                              <TableCell className="whitespace-nowrap text-sm">{product.artikelnummer || '-'}</TableCell>
-                              <TableCell className="whitespace-nowrap text-sm">{product.produktname || '-'}</TableCell>
-                              <TableCell className="whitespace-nowrap text-sm font-mono text-xs">{product.ean || '-'}</TableCell>
-                              <TableCell className="whitespace-nowrap text-sm">{product.hersteller || '-'}</TableCell>
+                              <TableCell className="text-sm">{product.artikelnummer || '-'}</TableCell>
+                              <TableCell className="font-medium">{product.produktname || '-'}</TableCell>
+                              <TableCell className="font-mono text-xs">{product.ean || '-'}</TableCell>
+                              <TableCell className="text-sm">{product.hersteller || '-'}</TableCell>
                             </>
                           )}
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </div>
                 
                 {/* Pagination Controls */}
