@@ -2419,16 +2419,6 @@ export default function URLScraper() {
                   <Save className="w-4 h-4 mr-2" />
                   Als Projekt speichern
                 </Button>
-                {!isFromPdfAutoScraper && (
-                  <Button
-                    variant="outline"
-                    size="default"
-                    onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  >
-                    <Settings2 className="w-4 h-4 mr-2" />
-                    Spalten auswählen
-                  </Button>
-                )}
                 <Button onClick={downloadCSV} variant="outline">
                   <Download className="w-4 h-4 mr-2" />
                   CSV Exportieren
@@ -2444,48 +2434,6 @@ export default function URLScraper() {
               </div>
             </div>
 
-            {/* CSV Column Selector */}
-            {showColumnSelector && (
-              <div className="mt-4 mb-4 p-4 bg-muted/30 rounded-lg border">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold">Spalten für Export auswählen</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleAllColumns(true)}
-                    >
-                      Alle auswählen
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleAllColumns(false)}
-                    >
-                      Alle abwählen
-                    </Button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {exportColumns.map(col => (
-                    <div key={col.key} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`col-${col.key}`}
-                        checked={col.enabled}
-                        onCheckedChange={() => toggleColumn(col.key)}
-                      />
-                      <Label
-                        htmlFor={`col-${col.key}`}
-                        className="text-sm font-medium cursor-pointer"
-                      >
-                        {col.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
             {/* AI Generation Progress Bar */}
             {isGeneratingBatch && (
               <div className="mb-4">
