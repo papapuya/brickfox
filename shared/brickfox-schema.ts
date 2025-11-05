@@ -432,8 +432,8 @@ export const DEFAULT_BRICKFOX_MAPPING: BrickfoxExportMapping = {
   // Variant fields - scraped
   'v_item_number': { source: 'scraped', field: 'articleNumber' },
   'v_ean': { source: 'scraped', field: 'ean' },
-  'v_manufacturers_item_number': { source: 'scraped', field: 'articleNumber' },
-  'v_supplier_item_number': { source: 'scraped', field: 'articleNumber' },
+  'v_manufacturers_item_number': { source: 'scraped', field: 'manufacturerArticleNumber' },  // OHNE Präfix (z.B. "1522-0045")
+  'v_supplier_item_number': { source: 'scraped', field: 'manufacturerArticleNumber' },  // OHNE Präfix (z.B. "1522-0045")
   'v_purchase_price': { source: 'scraped', field: 'preis' },  // German field name
   'v_weight': { source: 'scraped', field: 'gewicht' },  // German field name
   'v_length': { source: 'scraped', field: 'laenge' },  // German field name

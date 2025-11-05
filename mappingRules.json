@@ -6,7 +6,7 @@
   "target": "brickfox_csv",
   
   "mapping": {
-    "Artikelnummer": ["p_item_number", "v_manufacturers_item_number"],
+    "Artikelnummer": ["p_item_number", "v_manufacturers_item_number", "v_supplier_item_number"],
     "Produktname": ["p_name[de]"],
     "EAN": ["v_ean"],
     "Hersteller": ["p_brand", "v_supplier[Eur]"],
