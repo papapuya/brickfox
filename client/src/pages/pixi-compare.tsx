@@ -341,8 +341,8 @@ export default function PixiComparePage() {
       const firstProduct = result.products[0].originalData;
       const columnNames = Object.keys(firstProduct);
       
-      // Create header with original columns + Pixi Status + Pixi EAN
-      const headers = [...columnNames, 'Pixi_Status', 'Pixi_EAN'];
+      // Create header with original columns + Pixi Status
+      const headers = [...columnNames, 'Pixi_Status'];
       csvRows.push(headers.join(','));
 
       // Create data rows with all original data + Pixi columns
@@ -351,24 +351,22 @@ export default function PixiComparePage() {
           const rowValues = columnNames.map(col => 
             escapeCsvValue(product.originalData[col])
           );
-          // Add Pixi status and EAN
+          // Add Pixi status
           rowValues.push(escapeCsvValue(product.pixi_status));
-          rowValues.push(escapeCsvValue(product.pixi_ean || ''));
           csvRows.push(rowValues.join(','));
         }
       });
     } else {
       // Fallback: Simple format if no originalData available
       csvRows = [
-        ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status', 'Pixi EAN'].join(','),
+        ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status'].join(','),
         ...result.products.map(p => 
           [
             escapeCsvValue(p.artikelnummer),
             escapeCsvValue(p.produktname),
             escapeCsvValue(p.ean),
             escapeCsvValue(p.hersteller),
-            escapeCsvValue(p.pixi_status),
-            escapeCsvValue(p.pixi_ean || '')
+            escapeCsvValue(p.pixi_status)
           ].join(',')
         )
       ];
@@ -788,9 +786,8 @@ export default function PixiComparePage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        {/* Pixi Status columns first */}
+                        {/* Pixi Status column first */}
                         <TableHead className="bg-background sticky left-0 z-20 border-r">Pixi_Status</TableHead>
-                        <TableHead className="bg-background">Pixi_EAN</TableHead>
                         
                         {/* Original CSV columns */}
                         {result.products.length > 0 && result.products[0].originalData && 
@@ -824,9 +821,6 @@ export default function PixiComparePage() {
                               )}
                               {product.pixi_status}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm text-muted-foreground whitespace-nowrap">
-                            {product.pixi_ean || '-'}
                           </TableCell>
                           
                           {/* Original CSV data columns */}

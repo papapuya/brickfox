@@ -239,6 +239,17 @@ export class PixiService {
             isMatch = true;
             matchedEan = pixiItem.EANUPC || null;
           }
+          
+          // Try without prefix (e.g., "ANS2447304960" -> "2447304960")
+          if (!isMatch && lookupKey.length > 3) {
+            const withoutPrefix = lookupKey.substring(3);
+            pixiItem = pixiByItemNr.get(withoutPrefix);
+            if (pixiItem) {
+              console.log(`[Pixi Match] ✓ Strategy 1b matched (without prefix): ${artikelnummer} -> ${pixiItem.ItemNrSuppl}`);
+              isMatch = true;
+              matchedEan = pixiItem.EANUPC || null;
+            }
+          }
         }
 
         // Strategy 2: Try v_manufacturers_item_number (e.g., "2447304960")

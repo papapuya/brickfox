@@ -1647,7 +1647,36 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
 
       console.log(`[Pixi Compare] Parsed ${parseResult.data.length} products from CSV`);
 
-      const comparisonResult = await pixiService.compareProducts(parseResult.data, supplNr);
+      // Filter out empty rows (all fields empty or whitespace)
+      const products = parseResult.data.filter((row: any) => {
+        const hasData = Object.values(row).some(val => 
+          val !== null && val !== undefined && String(val).trim() !== ''
+        );
+        return hasData;
+      });
+
+      // Fix scientific notation in EAN fields (e.g., "4,01E+12" -> "4013674012345")
+      products.forEach((product: any) => {
+        // Try to fix EAN field
+        ['v_ean', 'ean', 'EAN'].forEach(key => {
+          if (product[key]) {
+            const eanStr = String(product[key]);
+            // Check if it's in scientific notation (e.g., "4,01E+12" or "4.01E+12")
+            if (eanStr.match(/[0-9],[0-9]+E\+[0-9]+/i) || eanStr.match(/[0-9]\.[0-9]+E\+[0-9]+/i)) {
+              // Parse as number and convert back to string without scientific notation
+              const eanNum = parseFloat(eanStr.replace(',', '.'));
+              if (!isNaN(eanNum)) {
+                product[key] = Math.round(eanNum).toString();
+                console.log(`[Pixi Compare] Fixed EAN scientific notation: ${eanStr} -> ${product[key]}`);
+              }
+            }
+          }
+        });
+      });
+
+      console.log(`[Pixi Compare] After filtering: ${products.length} valid products`);
+
+      const comparisonResult = await pixiService.compareProducts(products, supplNr);
 
       console.log(
         `[Pixi Compare] Comparison complete: ${comparisonResult.summary.total} total, ` +
