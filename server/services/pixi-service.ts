@@ -14,8 +14,8 @@ interface PixiItemSearchRequest {
 
 interface PixiItemSearchResponse {
   data: Array<{
-    v_manufacturers_item_number: string;
-    v_ean: string;
+    ItemNrSuppl: string;
+    EANUPC: string;
   }>;
 }
 
@@ -160,15 +160,15 @@ export class PixiService {
       const pixiItems = pixiResponse.data || [];
 
       // Create lookup maps for fast comparison
-      const pixiByItemNr = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
-      const pixiByEan = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
+      const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
 
       pixiItems.forEach(item => {
-        if (item.v_manufacturers_item_number) {
-          pixiByItemNr.set(item.v_manufacturers_item_number.toUpperCase(), item);
+        if (item.ItemNrSuppl) {
+          pixiByItemNr.set(item.ItemNrSuppl.toUpperCase(), item);
         }
-        if (item.v_ean) {
-          pixiByEan.set(item.v_ean, item);
+        if (item.EANUPC) {
+          pixiByEan.set(item.EANUPC, item);
         }
       });
 
@@ -188,7 +188,7 @@ export class PixiService {
         ]);
         
         const manufacturerItemNr = this.getColumnValue(product, [
-          'v_manufacturers_item_number', 'manufacturers_item_number',
+          'ItemNrSuppl', 'manufacturers_item_number',
           'Herstellerartikelnummer', 'Hersteller-Artikelnummer'
         ]);
         
@@ -204,7 +204,7 @@ export class PixiService {
           'EAN', 'ean', 'EAN-Code', 'EAN Code',
           'GTIN', 'gtin', 'Barcode', 'barcode',
           'UPC', 'upc', 'EAN/UPC',
-          'v_ean', 'p_ean'  // Export system columns
+          'EANUPC', 'p_ean'  // Export system columns
         ]);
         
         const hersteller = this.getColumnValue(product, [
@@ -229,8 +229,8 @@ export class PixiService {
           });
           console.log('[Pixi Match Debug] First 5 Pixi items:', 
             Array.from(pixiByItemNr.entries()).slice(0, 5).map(([key, val]) => ({
-              v_manufacturers_item_number: key,
-              v_ean: val.v_ean
+              ItemNrSuppl: key,
+              EANUPC: val.EANUPC
             }))
           );
         }
@@ -240,9 +240,9 @@ export class PixiService {
           const lookupKey = artikelnummer.toUpperCase();
           pixiItem = pixiByItemNr.get(lookupKey);
           if (pixiItem) {
-            console.log(`[Pixi Match] ✓ Strategy 1 matched: ${artikelnummer} -> ${pixiItem.v_manufacturers_item_number}`);
+            console.log(`[Pixi Match] ✓ Strategy 1 matched: ${artikelnummer} -> ${pixiItem.ItemNrSuppl}`);
             isMatch = true;
-            matchedEan = pixiItem.v_ean || null;
+            matchedEan = pixiItem.EANUPC || null;
           }
           
           // Try without prefix (e.g., "ANS2447304960" -> "2447304960")
@@ -250,21 +250,21 @@ export class PixiService {
             const withoutPrefix = lookupKey.substring(3);
             pixiItem = pixiByItemNr.get(withoutPrefix);
             if (pixiItem) {
-              console.log(`[Pixi Match] ✓ Strategy 1b matched (without prefix): ${artikelnummer} -> ${pixiItem.v_manufacturers_item_number}`);
+              console.log(`[Pixi Match] ✓ Strategy 1b matched (without prefix): ${artikelnummer} -> ${pixiItem.ItemNrSuppl}`);
               isMatch = true;
-              matchedEan = pixiItem.v_ean || null;
+              matchedEan = pixiItem.EANUPC || null;
             }
           }
         }
 
-        // Strategy 2: Try v_manufacturers_item_number (e.g., "2447304960")
+        // Strategy 2: Try ItemNrSuppl (e.g., "2447304960")
         if (!isMatch && manufacturerItemNr) {
           const lookupKey = manufacturerItemNr.toUpperCase();
           pixiItem = pixiByItemNr.get(lookupKey);
           if (pixiItem) {
-            console.log(`[Pixi Match] ✓ Strategy 2 matched: ${manufacturerItemNr} -> ${pixiItem.v_manufacturers_item_number}`);
+            console.log(`[Pixi Match] ✓ Strategy 2 matched: ${manufacturerItemNr} -> ${pixiItem.ItemNrSuppl}`);
             isMatch = true;
-            matchedEan = pixiItem.v_ean || null;
+            matchedEan = pixiItem.EANUPC || null;
           }
         }
 
@@ -272,9 +272,9 @@ export class PixiService {
         if (!isMatch && ean) {
           pixiItem = pixiByEan.get(ean);
           if (pixiItem) {
-            console.log(`[Pixi Match] ✓ Strategy 3 matched: ${ean} -> ${pixiItem.v_manufacturers_item_number}`);
+            console.log(`[Pixi Match] ✓ Strategy 3 matched: ${ean} -> ${pixiItem.ItemNrSuppl}`);
             isMatch = true;
-            matchedEan = pixiItem.v_ean || null;
+            matchedEan = pixiItem.EANUPC || null;
           }
         }
 
@@ -374,17 +374,17 @@ export class PixiService {
       const pixiItems = pixiResponse.data || [];
 
       // Create lookup maps (normalize by removing hyphens and spaces)
-      const pixiByItemNr = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
-      const pixiByEan = new Map<string, { v_manufacturers_item_number: string; v_ean: string }>();
+      const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
       
       pixiItems.forEach(item => {
-        if (item.v_manufacturers_item_number) {
+        if (item.ItemNrSuppl) {
           // Normalize: Remove hyphens, spaces, and uppercase
-          const normalized = item.v_manufacturers_item_number.replace(/[-\s]/g, '').toUpperCase();
+          const normalized = item.ItemNrSuppl.replace(/[-\s]/g, '').toUpperCase();
           pixiByItemNr.set(normalized, item);
         }
-        if (item.v_ean) {
-          const normalized = item.v_ean.replace(/[-\s]/g, '').toUpperCase();
+        if (item.EANUPC) {
+          const normalized = item.EANUPC.replace(/[-\s]/g, '').toUpperCase();
           pixiByEan.set(normalized, item);
         }
       });
@@ -395,8 +395,8 @@ export class PixiService {
       if (pixiItems.length > 0) {
         console.log(`[Pixi Debug] First 5 Pixi items:`, 
           pixiItems.slice(0, 5).map(item => ({
-            v_manufacturers_item_number: item.v_manufacturers_item_number,
-            v_ean: item.v_ean
+            ItemNrSuppl: item.ItemNrSuppl,
+            EANUPC: item.EANUPC
           }))
         );
       }
@@ -498,7 +498,7 @@ export class PixiService {
         }
         
         const isMatch = !!pixiItem;
-        const matchedEan = pixiItem?.v_ean || null;
+        const matchedEan = pixiItem?.EANUPC || null;
         const status: 'NEU' | 'VORHANDEN' = isMatch ? 'VORHANDEN' : 'NEU';
         
         // Debug logging for products that don't match
@@ -523,8 +523,8 @@ export class PixiService {
           console.log(`[Pixi Match Success] First matched product:`, {
             artikelnummer,
             matchStrategy,
-            matchedItemNr: pixiItem?.v_manufacturers_item_number,
-            matchedEan: pixiItem?.v_ean,
+            matchedItemNr: pixiItem?.ItemNrSuppl,
+            matchedEan: pixiItem?.EANUPC,
           });
         }
 
@@ -537,9 +537,9 @@ export class PixiService {
         // Build Brickfox-formatted originalData
         const brickfoxData: any = {
           p_item_number: artikelnummer,
-          v_manufacturers_item_number: manufacturerItemNr || artikelnummer,
+          ItemNrSuppl: manufacturerItemNr || artikelnummer,
           'p_name[de]': produktname,
-          v_ean: ean,
+          EANUPC: ean,
           p_brand: hersteller,
         };
 
