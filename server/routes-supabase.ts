@@ -1633,6 +1633,7 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
         Papa.parse(csvContent, {
           header: true,
           skipEmptyLines: true,
+          transformHeader: (header) => header.trim(), // Remove leading/trailing spaces from headers
           complete: (results) => resolve(results),
           error: (error) => reject(error),
         });
