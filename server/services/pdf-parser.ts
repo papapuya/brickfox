@@ -309,11 +309,11 @@ export class PDFParserService {
         console.log(`  Price matches: ${priceMatches ? priceMatches.join(', ') : 'NONE'}`);
       }
 
-      // Process Article Number: Remove hyphens and spaces (2447-0121 → 24470121)
+      // Process Article Number: Keep original format with hyphens (2447-3049-60)
       if (articleMatch) {
-        const cleanedNumber = articleMatch[0].replace(/[-\s]/g, '');
-        product.articleNumber = cleanedNumber;  // Will be prefixed later in the route
-        product.manufacturerArticleNumber = cleanedNumber;  // Keep without prefix
+        const originalNumber = articleMatch[0].trim();  // Keep hyphens intact!
+        product.articleNumber = originalNumber;  // Will be prefixed later in the route
+        product.manufacturerArticleNumber = originalNumber;  // Keep original format for Pixi matching
         console.log(`  ✅ Article: ${product.articleNumber} (Manufacturer: ${product.manufacturerArticleNumber})`);
       }
       

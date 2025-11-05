@@ -333,12 +333,10 @@ export async function scrapeProduct(options: ScrapeOptions): Promise<ScrapedProd
     const element = $(articleSelector).first();
     let manufacturerNumber = element.text().trim() || element.attr('content')?.trim() || '';
     
-    // Remove all hyphens/dashes from manufacturer number
-    if (manufacturerNumber) {
-      manufacturerNumber = manufacturerNumber.replace(/-/g, '');
-    }
+    // Keep original format with hyphens (e.g., "2447-3049-60")
+    // DO NOT remove hyphens - required for Pixi ERP matching!
     
-    // Store manufacturer article number (without hyphens)
+    // Store manufacturer article number (keep original format)
     product.manufacturerArticleNumber = manufacturerNumber;
     
     // Generate Brickfox article number based on supplier

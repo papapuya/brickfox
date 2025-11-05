@@ -375,18 +375,19 @@ export class PixiService {
       const pixiResponse = await this.searchItems(supplNr);
       const pixiItems = pixiResponse.data || [];
 
-      // Create lookup maps (normalize by removing hyphens and spaces)
+      // Create lookup maps (case-insensitive, preserve hyphens!)
       const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
       const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
       
       pixiItems.forEach(item => {
         if (item.ItemNrSuppl) {
-          // Normalize: Remove hyphens, spaces, and uppercase
-          const normalized = item.ItemNrSuppl.replace(/[-\s]/g, '').toUpperCase();
+          // Only uppercase for case-insensitive matching - DO NOT remove hyphens!
+          const normalized = item.ItemNrSuppl.trim().toUpperCase();
           pixiByItemNr.set(normalized, item);
         }
         if (item.EANUPC) {
-          const normalized = item.EANUPC.replace(/[-\s]/g, '').toUpperCase();
+          // Only uppercase for case-insensitive matching - DO NOT remove hyphens!
+          const normalized = item.EANUPC.trim().toUpperCase();
           pixiByEan.set(normalized, item);
         }
       });
@@ -459,12 +460,12 @@ export class PixiService {
           }
         }
 
-        // Multi-strategy matching (normalize by removing hyphens/spaces)
+        // Multi-strategy matching (case-insensitive, preserve hyphens!)
         let pixiItem = null;
         let matchStrategy = '';
         
-        // Helper: Normalize strings for matching (remove hyphens, spaces, uppercase)
-        const normalize = (str: string) => str.replace(/[-\s]/g, '').toUpperCase();
+        // Helper: Normalize strings for matching (only uppercase - DO NOT remove hyphens!)
+        const normalize = (str: string) => str.trim().toUpperCase();
         
         // Strategy 1: Try exact match with full article number (normalized)
         pixiItem = pixiByItemNr.get(normalize(artikelnummer));

@@ -2,6 +2,29 @@
 
 ## Recent Changes
 
+### 2025-11-05: KRITISCHER FIX - Bindestriche in Artikelnummern erhalten
+**Änderung**: Bindestriche in Hersteller-Artikelnummern werden NICHT mehr entfernt!
+
+**Problem behoben:**
+- **Vorher**: "2447-3049-60" → "2447304960" (Bindestriche entfernt)
+- **Nachher**: "2447-3049-60" → "2447-3049-60" (Original erhalten) ✅
+
+**Betroffene Komponenten:**
+- ✅ PDF-Parser (`server/services/pdf-parser.ts`) - Zeile 317: Bindestriche bleiben erhalten
+- ✅ URL-Scraper (`server/scraper-service.ts`) - Zeile 339-342: Bindestriche bleiben erhalten
+- ✅ Pixi-Service (`server/services/pixi-service.ts`):
+  - Zeile 388/393: Maps verwenden nur `.toUpperCase()` (keine Bindestrich-Entfernung)
+  - Zeile 471: `normalize()` Funktion entfernt KEINE Bindestriche mehr
+
+**Auswirkung:**
+- ✅ Pixi-Abgleich funktioniert jetzt korrekt mit Original-Artikelnummern
+- ✅ Matching: "2447-3049-60" = "2447-3049-60" (Case-Insensitive)
+- ✅ Keine Datenverluste durch Formatänderungen
+
+**Technische Dokumentation:** `docs/pixi-integration.md` (Version 1.3)
+
+## Recent Changes
+
 ### 2025-11-04: Automatisches Mapping-Modul für Brickfox-CSV-Export
 **Änderung**: Neues Mapping-System für automatische Konvertierung von Produktdaten in Brickfox-Format!
 

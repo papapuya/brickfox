@@ -818,6 +818,7 @@ Der `X-AUTH-TOKEN` wird niemals im Frontend exponiert:
 
 | Datum | Version | Änderung |
 |-------|---------|----------|
+| 2025-11-05 | 1.3 | **KRITISCH:** Bindestriche in Artikelnummern werden nun erhalten (z.B. "2447-3049-60") - keine Normalisierung mehr! |
 | 2025-11-05 | 1.2 | Multi-Strategie Matching implementiert |
 | 2025-11-04 | 1.1 | manufacturerArticleNumber-Feld hinzugefügt |
 | 2025-11-03 | 1.0 | Initiale Pixi-Integration |
