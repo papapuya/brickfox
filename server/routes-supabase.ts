@@ -1828,10 +1828,26 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
         console.log(`[Brickfox Preview] Loaded custom CSV mappings for project ${projectId}`);
       }
 
+      // Load mappingRules.json for fixed values and auto-generate rules
+      let fixedValues = undefined;
+      let autoGenerateRules = undefined;
+      
+      try {
+        const { loadMappingRules } = await import('./services/mapping-rules-loader');
+        const mappingRules = loadMappingRules();
+        fixedValues = mappingRules.fixedValues;
+        autoGenerateRules = mappingRules.autoGenerate;
+        console.log(`[Brickfox Preview] Loaded mappingRules.json with ${Object.keys(fixedValues).length} fixed values`);
+      } catch (error: any) {
+        console.warn(`[Brickfox Preview] Could not load mappingRules.json: ${error.message}`);
+      }
+
       // Transform to Brickfox format (without AI enhancement for faster preview)
       const brickfoxRows = mapProductsToBrickfox(products, {
         supplierName: supplierName || 'Unbekannt',
         customMapping,
+        fixedValues,
+        autoGenerateRules,
         enableAI: false // Disable AI for preview to speed up
       });
 
@@ -1929,10 +1945,26 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
         }
       });
 
+      // Load mappingRules.json for fixed values and auto-generate rules
+      let fixedValues = undefined;
+      let autoGenerateRules = undefined;
+      
+      try {
+        const { loadMappingRules } = await import('./services/mapping-rules-loader');
+        const mappingRules = loadMappingRules();
+        fixedValues = mappingRules.fixedValues;
+        autoGenerateRules = mappingRules.autoGenerate;
+        console.log(`[Brickfox Export] Loaded mappingRules.json with ${Object.keys(fixedValues).length} fixed values`);
+      } catch (error: any) {
+        console.warn(`[Brickfox Export] Could not load mappingRules.json: ${error.message}`);
+      }
+
       // Transform to Brickfox format
       const brickfoxRows = mapProductsToBrickfox(products, {
         supplierName: supplierName || 'Unbekannt',
         customMapping,
+        fixedValues,
+        autoGenerateRules,
         enableAI: true
       });
 

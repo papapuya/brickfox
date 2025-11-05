@@ -27,6 +27,12 @@ export interface BrickfoxMapperOptions {
   supplierName?: string;
   customMapping?: BrickfoxExportMapping;
   enableAI?: boolean;
+  fixedValues?: Record<string, string | number>;
+  autoGenerateRules?: Record<string, {
+    dependsOn: string;
+    rule: string;
+    fallback?: string;
+  }>;
 }
 
 /**
@@ -408,6 +414,49 @@ function getFieldValue(
 }
 
 /**
+ * Generate auto-generated field value (e.g., category path from voltage)
+ */
+function generateAutoFieldValue(
+  rule: {
+    dependsOn: string;
+    rule: string;
+    fallback?: string;
+  },
+  product: ProductInProject
+): string | null {
+  if (!rule) return null;
+  
+  try {
+    // Extract value from product's extractedData
+    let dependsOnValue: string | null = null;
+    
+    if (product.extractedData && Array.isArray(product.extractedData)) {
+      const attr = product.extractedData.find((item: any) => 
+        item.key === rule.dependsOn || item.label === rule.dependsOn
+      );
+      if (attr) {
+        dependsOnValue = attr.value?.toString();
+      }
+    }
+    
+    if (dependsOnValue) {
+      // Replace template variables in rule (e.g., {{Nominalspannung (V)}})
+      let result = rule.rule.replace(
+        new RegExp(`\\{\\{${rule.dependsOn}\\}\\}`, 'g'),
+        dependsOnValue
+      );
+      return result;
+    } else if (rule.fallback) {
+      return rule.fallback;
+    }
+  } catch (error) {
+    console.error('[Auto-Generate] Error generating auto field:', error);
+  }
+  
+  return rule.fallback || null;
+}
+
+/**
  * Transform a single product into Brickfox row(s)
  * Note: Most products have single variant, so we create one row per product
  */
@@ -422,6 +471,23 @@ export function mapProductToBrickfox(
   for (const field of BRICKFOX_FIELDS) {
     const value = getFieldValue(product, mapping, field.key, options.supplierName);
     row[field.key] = value;
+  }
+  
+  // Apply fixed values from mappingRules.json (if provided)
+  if (options.fixedValues) {
+    for (const [key, value] of Object.entries(options.fixedValues)) {
+      row[key] = value;
+    }
+  }
+  
+  // Apply auto-generated fields (e.g., category path from voltage)
+  if (options.autoGenerateRules) {
+    for (const [fieldName, rule] of Object.entries(options.autoGenerateRules)) {
+      const generatedValue = generateAutoFieldValue(rule, product);
+      if (generatedValue) {
+        row[fieldName] = generatedValue;
+      }
+    }
   }
   
   return row;
