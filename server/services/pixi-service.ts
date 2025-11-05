@@ -111,6 +111,11 @@ export class PixiService {
 
       const data: PixiItemSearchResponse = await response.json();
       
+      // Debug: Log first raw item to see actual field names
+      if (data.data && data.data.length > 0) {
+        console.log('[Pixi Debug] RAW API Response - First item:', JSON.stringify(data.data[0], null, 2));
+      }
+      
       // Cache the result
       this.cache.set(supplNr, { data, timestamp: Date.now() });
       
