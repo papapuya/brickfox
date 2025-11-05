@@ -11,6 +11,7 @@
     "EAN": ["v_ean"],
     "Hersteller": ["p_brand", "v_supplier[Eur]"],
     "EK (netto) €": ["v_purchase_price"],
+    "VK Preis €": ["v_price[Eur]"],
     "Nominalspannung (V)": ["p_attributes[akku_v][de]"],
     "Nominalkapazität (mAh)": ["p_attributes[akku_mah][de]"],
     "Länge (mm)": ["v_length"],
@@ -96,6 +97,7 @@
     ],
     "dataTypes": {
       "v_purchase_price": "number",
+      "v_price[Eur]": "number",
       "v_weight": "number",
       "v_length": "number",
       "v_width": "number",
@@ -124,6 +126,7 @@
       "p_brand",
       "p_group_path[de]",
       "v_purchase_price",
+      "v_price[Eur]",
       "v_supplier[Eur]",
       "p_attributes[akku_v][de]",
       "p_attributes[akku_mah][de]",
