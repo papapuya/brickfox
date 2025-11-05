@@ -782,8 +782,8 @@ export default function PixiComparePage() {
                 <CardTitle>Produktliste ({result.products.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-auto max-h-[600px]">
-                  <Table>
+                <div className="rounded-md border overflow-x-auto overflow-y-auto max-h-[600px]">
+                  <Table className="min-w-full">
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         {/* Pixi Status column first */}
