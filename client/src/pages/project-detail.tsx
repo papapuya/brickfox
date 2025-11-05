@@ -340,15 +340,14 @@ export default function ProjectDetail() {
     if (!pixiResults) return;
 
     const csvContent = [
-      ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status', 'Pixi EAN'].join(';'),
+      ['Artikelnummer', 'Produktname', 'EAN', 'Hersteller', 'Pixi Status'].join(';'),
       ...pixiResults.products.map((p: any) => 
         [
           p.artikelnummer,
           `"${p.produktname}"`,
           p.ean,
           p.hersteller,
-          p.pixi_status,
-          p.pixi_ean || ''
+          p.pixi_status
         ].join(';')
       )
     ].join('\n');
@@ -802,7 +801,6 @@ export default function ProjectDetail() {
                             <th className="text-left p-3 text-sm font-medium">Produktname</th>
                             <th className="text-left p-3 text-sm font-medium">EAN</th>
                             <th className="text-left p-3 text-sm font-medium">Hersteller</th>
-                            <th className="text-left p-3 text-sm font-medium">Pixi EAN</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -825,7 +823,6 @@ export default function ProjectDetail() {
                               <td className="p-3 text-sm">{product.produktname}</td>
                               <td className="p-3 text-sm font-mono text-xs">{product.ean}</td>
                               <td className="p-3 text-sm">{product.hersteller}</td>
-                              <td className="p-3 text-sm font-mono text-xs">{product.pixi_ean || '-'}</td>
                             </tr>
                           ))}
                         </tbody>
