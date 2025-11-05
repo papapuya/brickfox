@@ -17,7 +17,7 @@ import { de } from "date-fns/locale";
 import type { Project, ProductInProject, ExportColumn } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
-import BrickfoxDataPreview from "@/components/brickfox-data-preview";
+import BrickfoxPreviewV2 from "@/components/brickfox-preview-v2";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -1068,7 +1068,7 @@ export default function ProjectDetail() {
         {/* Brickfox Preview Dialog */}
         <Dialog open={isBrickfoxPreviewOpen} onOpenChange={setIsBrickfoxPreviewOpen}>
           <DialogContent className="max-w-7xl max-h-[90vh] overflow-auto">
-            <BrickfoxDataPreview 
+            <BrickfoxPreviewV2 
               products={products || []}
               projectName={project?.name}
               projectId={id}
