@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, RefreshCw, Eye, Settings } from "lucide-react";
 import type { ProductInProject } from "@shared/schema";
-import { apiDownload } from "@/lib/api";
+import { apiDownload, apiPost } from "@/lib/api";
 
 interface BrickfoxRow {
   [key: string]: string | number | boolean | null;
@@ -42,22 +42,10 @@ export default function BrickfoxDataPreview({ products, projectName, projectId, 
     setError(null);
 
     try {
-      const response = await fetch('/api/brickfox/preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId,
-          supplierId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await apiPost<{ success: boolean; rows: any[]; error?: string }>(
+        '/api/brickfox/preview',
+        { projectId, supplierId }
+      );
       
       if (!data.success) {
         throw new Error(data.error || 'Failed to generate Brickfox preview');
