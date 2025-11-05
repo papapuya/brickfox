@@ -7,6 +7,7 @@ interface PDFProduct {
   productName: string;
   url: string | null;
   articleNumber: string | null;
+  manufacturerArticleNumber?: string | null;  // Hersteller-Artikelnummer (ohne Präfix)
   eanCode: string | null;
   ekPrice: string | null;
   description: string | null;
@@ -310,8 +311,10 @@ export class PDFParserService {
 
       // Process Article Number: Remove hyphens and spaces (2447-0121 → 24470121)
       if (articleMatch) {
-        product.articleNumber = articleMatch[0].replace(/[-\s]/g, '');
-        console.log(`  ✅ Article: ${product.articleNumber}`);
+        const cleanedNumber = articleMatch[0].replace(/[-\s]/g, '');
+        product.articleNumber = cleanedNumber;  // Will be prefixed later in the route
+        product.manufacturerArticleNumber = cleanedNumber;  // Keep without prefix
+        console.log(`  ✅ Article: ${product.articleNumber} (Manufacturer: ${product.manufacturerArticleNumber})`);
       }
       
       // Process EAN Code
