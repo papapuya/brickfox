@@ -370,9 +370,14 @@ export class PixiService {
 
       // Create lookup maps
       const pixiByItemNr = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      const pixiByEan = new Map<string, { ItemNrSuppl: string; EANUPC: string }>();
+      
       pixiItems.forEach(item => {
         if (item.ItemNrSuppl) {
           pixiByItemNr.set(item.ItemNrSuppl.toUpperCase(), item);
+        }
+        if (item.EANUPC) {
+          pixiByEan.set(item.EANUPC.toUpperCase(), item);
         }
       });
 
@@ -434,11 +439,57 @@ export class PixiService {
           }
         }
 
-        // Check if product exists in Pixi
-        const pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
+        // Multi-strategy matching (same as CSV upload)
+        let pixiItem = null;
+        let matchStrategy = '';
+        
+        // Strategy 1: Try exact match with full article number
+        pixiItem = pixiByItemNr.get(artikelnummer.toUpperCase());
+        if (pixiItem) {
+          matchStrategy = 'artikelnummer_exact';
+        }
+        
+        // Strategy 2: Try with manufacturer item number (without prefix)
+        if (!pixiItem && manufacturerItemNr) {
+          pixiItem = pixiByItemNr.get(manufacturerItemNr.toUpperCase());
+          if (pixiItem) {
+            matchStrategy = 'manufacturer_item_nr';
+          }
+        }
+        
+        // Strategy 3: Try removing common prefixes (ANS, etc.)
+        if (!pixiItem && artikelnummer.length > 3) {
+          const withoutPrefix = artikelnummer.replace(/^(ANS|BK|VK|ART)/i, '');
+          if (withoutPrefix !== artikelnummer) {
+            pixiItem = pixiByItemNr.get(withoutPrefix.toUpperCase());
+            if (pixiItem) {
+              matchStrategy = 'artikelnummer_without_prefix';
+            }
+          }
+        }
+        
+        // Strategy 4: Try EAN as fallback
+        if (!pixiItem && ean) {
+          pixiItem = pixiByEan.get(ean.toUpperCase());
+          if (pixiItem) {
+            matchStrategy = 'ean';
+          }
+        }
+        
         const isMatch = !!pixiItem;
         const matchedEan = pixiItem?.EANUPC || null;
         const status: 'NEU' | 'VORHANDEN' = isMatch ? 'VORHANDEN' : 'NEU';
+        
+        // Debug logging for first product
+        if (results.length === 0) {
+          console.log(`[Pixi Match Debug] First product matching:`, {
+            artikelnummer,
+            manufacturerItemNr,
+            ean,
+            matchStrategy: matchStrategy || 'NO_MATCH',
+            status,
+          });
+        }
 
         if (status === 'NEU') {
           neuCount++;
