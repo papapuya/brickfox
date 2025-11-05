@@ -1647,16 +1647,8 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
 
       console.log(`[Pixi Compare] Parsed ${parseResult.data.length} products from CSV`);
 
-      // Filter out empty rows (all fields empty or whitespace)
-      const products = parseResult.data.filter((row: any) => {
-        const hasData = Object.values(row).some(val => 
-          val !== null && val !== undefined && String(val).trim() !== ''
-        );
-        return hasData;
-      });
-
-      // Fix scientific notation in EAN fields (e.g., "4,01E+12" -> "4013674012345")
-      products.forEach((product: any) => {
+      // Fix scientific notation in EAN fields FIRST (e.g., "4,01E+12" -> "4013674012345")
+      parseResult.data.forEach((product: any) => {
         // Try to fix EAN field
         ['v_ean', 'ean', 'EAN'].forEach(key => {
           if (product[key]) {
@@ -1672,6 +1664,19 @@ Gesendet am: ${new Date().toLocaleString('de-DE')}
             }
           }
         });
+      });
+
+      // Filter out empty rows (where important fields are all empty)
+      const products = parseResult.data.filter((row: any) => {
+        // Check if at least one of the key fields has data
+        const keyFields = [
+          row.p_item_number, row.v_manufacturers_item_number, 
+          row['p_name[de]'], row.v_ean, row.p_brand
+        ];
+        const hasKeyData = keyFields.some(val => 
+          val !== null && val !== undefined && String(val).trim() !== ''
+        );
+        return hasKeyData;
       });
 
       console.log(`[Pixi Compare] After filtering: ${products.length} valid products`);
