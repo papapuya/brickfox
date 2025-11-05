@@ -382,6 +382,16 @@ export class PixiService {
       });
 
       console.log(`[Pixi Service] Loaded ${pixiItems.length} items from Pixi API`);
+      
+      // Debug: Show first 5 Pixi items to verify format
+      if (pixiItems.length > 0) {
+        console.log(`[Pixi Debug] First 5 Pixi items:`, 
+          pixiItems.slice(0, 5).map(item => ({
+            ItemNrSuppl: item.ItemNrSuppl,
+            EANUPC: item.EANUPC
+          }))
+        );
+      }
 
       // Compare and prepare updates
       const results: PixiSupabaseComparisonResult[] = [];
@@ -480,14 +490,30 @@ export class PixiService {
         const matchedEan = pixiItem?.EANUPC || null;
         const status: 'NEU' | 'VORHANDEN' = isMatch ? 'VORHANDEN' : 'NEU';
         
-        // Debug logging for first product
-        if (results.length === 0) {
-          console.log(`[Pixi Match Debug] First product matching:`, {
+        // Debug logging for products that don't match
+        if (!isMatch) {
+          const withoutPrefix = artikelnummer.replace(/^(ANS|BK|VK|ART)/i, '');
+          console.log(`[Pixi No-Match Debug] Product not found:`, {
             artikelnummer,
             manufacturerItemNr,
             ean,
-            matchStrategy: matchStrategy || 'NO_MATCH',
-            status,
+            withoutPrefix,
+            searchedKeys: [
+              artikelnummer.toUpperCase(),
+              manufacturerItemNr?.toUpperCase(),
+              withoutPrefix !== artikelnummer ? withoutPrefix.toUpperCase() : null,
+              ean?.toUpperCase()
+            ].filter(Boolean)
+          });
+        }
+        
+        // Debug logging for first successful match
+        if (isMatch && results.filter(r => r.pixi_status === 'VORHANDEN').length === 0) {
+          console.log(`[Pixi Match Success] First matched product:`, {
+            artikelnummer,
+            matchStrategy,
+            matchedItemNr: pixiItem?.ItemNrSuppl,
+            matchedEan: pixiItem?.EANUPC,
           });
         }
 
