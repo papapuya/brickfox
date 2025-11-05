@@ -320,24 +320,22 @@ function getFieldValue(
     return null;
   }
   
-  // STEP 1: Versuche intelligentes Auto-Mapping für andere Felder
-  const autoMappedValue = autoMapFieldByLabel(product, brickfoxField);
-  if (autoMappedValue !== null && autoMappedValue !== undefined && autoMappedValue !== '') {
-    let value: any = autoMappedValue;
-    
-    // Parse based on field type
-    if (fieldMeta.type === 'number' || fieldMeta.key === 'v_weight') {
-      value = parseWeight(value);
-    } else if (fieldMeta.type === 'price') {
-      value = parsePrice(value);
-    }
-    
-    debugLog(`[AUTO-MAPPED] ${brickfoxField} → ${value}`);
-    return value;
-  }
-  
-  // STEP 2: Falls kein Config vorhanden, Default-Wert verwenden
+  // Falls kein Config vorhanden, versuche Auto-Mapping
   if (!config) {
+    const autoMappedValue = autoMapFieldByLabel(product, brickfoxField);
+    if (autoMappedValue !== null && autoMappedValue !== undefined && autoMappedValue !== '') {
+      let value: any = autoMappedValue;
+      
+      // Parse based on field type
+      if (fieldMeta.type === 'number' || fieldMeta.key === 'v_weight') {
+        value = parseWeight(value);
+      } else if (fieldMeta.type === 'price') {
+        value = parsePrice(value);
+      }
+      
+      debugLog(`[AUTO-MAPPED] ${brickfoxField} → ${value}`);
+      return value;
+    }
     return fieldMeta.defaultValue || null;
   }
   
@@ -349,6 +347,31 @@ function getFieldValue(
   // Constant value
   if (config.source === 'constant') {
     return config.value ?? fieldMeta.defaultValue ?? null;
+  }
+  
+  // Calculated value - PRIORITÄT 1: VK-Preis mit intelligenter Logik
+  if (config.source === 'calculated') {
+    if (brickfoxField === 'v_price[Eur]') {
+      // PRIORITY 1: Prüfe ob vkPrice bereits in extractedData vorhanden ist
+      const existingVkPrice = autoMapFieldByLabel(product, 'v_price[Eur]');
+      if (existingVkPrice !== null && existingVkPrice !== undefined && existingVkPrice !== '') {
+        let value: any = existingVkPrice;
+        if (fieldMeta.type === 'price') {
+          value = parsePrice(value);
+        }
+        debugLog(`[CALCULATED] v_price[Eur] → Existing vkPrice from extractedData: ${value}`);
+        return value;
+      }
+      
+      // PRIORITY 2: Berechne VK aus EK (nur wenn kein vkPrice vorhanden)
+      const purchasePrice = getFieldValue(product, mapping, 'v_purchase_price', supplierName);
+      if (typeof purchasePrice === 'number') {
+        const calculated = calculateSalesPrice(purchasePrice);
+        debugLog(`[CALCULATED] v_price[Eur] → Calculated from EK ${purchasePrice}: ${calculated}`);
+        return calculated;
+      }
+    }
+    return null;
   }
   
   // Scraped value
@@ -375,27 +398,6 @@ function getFieldValue(
     }
     
     return value ?? null;
-  }
-  
-  // Calculated value - NUR wenn nicht bereits in extractedData vorhanden
-  if (config.source === 'calculated') {
-    if (brickfoxField === 'v_price[Eur]') {
-      // PRIORITY 1: Prüfe ob vkPrice bereits in extractedData vorhanden ist
-      const existingVkPrice = autoMapFieldByLabel(product, 'v_price[Eur]');
-      if (existingVkPrice !== null) {
-        debugLog(`[CALCULATED] v_price[Eur] → Existing vkPrice from extractedData: ${existingVkPrice}`);
-        return existingVkPrice;
-      }
-      
-      // PRIORITY 2: Berechne VK aus EK (nur wenn nicht vorhanden)
-      const purchasePrice = getFieldValue(product, mapping, 'v_purchase_price', supplierName);
-      if (typeof purchasePrice === 'number') {
-        const calculated = calculateSalesPrice(purchasePrice);
-        debugLog(`[CALCULATED] v_price[Eur] → Calculated from EK ${purchasePrice}: ${calculated}`);
-        return calculated;
-      }
-    }
-    return null;
   }
   
   // AI-generated values from customAttributes
