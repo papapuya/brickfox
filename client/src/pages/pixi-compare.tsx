@@ -789,16 +789,25 @@ export default function PixiComparePage() {
                         {/* Pixi Status column first */}
                         <TableHead className="bg-background sticky left-0 z-20 border-r">Pixi_Status</TableHead>
                         
-                        {/* Original CSV columns */}
-                        {result.products.length > 0 && result.products[0].originalData && 
+                        {/* Dynamic columns based on data source */}
+                        {result.products.length > 0 && result.products[0].originalData ? (
+                          // CSV Upload: Show all original CSV columns
                           Object.keys(result.products[0].originalData)
-                            .filter(columnName => columnName !== 'pixi_ean') // Remove Pixi_EAN column
+                            .filter(columnName => columnName !== 'pixi_ean')
                             .map((columnName, idx) => (
                               <TableHead key={idx} className="bg-background whitespace-nowrap">
                                 {columnName}
                               </TableHead>
                             ))
-                        }
+                        ) : (
+                          // Project-based: Show basic product fields
+                          <>
+                            <TableHead className="bg-background whitespace-nowrap">Artikelnummer</TableHead>
+                            <TableHead className="bg-background whitespace-nowrap">Produktname</TableHead>
+                            <TableHead className="bg-background whitespace-nowrap">EAN</TableHead>
+                            <TableHead className="bg-background whitespace-nowrap">Hersteller</TableHead>
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -825,16 +834,25 @@ export default function PixiComparePage() {
                             </Badge>
                           </TableCell>
                           
-                          {/* Original CSV data columns */}
-                          {product.originalData && 
+                          {/* Data columns - dynamic based on source */}
+                          {product.originalData ? (
+                            // CSV Upload: Show all original data columns
                             Object.keys(result.products[0].originalData || {})
-                              .filter(columnName => columnName !== 'pixi_ean') // Remove Pixi_EAN column
+                              .filter(columnName => columnName !== 'pixi_ean')
                               .map((columnName, colIdx) => (
                                 <TableCell key={colIdx} className="whitespace-nowrap text-sm">
                                   {product.originalData[columnName] || '-'}
                                 </TableCell>
                               ))
-                          }
+                          ) : (
+                            // Project-based: Show basic product fields
+                            <>
+                              <TableCell className="whitespace-nowrap text-sm">{product.artikelnummer || '-'}</TableCell>
+                              <TableCell className="whitespace-nowrap text-sm">{product.produktname || '-'}</TableCell>
+                              <TableCell className="whitespace-nowrap text-sm font-mono text-xs">{product.ean || '-'}</TableCell>
+                              <TableCell className="whitespace-nowrap text-sm">{product.hersteller || '-'}</TableCell>
+                            </>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
