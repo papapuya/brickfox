@@ -566,6 +566,7 @@ export class PixiService {
         results.push({
           id: product.id,
           artikelnummer,
+          manufacturerArticleNumber: manufacturerItemNr || undefined,
           produktname,
           ean,
           hersteller,

@@ -16,6 +16,7 @@ import type { Project, Supplier } from '@shared/schema';
 
 interface ComparisonResult {
   artikelnummer: string;
+  manufacturerArticleNumber?: string;
   produktname: string;
   ean: string;
   hersteller: string;
@@ -804,6 +805,7 @@ export default function PixiComparePage() {
                           // Project-based: Show basic product fields
                           <>
                             <TableHead className="min-w-[150px]">Artikelnummer</TableHead>
+                            <TableHead className="min-w-[150px]">Hersteller-Artikelnr.</TableHead>
                             <TableHead className="min-w-[300px]">Produktname</TableHead>
                             <TableHead className="min-w-[130px]">EAN</TableHead>
                             <TableHead className="min-w-[150px]">Hersteller</TableHead>
@@ -849,6 +851,7 @@ export default function PixiComparePage() {
                             // Project-based: Show basic product fields
                             <>
                               <TableCell className="text-sm">{product.artikelnummer || '-'}</TableCell>
+                              <TableCell className="text-muted-foreground">{product.manufacturerArticleNumber || '-'}</TableCell>
                               <TableCell className="font-medium">{product.produktname || '-'}</TableCell>
                               <TableCell className="font-mono text-xs">{product.ean || '-'}</TableCell>
                               <TableCell className="text-sm">{product.hersteller || '-'}</TableCell>
