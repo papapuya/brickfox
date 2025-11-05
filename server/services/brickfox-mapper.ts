@@ -350,26 +350,26 @@ function getFieldValue(
     return config.value ?? fieldMeta.defaultValue ?? null;
   }
   
-  // Calculated value - PRIORITÄT 1: VK-Preis mit intelligenter Logik
+  // Calculated value - PRIORITÄT: Berechnung ZUERST, dann Fallback auf extractedData
   if (config.source === 'calculated') {
     if (brickfoxField === 'v_price[Eur]') {
-      // PRIORITY 1: Prüfe ob vkPrice bereits in extractedData vorhanden ist
+      // PRIORITY 1: Berechne VK aus EK (wenn EK vorhanden)
+      const purchasePrice = getFieldValue(product, mapping, 'v_purchase_price', supplierName);
+      if (typeof purchasePrice === 'number' && purchasePrice > 0) {
+        const calculated = calculateSalesPrice(purchasePrice);
+        debugLog(`[CALCULATED] v_price[Eur] → Calculated from EK ${purchasePrice}: ${calculated}`);
+        return calculated;
+      }
+      
+      // PRIORITY 2: Fallback auf vkPrice aus extractedData (nur wenn EK fehlt)
       const existingVkPrice = autoMapFieldByLabel(product, 'v_price[Eur]');
       if (existingVkPrice !== null && existingVkPrice !== undefined && existingVkPrice !== '') {
         let value: any = existingVkPrice;
         if (fieldMeta.type === 'price') {
           value = parsePrice(value);
         }
-        debugLog(`[CALCULATED] v_price[Eur] → Existing vkPrice from extractedData: ${value}`);
+        debugLog(`[CALCULATED-FALLBACK] v_price[Eur] → Existing vkPrice from extractedData: ${value}`);
         return value;
-      }
-      
-      // PRIORITY 2: Berechne VK aus EK (nur wenn kein vkPrice vorhanden)
-      const purchasePrice = getFieldValue(product, mapping, 'v_purchase_price', supplierName);
-      if (typeof purchasePrice === 'number') {
-        const calculated = calculateSalesPrice(purchasePrice);
-        debugLog(`[CALCULATED] v_price[Eur] → Calculated from EK ${purchasePrice}: ${calculated}`);
-        return calculated;
       }
     }
     return null;
@@ -385,6 +385,16 @@ function getFieldValue(
       const extracted = product.extractedData.find((item: any) => item.key === config.field);
       if (extracted) {
         value = (extracted as any).value;
+      }
+    }
+    
+    // FALLBACK: If still not found, try auto-mapping by label
+    // This ensures ekPrice, vkPrice, marke etc. from PDF are recognized
+    if (!value || value === null || value === undefined || value === '') {
+      const autoMapped = autoMapFieldByLabel(product, brickfoxField);
+      if (autoMapped !== null && autoMapped !== undefined && autoMapped !== '') {
+        value = autoMapped;
+        debugLog(`[SCRAPED-FALLBACK] ${brickfoxField} → Auto-mapped: ${value}`);
       }
     }
     
