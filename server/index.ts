@@ -130,7 +130,7 @@ app.use((req, res, next) => {
     server.listen({
       port,
       host,
-    }, () => {
+    }, async () => {
       const nodeEnv = process.env.NODE_ENV || 'development';
       logger.info(`✅ Server is now serving on port ${port} (${nodeEnv} mode on ${host})`);
       console.log(`✅ Server ready at http://localhost:${port}`);
