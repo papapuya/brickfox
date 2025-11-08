@@ -281,9 +281,13 @@
   /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
    * buttons/badges can remove the automatic brightness adjustment on interactions
    * and program their own. */
-  .no-default-hover-elevate {}
+  .no-default-hover-elevate {
+    /* Intentionally empty - used as escape hatch */
+  }
 
-  .no-default-active-elevate {}
+  .no-default-active-elevate {
+    /* Intentionally empty - used as escape hatch */
+  }
 
 
   /**
@@ -356,12 +360,14 @@
   }
 }
 
-h1, h2, h3, h4 {
-  @apply font-bold text-foreground;
-}
+@layer base {
+  h1, h2, h3, h4 {
+    @apply font-bold text-foreground;
+  }
 
-a {
-  @apply text-primary hover:text-primary-hover transition;
+  a {
+    @apply text-primary hover:text-primary-hover transition;
+  }
 }
 
 /* Permanente horizontale Scrollbar für Produkttabellen */

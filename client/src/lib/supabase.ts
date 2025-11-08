@@ -6,7 +6,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('⚠️ VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in environment variables!');
-  throw new Error('Supabase configuration is missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+  console.error('⚠️ Current values:', { 
+    url: supabaseUrl ? 'SET' : 'MISSING', 
+    key: supabaseAnonKey ? 'SET' : 'MISSING' 
+  });
+  // Don't throw - let the app render an error message instead
+  // This allows the app to show a helpful error page
 }
 
 // Dynamic storage adapter that respects "Remember Me" preference
@@ -68,17 +73,35 @@ class DynamicStorage implements Storage {
   }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storage: new DynamicStorage(),
-    storageKey: 'sb-auth-token',
-  },
-});
-
-// SECURITY: Don't log URLs or credentials
-if (process.env.NODE_ENV === 'development') {
-  console.log('✅ Supabase client initialized');
+// Create a dummy client if credentials are missing (for error display)
+let supabaseClient: ReturnType<typeof createClient>;
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Create a dummy client that will fail gracefully
+  // This allows the app to render an error message
+  supabaseClient = createClient('https://placeholder.supabase.co', 'placeholder-key', {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+  // Store error state for UI to display
+  (window as any).__SUPABASE_CONFIG_ERROR__ = true;
+} else {
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      storage: new DynamicStorage(),
+      storageKey: 'sb-auth-token',
+    },
+  });
+  
+  // SECURITY: Don't log URLs or credentials
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Supabase client initialized');
+  }
 }
+
+export const supabase = supabaseClient;
