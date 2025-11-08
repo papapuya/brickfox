@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes-supabase";
-import { serveStatic, log } from "./vite";
+import { serveStatic, log } from "./static-server";
 import { errorHandler } from "./middleware/error-handler";
 import { logger } from "./utils/logger";
 import fs from 'fs';
