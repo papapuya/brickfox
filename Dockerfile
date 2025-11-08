@@ -17,8 +17,17 @@ RUN npm ci --only=production=false
 # Copy source code
 COPY . .
 
+# Make build script executable
+RUN chmod +x scripts/build-with-env.sh || true
+
 # Build application
-RUN npm run build
+# Render.com makes environment variables available during build
+# The build script will verify they're set before building
+RUN if [ -f scripts/build-with-env.sh ]; then \
+      ./scripts/build-with-env.sh; \
+    else \
+      npm run build; \
+    fi
 
 # Production stage
 FROM node:20-alpine AS production
