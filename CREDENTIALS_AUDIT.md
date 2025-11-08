@@ -32,7 +32,8 @@ const email = 'admin@pimpilot.de';
 
 **Credential:**
 ```javascript
-'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'
+// ENTFERNT: Echter API Key wurde aus Sicherheitsgründen entfernt
+// Verwenden Sie stattdessen: OPENAI_API_KEY=your_openai_api_key_here in .env
 ```
 
 **Risiko:** 🔴 SEHR HOCH - API Key ist in Dokumentation sichtbar
