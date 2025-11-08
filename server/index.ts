@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes-supabase";
-import { setupVite, serveStatic, log } from "./vite";
+import { serveStatic, log } from "./vite";
 import { errorHandler } from "./middleware/error-handler";
 import { logger } from "./utils/logger";
 import fs from 'fs';
@@ -107,6 +107,8 @@ app.use((req, res, next) => {
     // doesn't interfere with the other routes
     if (app.get("env") === "development") {
       try {
+        // Dynamic import to avoid bundling vite in production
+        const { setupVite } = await import("./vite");
         await setupVite(app, server);
         log('Vite development server initialized');
       } catch (viteError: any) {
