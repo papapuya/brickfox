@@ -42,7 +42,7 @@ RUN npm ci --only=production && \
 
 # Copy built application from builder
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/client/dist ./client/dist
+COPY --from=builder --chown=nodejs:nodejs /app/dist/public ./client/dist
 
 # Copy necessary files
 COPY --chown=nodejs:nodejs server/index.ts ./server/
