@@ -48,9 +48,9 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist/public ./client/dist
 COPY --chown=nodejs:nodejs server/index.ts ./server/
 COPY --chown=nodejs:nodejs shared ./shared
 
-# Create directories for uploads and assets
-RUN mkdir -p attached_assets/product_images uploads && \
-    chown -R nodejs:nodejs attached_assets uploads
+# Create directories for uploads, assets, and logs
+RUN mkdir -p attached_assets/product_images uploads logs && \
+    chown -R nodejs:nodejs attached_assets uploads logs
 
 # Switch to non-root user
 USER nodejs
