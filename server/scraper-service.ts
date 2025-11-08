@@ -1735,8 +1735,8 @@ function parsePropertiesTable($: cheerio.CheerioAPI, product: any): boolean {
     // Try each label selector pattern
     for (const labelSelector of labelSelectors) {
       technicalDataContainer.find(labelSelector).each((_, labelEl) => {
-      const $label = $(labelEl);
-      const label = $label.text().trim().toLowerCase();
+        const $label = $(labelEl);
+        const label = $label.text().trim().toLowerCase();
         
         // Try to find value using different methods
         let value = '';
@@ -1777,76 +1777,77 @@ function parsePropertiesTable($: cheerio.CheerioAPI, product: any): boolean {
             const $parentNext = $parent.next();
             if ($parentNext.length > 0) {
               value = $parentNext.text().trim();
-            }
           }
         }
-
-      if (!label || !value) return;
-      foundData = true;
-
-      // Map labels to product fields using keywords
-      if (label.includes('länge') && !label.includes('leucht')) {
-        product.length = value;
-      } else if (label.includes('gehäusedurchmesser') || label.includes('body diameter') || label.includes('bodydurchmesser')) {
-        product.bodyDiameter = value;
-      } else if (label.includes('kopfdurchmesser') || label.includes('head diameter')) {
-        product.headDiameter = value;
-      } else if (label.includes('gewicht') && (label.includes('ohne') || label.includes('without'))) {
-        product.weightWithoutBattery = value;
-      } else if (label.includes('gesamt gewicht') || label.includes('total weight')) {
-        product.totalWeight = value;
-      } else if (label.includes('stromversorgung') || label.includes('power supply')) {
-        product.powerSupply = value;
-      } else if (label.includes('leuchtmittel 1') || label === 'leuchtmittel 1') {
-        product.led1 = value;
-      } else if (label.includes('leuchtmittel 2') || label === 'leuchtmittel 2') {
-        product.led2 = value;
-      } else if (label.includes('spotintensität') || label.includes('spot intensity')) {
-        product.spotIntensity = value;
-      } else if (label.includes('leuchtleistung')) {
-        product.maxLuminosity = value;
-      } else if (label.includes('leuchtweite')) {
-        product.maxBeamDistance = value;
-      }
-      // ANSMANN Technical Specifications
-      // Handle both "Nominalspannung" and "Nominal-Spannung" (with hyphen)
-      else if (label.includes('nominalspannung') || label.includes('nominal-spannung') || label.includes('nominal spannung') || label.includes('spannung') || (label.includes('voltage') && !label.includes('input'))) {
-        (product as any).nominalspannung = formatMeasurement(value);
-        console.log(`⚡ Extracted Nominalspannung from DIV table: ${value} → ${(product as any).nominalspannung}`);
-      } else if (label.includes('nominalkapazität') || label.includes('nominal-kapazität') || label.includes('nominal kapazität') || label.includes('kapazität') || label.includes('capacity') || (label.includes('mah') && !label.includes('max'))) {
-        (product as any).nominalkapazitaet = formatMeasurement(value);
-        console.log(`🔋 Extracted Nominalkapazität from DIV table: ${value} → ${(product as any).nominalkapazitaet}`);
-      } else if (label.includes('entladestrom') || label.includes('discharge current') || label.includes('max. entladestrom') || label.includes('max entladestrom')) {
-        (product as any).maxEntladestrom = formatMeasurement(value);
-        console.log(`⚡ Extracted max. Entladestrom from DIV table: ${value} → ${(product as any).maxEntladestrom}`);
-      } else if (label.includes('zellenchemie') || label.includes('cell chemistry') || label.includes('chemie')) {
-        (product as any).zellenchemie = value;
-      } else if (label.includes('energie') && (label.includes('wh') || label.includes('wattstunden'))) {
-        (product as any).energie = formatMeasurement(value);
-      } else if (label.includes('farbe') || label.includes('color') || label.includes('colour')) {
-        (product as any).farbe = value;
-      } else if (label.includes('länge') && !label.includes('leucht') && !product.length) {
-        (product as any).laenge = formatMeasurement(value);
-      } else if ((label.includes('breite') || label.includes('width')) && !(product as any).breite) {
-        (product as any).breite = formatMeasurement(value);
-      } else if ((label.includes('höhe') || label.includes('height')) && !(product as any).hoehe) {
-        (product as any).hoehe = formatMeasurement(value);
-      } else if (label.includes('gewicht') && !label.includes('ohne') && !label.includes('without') && !(product as any).gewicht) {
-        (product as any).gewicht = formatMeasurement(value);
-      }
-      // EAN extraction from table
-      else if ((label.includes('ean') || label.includes('barcode') || label.includes('gtin')) && !product.ean) {
-        // Extract 13-digit number from value
-        const eanMatch = value.match(/\d{13}/);
-        if (eanMatch) {
-          product.ean = eanMatch[0];
-          console.log(`📦 Extracted EAN from DIV table: ${product.ean}`);
-        } else if (value.trim().length === 13 && /^\d+$/.test(value.trim())) {
-          product.ean = value.trim();
-          console.log(`📦 Extracted EAN from DIV table (direct): ${product.ean}`);
         }
-      }
-    });
+
+        if (!label || !value) return;
+        foundData = true;
+
+        // Map labels to product fields using keywords
+        if (label.includes('länge') && !label.includes('leucht')) {
+          product.length = value;
+        } else if (label.includes('gehäusedurchmesser') || label.includes('body diameter') || label.includes('bodydurchmesser')) {
+          product.bodyDiameter = value;
+        } else if (label.includes('kopfdurchmesser') || label.includes('head diameter')) {
+          product.headDiameter = value;
+        } else if (label.includes('gewicht') && (label.includes('ohne') || label.includes('without'))) {
+          product.weightWithoutBattery = value;
+        } else if (label.includes('gesamt gewicht') || label.includes('total weight')) {
+          product.totalWeight = value;
+        } else if (label.includes('stromversorgung') || label.includes('power supply')) {
+          product.powerSupply = value;
+        } else if (label.includes('leuchtmittel 1') || label === 'leuchtmittel 1') {
+          product.led1 = value;
+        } else if (label.includes('leuchtmittel 2') || label === 'leuchtmittel 2') {
+          product.led2 = value;
+        } else if (label.includes('spotintensität') || label.includes('spot intensity')) {
+          product.spotIntensity = value;
+        } else if (label.includes('leuchtleistung')) {
+          product.maxLuminosity = value;
+        } else if (label.includes('leuchtweite')) {
+          product.maxBeamDistance = value;
+        }
+        // ANSMANN Technical Specifications
+        // Handle both "Nominalspannung" and "Nominal-Spannung" (with hyphen)
+        else if (label.includes('nominalspannung') || label.includes('nominal-spannung') || label.includes('nominal spannung') || label.includes('spannung') || (label.includes('voltage') && !label.includes('input'))) {
+          (product as any).nominalspannung = formatMeasurement(value);
+          console.log(`⚡ Extracted Nominalspannung from DIV table: ${value} → ${(product as any).nominalspannung}`);
+        } else if (label.includes('nominalkapazität') || label.includes('nominal-kapazität') || label.includes('nominal kapazität') || label.includes('kapazität') || label.includes('capacity') || (label.includes('mah') && !label.includes('max'))) {
+          (product as any).nominalkapazitaet = formatMeasurement(value);
+          console.log(`🔋 Extracted Nominalkapazität from DIV table: ${value} → ${(product as any).nominalkapazitaet}`);
+        } else if (label.includes('entladestrom') || label.includes('discharge current') || label.includes('max. entladestrom') || label.includes('max entladestrom')) {
+          (product as any).maxEntladestrom = formatMeasurement(value);
+          console.log(`⚡ Extracted max. Entladestrom from DIV table: ${value} → ${(product as any).maxEntladestrom}`);
+        } else if (label.includes('zellenchemie') || label.includes('cell chemistry') || label.includes('chemie')) {
+          (product as any).zellenchemie = value;
+        } else if (label.includes('energie') && (label.includes('wh') || label.includes('wattstunden'))) {
+          (product as any).energie = formatMeasurement(value);
+        } else if (label.includes('farbe') || label.includes('color') || label.includes('colour')) {
+          (product as any).farbe = value;
+        } else if (label.includes('länge') && !label.includes('leucht') && !product.length) {
+          (product as any).laenge = formatMeasurement(value);
+        } else if ((label.includes('breite') || label.includes('width')) && !(product as any).breite) {
+          (product as any).breite = formatMeasurement(value);
+        } else if ((label.includes('höhe') || label.includes('height')) && !(product as any).hoehe) {
+          (product as any).hoehe = formatMeasurement(value);
+        } else if (label.includes('gewicht') && !label.includes('ohne') && !label.includes('without') && !(product as any).gewicht) {
+          (product as any).gewicht = formatMeasurement(value);
+        }
+        // EAN extraction from table
+        else if ((label.includes('ean') || label.includes('barcode') || label.includes('gtin')) && !product.ean) {
+          // Extract 13-digit number from value
+          const eanMatch = value.match(/\d{13}/);
+          if (eanMatch) {
+            product.ean = eanMatch[0];
+            console.log(`📦 Extracted EAN from DIV table: ${product.ean}`);
+          } else if (value.trim().length === 13 && /^\d+$/.test(value.trim())) {
+            product.ean = value.trim();
+            console.log(`📦 Extracted EAN from DIV table (direct): ${product.ean}`);
+          }
+        }
+      });
+    }
   }
 
   // METHOD 2: Parse TABLE-based properties (fallback)
