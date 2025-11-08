@@ -29,6 +29,33 @@ const openApiSpec = {
         bearerFormat: 'JWT',
       },
     },
+    schemas: {
+      Project: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      Product: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          articleNumber: { type: 'string' },
+          productName: { type: 'string' },
+          description: { type: 'string' },
+        },
+      },
+      Supplier: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          url: { type: 'string', format: 'uri' },
+        },
+      },
+    },
   },
   security: [
     {
@@ -188,35 +215,6 @@ const openApiSpec = {
           '201': {
             description: 'Backup created',
           },
-        },
-      },
-    },
-  },
-  components: {
-    schemas: {
-      Project: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          createdAt: { type: 'string', format: 'date-time' },
-        },
-      },
-      Product: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          articleNumber: { type: 'string' },
-          productName: { type: 'string' },
-          description: { type: 'string' },
-        },
-      },
-      Supplier: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          url: { type: 'string', format: 'uri' },
         },
       },
     },
