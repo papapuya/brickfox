@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from './supabase';
 
@@ -35,42 +35,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['/api/auth/user'],
     queryFn: async () => {
-      // Check Supabase session first
+      // EINFACH: Prüfe zuerst Supabase Session (schnellste Methode)
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error || !session) {
-        // Remove token from both storages
-        localStorage.removeItem('supabase_token');
-        sessionStorage.removeItem('supabase_token');
-        return { user: null };
-      }
-
-      // Store token for API calls in the correct storage
-      const token = session.access_token;
-      const storage = getTokenStorage();
-      const otherStorage = storage === localStorage ? sessionStorage : localStorage;
-      
-      storage.setItem('supabase_token', token);
-      otherStorage.removeItem('supabase_token'); // Clean up other storage
-      
-      // Fetch user data from backend with tenant_id
-      const res = await fetch('/api/auth/user', { 
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (!res.ok) {
-        // Remove token from both storages
-        localStorage.removeItem('supabase_token');
-        sessionStorage.removeItem('supabase_token');
-        return { user: null };
+      if (!error && session?.access_token) {
+        // Session gefunden - speichere Token und hole User-Daten
+        const token = session.access_token;
+        const storage = getTokenStorage();
+        storage.setItem('supabase_token', token);
+        if (session.refresh_token) {
+          storage.setItem('supabase_refresh_token', session.refresh_token);
+        }
+        
+        const res = await fetch('/api/auth/user', { 
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          return res.json();
+        }
       }
       
-      return res.json();
+      // Fallback: Prüfe gespeicherte Tokens
+      const storedToken = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
+      const storedRefreshToken = localStorage.getItem('supabase_refresh_token') || sessionStorage.getItem('supabase_refresh_token');
+      
+      if (storedToken) {
+        // Versuche Token zu validieren
+        const res = await fetch('/api/auth/user', { 
+          headers: { 'Authorization': `Bearer ${storedToken}` },
+        });
+        if (res.ok) {
+          return res.json();
+        }
+        
+        // Token ungültig - versuche Refresh
+        if (storedRefreshToken) {
+          try {
+            const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession({
+              refresh_token: storedRefreshToken
+            });
+            
+            if (!refreshError && refreshedSession?.access_token) {
+              const token = refreshedSession.access_token;
+              const storage = getTokenStorage();
+              storage.setItem('supabase_token', token);
+              if (refreshedSession.refresh_token) {
+                storage.setItem('supabase_refresh_token', refreshedSession.refresh_token);
+              }
+              
+              const res = await fetch('/api/auth/user', { 
+                headers: { 'Authorization': `Bearer ${token}` },
+              });
+              if (res.ok) {
+                return res.json();
+              }
+            }
+          } catch (e) {
+            console.error('[AuthContext] Refresh failed:', e);
+          }
+        }
+      }
+      
+      return { user: null };
     },
-    retry: false,
+    retry: 1, // Nur einmal retry
     refetchOnWindowFocus: false,
+    staleTime: 2 * 60 * 1000, // 2 Minuten als "fresh" betrachten
   });
 
   // Listen for auth changes
@@ -96,10 +126,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [refetch]);
 
+  // EINFACH: Prüfe sofort ob Token vorhanden ist (ohne useMemo, direkt)
+  const checkToken = () => {
+    try {
+      return !!(localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token') ||
+                localStorage.getItem('supabase_refresh_token') || sessionStorage.getItem('supabase_refresh_token'));
+    } catch {
+      return false;
+    }
+  };
+
+  const hasToken = checkToken();
+
   const value: AuthContextType = {
     user: data?.user || null,
     isLoading,
-    isAuthenticated: !!data?.user,
+    // EINFACH: Authentifiziert wenn User-Daten vorhanden ODER Token vorhanden
+    // WICHTIG: hasToken wird bei jedem Render neu geprüft, nicht nur bei data/isLoading Änderungen
+    isAuthenticated: !!data?.user || hasToken,
     refetch,
   };
 

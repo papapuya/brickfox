@@ -100,29 +100,41 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    // CRITICAL: Use Helium/Neon DB directly (not Supabase remote DB!)
-    const users = await heliumDb.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
-    const user = users[0];
-
-    if (!user) return null;
-
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username || undefined,
-      isAdmin: user.isAdmin || false,
-      tenantId: user.tenantId || undefined,
-      role: user.role || 'member',
-      stripeCustomerId: user.stripeCustomerId || undefined,
-      subscriptionStatus: user.subscriptionStatus || undefined,
-      subscriptionId: user.subscriptionId || undefined,
-      planId: user.planId || undefined,
-      currentPeriodEnd: user.currentPeriodEnd || undefined,
-      apiCallsUsed: user.apiCallsUsed || 0,
-      apiCallsLimit: user.apiCallsLimit || 50,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    // PRIORITY: Try Supabase first (works even if Helium DB is down)
+    if (supabaseAdmin) {
+      try {
+        const { data: userFromSupabase, error: supabaseError } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (!supabaseError && userFromSupabase) {
+          return {
+            id: userFromSupabase.id,
+            email: userFromSupabase.email,
+            username: userFromSupabase.username || undefined,
+            isAdmin: userFromSupabase.is_admin || false,
+            tenantId: userFromSupabase.tenant_id || undefined,
+            role: userFromSupabase.role || 'member',
+            stripeCustomerId: userFromSupabase.stripe_customer_id || undefined,
+            subscriptionStatus: userFromSupabase.subscription_status || undefined,
+            subscriptionId: userFromSupabase.subscription_id || undefined,
+            planId: userFromSupabase.plan_id || undefined,
+            currentPeriodEnd: userFromSupabase.current_period_end || undefined,
+            apiCallsUsed: userFromSupabase.api_calls_used || 0,
+            apiCallsLimit: userFromSupabase.api_calls_limit || 50,
+            createdAt: userFromSupabase.created_at,
+            updatedAt: userFromSupabase.updated_at,
+          };
+        }
+      } catch (supabaseError: any) {
+        console.error('[getUserById] Error getting user from Supabase:', supabaseError.message);
+      }
+    }
+    
+    // No fallback - Supabase is the only source of truth
+    return null;
   }
 
   async getUserByEmail(email: string): Promise<User & { passwordHash: string } | null> {
@@ -159,10 +171,15 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User & { passwordHash: string } | null> {
-    // CRITICAL: Query Helium DB directly (local PostgreSQL), not Supabase remote DB!
-    const users = await heliumDb.select()
-      .from(usersTable)
-      .where(eq(usersTable.username, username))
+    // Use Supabase API instead of Helium DB
+    if (!supabaseAdmin) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+    
+    const { data: users, error } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('username', username)
       .limit(1);
 
     if (!users || users.length === 0) return null;
@@ -173,19 +190,19 @@ export class SupabaseStorage implements IStorage {
       id: user.id,
       email: user.email,
       username: user.username || undefined,
-      isAdmin: user.isAdmin || false,
-      tenantId: user.tenantId || undefined,
+      isAdmin: user.is_admin || false,
+      tenantId: user.tenant_id || undefined,
       role: user.role || 'member',
       passwordHash: '', // Not used with Supabase Auth
-      stripeCustomerId: user.stripeCustomerId || undefined,
-      subscriptionStatus: user.subscriptionStatus || undefined,
-      subscriptionId: user.subscriptionId || undefined,
-      planId: user.planId || undefined,
-      currentPeriodEnd: user.currentPeriodEnd ? user.currentPeriodEnd.toISOString() : undefined,
-      apiCallsUsed: user.apiCallsUsed || 0,
-      apiCallsLimit: user.apiCallsLimit || 50,
-      createdAt: user.createdAt ? user.createdAt.toISOString() : new Date().toISOString(),
-      updatedAt: user.updatedAt ? user.updatedAt.toISOString() : new Date().toISOString(),
+      stripeCustomerId: user.stripe_customer_id || undefined,
+      subscriptionStatus: user.subscription_status || undefined,
+      subscriptionId: user.subscription_id || undefined,
+      planId: user.plan_id || undefined,
+      currentPeriodEnd: user.current_period_end || undefined,
+      apiCallsUsed: user.api_calls_used || 0,
+      apiCallsLimit: user.api_calls_limit || 50,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
     };
   }
 
@@ -922,191 +939,472 @@ export class SupabaseStorage implements IStorage {
     const user = await this.getUserById(userId);
     if (!user) throw new Error('User not found');
 
-    const insertData: any = {
-      userId: userId,
-      tenantId: user.tenantId || null,
-      name: data.name,
-      supplNr: data.supplNr || null,
-      urlPattern: data.urlPattern || null,
-      description: data.description || null,
-      selectors: data.selectors || {},
-      productLinkSelector: data.productLinkSelector || null,
-      sessionCookies: encryptionService.encrypt(data.sessionCookies) || null,
-      userAgent: data.userAgent || null,
-      loginUrl: data.loginUrl || null,
-      loginUsernameField: data.loginUsernameField || null,
-      loginPasswordField: data.loginPasswordField || null,
-      loginUsername: data.loginUsername || null,
-      verifiedFields: data.verifiedFields || null,
-      lastVerifiedAt: data.lastVerifiedAt || null,
-    };
+    // PRIORITY: Try Supabase first (same as reads!)
+    let newSupplier: any = null;
 
-    // SECURITY: Encrypt password before storing
-    if (data.loginPassword) {
-      insertData.loginPassword = encryptionService.encrypt(data.loginPassword);
+    if (supabaseAdmin) {
+      try {
+        const supabaseInsertData: any = {
+          user_id: userId,
+          tenant_id: user.tenantId || null,
+          name: data.name,
+          suppl_nr: data.supplNr, // Now required field
+          url_pattern: data.urlPattern || null,
+          description: data.description || null,
+          selectors: data.selectors || {},
+          product_link_selector: data.productLinkSelector || null,
+          session_cookies: data.sessionCookies ? encryptionService.encrypt(data.sessionCookies) : null,
+          user_agent: data.userAgent || null,
+          login_url: data.loginUrl || null,
+          login_username_field: data.loginUsernameField || null,
+          login_password_field: data.loginPasswordField || null,
+          login_username: data.loginUsername || null,
+          verified_fields: data.verifiedFields || null,
+          last_verified_at: data.lastVerifiedAt || null,
+        };
+
+        // SECURITY: Encrypt password before storing
+        if (data.loginPassword) {
+          supabaseInsertData.login_password = encryptionService.encrypt(data.loginPassword);
+        }
+
+        const { data: supplierFromSupabase, error: supabaseError } = await supabaseAdmin
+          .from('suppliers')
+          .insert(supabaseInsertData)
+          .select()
+          .single();
+
+        if (!supabaseError && supplierFromSupabase) {
+          newSupplier = supplierFromSupabase;
+          console.log('[createSupplier] Created supplier in Supabase:', newSupplier.id);
+        } else {
+          console.error('[createSupplier] Error creating supplier in Supabase:', supabaseError?.message);
+          console.error('[createSupplier] Error details:', JSON.stringify(supabaseError, null, 2));
+          console.error('[createSupplier] Error code:', supabaseError?.code);
+          console.error('[createSupplier] Error hint:', supabaseError?.hint);
+          // Don't try Helium DB if Supabase fails - throw the error so user sees it
+          throw new Error(`Fehler beim Erstellen in Supabase: ${supabaseError?.message || 'Unbekannter Fehler'}`);
+        }
+      } catch (supabaseError: any) {
+        console.error('[createSupplier] Exception creating supplier in Supabase:', supabaseError.message);
+        console.error('[createSupplier] Exception stack:', supabaseError.stack);
+        // Re-throw the error so it's visible to the user
+        throw supabaseError;
+      }
     }
 
-    // CRITICAL: Use Helium DB with Drizzle (same as reads!)
-    const [newSupplier] = await heliumDb
-      .insert(suppliersTable)
-      .values(insertData)
-      .returning();
+    // FALLBACK: Try Helium DB only if Supabase is not available (not if it failed)
+    if (!newSupplier && !supabaseAdmin) {
+      try {
+        const insertData: any = {
+          userId: userId,
+          tenantId: user.tenantId || null,
+          name: data.name,
+          supplNr: data.supplNr, // Now required field
+          urlPattern: data.urlPattern || null,
+          description: data.description || null,
+          selectors: data.selectors || {},
+          productLinkSelector: data.productLinkSelector || null,
+          sessionCookies: encryptionService.encrypt(data.sessionCookies) || null,
+          userAgent: data.userAgent || null,
+          loginUrl: data.loginUrl || null,
+          loginUsernameField: data.loginUsernameField || null,
+          loginPasswordField: data.loginPasswordField || null,
+          loginUsername: data.loginUsername || null,
+          verifiedFields: data.verifiedFields || null,
+          lastVerifiedAt: data.lastVerifiedAt || null,
+        };
+
+        // SECURITY: Encrypt password before storing
+        if (data.loginPassword) {
+          insertData.loginPassword = encryptionService.encrypt(data.loginPassword);
+        }
+
+        const [supplierFromHelium] = await heliumDb
+          .insert(suppliersTable)
+          .values(insertData)
+          .returning();
+
+        if (supplierFromHelium) {
+          newSupplier = supplierFromHelium;
+          console.log('[createSupplier] Created supplier in Helium DB:', newSupplier.id);
+        }
+      } catch (dbError: any) {
+        console.error('[createSupplier] Error creating supplier in Helium DB:', dbError.message);
+        throw dbError;
+      }
+    }
 
     if (!newSupplier) throw new Error('Failed to create supplier');
 
+    // Map the result to the Supplier format (handle both Supabase and Helium DB formats)
     return {
       id: newSupplier.id,
+      userId: newSupplier.user_id || newSupplier.userId,
+      tenantId: newSupplier.tenant_id || newSupplier.tenantId || undefined,
       name: newSupplier.name,
-      supplNr: newSupplier.supplNr || undefined,
-      urlPattern: newSupplier.urlPattern || undefined,
+      supplNr: newSupplier.suppl_nr || newSupplier.supplNr || undefined,
+      urlPattern: newSupplier.url_pattern || newSupplier.urlPattern || undefined,
       description: newSupplier.description || undefined,
       selectors: newSupplier.selectors as any,
-      productLinkSelector: newSupplier.productLinkSelector || undefined,
-      sessionCookies: newSupplier.sessionCookies || undefined,
-      userAgent: newSupplier.userAgent || undefined,
-      loginUrl: newSupplier.loginUrl || undefined,
-      loginUsernameField: newSupplier.loginUsernameField || undefined,
-      loginPasswordField: newSupplier.loginPasswordField || undefined,
-      loginUsername: newSupplier.loginUsername || undefined,
-      verifiedFields: newSupplier.verifiedFields || undefined,
-      lastVerifiedAt: newSupplier.lastVerifiedAt || undefined,
-      createdAt: newSupplier.createdAt!,
-      updatedAt: newSupplier.updatedAt!,
+      productLinkSelector: newSupplier.product_link_selector || newSupplier.productLinkSelector || undefined,
+      sessionCookies: this.safeDecrypt(newSupplier.session_cookies || newSupplier.sessionCookies) || undefined,
+      userAgent: newSupplier.user_agent || newSupplier.userAgent || undefined,
+      loginUrl: newSupplier.login_url || newSupplier.loginUrl || undefined,
+      loginUsernameField: newSupplier.login_username_field || newSupplier.loginUsernameField || undefined,
+      loginPasswordField: newSupplier.login_password_field || newSupplier.loginPasswordField || undefined,
+      loginUsername: newSupplier.login_username || newSupplier.loginUsername || undefined,
+      verifiedFields: newSupplier.verified_fields || newSupplier.verifiedFields || undefined,
+      lastVerifiedAt: newSupplier.last_verified_at || newSupplier.lastVerifiedAt || undefined,
+      createdAt: newSupplier.created_at || newSupplier.createdAt!,
+      updatedAt: newSupplier.updated_at || newSupplier.updatedAt!,
     };
   }
 
   async getSuppliers(userId: string): Promise<Supplier[]> {
-    const user = await this.getUserById(userId);
-    if (!user) {
-      console.log('[getSuppliers] User not found:', userId);
+    try {
+      let user: User | null = null;
+      try {
+        user = await this.getUserById(userId);
+      } catch (error: any) {
+        console.error('[getSuppliers] Error getting user:', error.message);
+        // Continue with empty user - will return empty array
+      }
+      
+      if (!user) {
+        console.log('[getSuppliers] User not found:', userId);
+        return [];
+      }
+
+      // PRIORITY: Try Supabase first (works even if Helium DB is down)
+      let suppliers: any[] = [];
+      
+      if (supabaseAdmin) {
+        try {
+        // Only select columns that definitely exist (avoid tenant_id if it doesn't exist)
+        let query = supabaseAdmin
+          .from('suppliers')
+          .select('id, user_id, name, url_pattern, description, selectors, product_link_selector, session_cookies, user_agent, created_at, updated_at');
+        
+        // Admins can see all suppliers, regular users only see their own
+        if (user.isAdmin) {
+          console.log('[getSuppliers] Admin user - loading all suppliers from Supabase');
+          // Don't filter by user_id for admins
+        } else {
+          // Always filter by user_id (tenant_id column might not exist)
+          console.log('[getSuppliers] Filtering by user_id from Supabase:', userId);
+          query = query.eq('user_id', userId);
+        }
+        
+        // Try to add tenant_id filter if user has tenantId (but don't fail if column doesn't exist)
+        // Admins can see all suppliers regardless of tenant_id
+        if (!user.isAdmin && user.tenantId) {
+          try {
+            query = query.eq('tenant_id', user.tenantId);
+          } catch (e) {
+            // tenant_id column might not exist, continue without it
+            console.log('[getSuppliers] tenant_id column not available, filtering by user_id only');
+          }
+        }
+        
+        const { data: suppliersFromSupabase, error: supabaseError } = await query.order('name');
+        
+        if (!supabaseError && suppliersFromSupabase) {
+          suppliers = suppliersFromSupabase;
+          console.log('[getSuppliers] Found suppliers in Supabase:', suppliers.length);
+        } else if (supabaseError) {
+          console.error('[getSuppliers] Error getting suppliers from Supabase:', supabaseError.message);
+          console.error('[getSuppliers] Error code:', supabaseError.code);
+          // If column doesn't exist error, try without optional columns
+          if (supabaseError.code === '42703' || supabaseError.message.includes('does not exist')) {
+            console.log('[getSuppliers] Retrying with minimal columns...');
+            let minimalQuery = supabaseAdmin
+              .from('suppliers')
+              .select('id, user_id, name, url_pattern, description, selectors, created_at, updated_at');
+            
+            // Apply same filtering logic for minimal query
+            if (!user.isAdmin) {
+              minimalQuery = minimalQuery.eq('user_id', userId);
+            }
+            
+            const { data: minimalSuppliers, error: minimalError } = await minimalQuery.order('name');
+            if (!minimalError && minimalSuppliers) {
+              suppliers = minimalSuppliers;
+              console.log('[getSuppliers] Found suppliers with minimal columns:', suppliers.length);
+            } else if (minimalError) {
+              console.error('[getSuppliers] Error with minimal columns:', minimalError.message);
+            }
+          }
+        }
+        } catch (supabaseError: any) {
+          console.error('[getSuppliers] Exception getting suppliers from Supabase:', supabaseError.message);
+        }
+      }
+      
+      // FALLBACK: Try Helium DB if Supabase lookup failed or returned empty
+      if (suppliers.length === 0) {
+        try {
+          if (user.isAdmin) {
+            console.log('[getSuppliers] Fallback: Admin user - loading all suppliers from Helium DB');
+            suppliers = await heliumDb
+              .select()
+              .from(suppliersTable)
+              .orderBy(suppliersTable.name);
+          } else if (user.tenantId) {
+            console.log('[getSuppliers] Fallback: Filtering by tenant_id from Helium DB:', user.tenantId);
+            suppliers = await heliumDb
+              .select()
+              .from(suppliersTable)
+              .where(eq(suppliersTable.tenantId, user.tenantId))
+              .orderBy(suppliersTable.name);
+          } else {
+            console.log('[getSuppliers] Fallback: Filtering by user_id from Helium DB:', userId);
+            suppliers = await heliumDb
+              .select()
+              .from(suppliersTable)
+              .where(eq(suppliersTable.userId, userId))
+              .orderBy(suppliersTable.name);
+          }
+          console.log('[getSuppliers] Found suppliers in Helium DB:', suppliers.length);
+        } catch (dbError: any) {
+          console.error('[getSuppliers] Error getting suppliers from Helium DB:', dbError.message);
+          console.error('[getSuppliers] DB Error stack:', dbError.stack);
+          // Return empty array if both fail - don't throw error
+          return [];
+        }
+      }
+
+      console.log('[getSuppliers] Total suppliers found:', suppliers.length);
+      
+      return suppliers.map((s: any) => ({
+        id: s.id,
+        userId: s.user_id || s.userId,
+        tenantId: s.tenant_id || s.tenantId || undefined,
+        name: s.name,
+        supplNr: s.suppl_nr ?? s.supplNr ?? undefined,
+        urlPattern: s.url_pattern || s.urlPattern || undefined,
+        description: s.description || undefined,
+        selectors: s.selectors as any,
+        productLinkSelector: s.product_link_selector || s.productLinkSelector || undefined,
+        sessionCookies: this.safeDecrypt(s.session_cookies || s.sessionCookies) || undefined,
+        userAgent: s.user_agent || s.userAgent || undefined,
+        loginUrl: s.login_url || s.loginUrl || undefined,
+        loginUsernameField: s.login_username_field || s.loginUsernameField || undefined,
+        loginPasswordField: s.login_password_field || s.loginPasswordField || undefined,
+        loginUsername: s.login_username || s.loginUsername || undefined,
+        exportMappings: s.export_mappings || s.exportMappings as any || undefined,
+        verifiedFields: s.verified_fields || s.verifiedFields || undefined,
+        lastVerifiedAt: s.last_verified_at || s.lastVerifiedAt || undefined,
+        createdAt: s.created_at || s.createdAt!,
+        updatedAt: s.updated_at || s.updatedAt!,
+      }));
+    } catch (error: any) {
+      console.error('[getSuppliers] Unexpected error:', error.message);
+      console.error('[getSuppliers] Error stack:', error.stack);
+      // Return empty array on any error to prevent 500 errors
       return [];
     }
-
-    // CRITICAL: Use Helium DB with Drizzle
-    let suppliers;
-    if (user.tenantId) {
-      console.log('[getSuppliers] Filtering by tenant_id:', user.tenantId);
-      suppliers = await heliumDb
-        .select()
-        .from(suppliersTable)
-        .where(eq(suppliersTable.tenantId, user.tenantId))
-        .orderBy(suppliersTable.name);
-    } else {
-      console.log('[getSuppliers] Filtering by user_id:', userId);
-      suppliers = await heliumDb
-        .select()
-        .from(suppliersTable)
-        .where(eq(suppliersTable.userId, userId))
-        .orderBy(suppliersTable.name);
-    }
-
-    console.log('[getSuppliers] Found suppliers:', suppliers.length);
-    
-    return suppliers.map((s: any) => ({
-      id: s.id,
-      userId: s.userId,
-      tenantId: s.tenantId || undefined,
-      name: s.name,
-      supplNr: s.supplNr || undefined,
-      urlPattern: s.urlPattern || undefined,
-      description: s.description || undefined,
-      selectors: s.selectors as any,
-      productLinkSelector: s.productLinkSelector || undefined,
-      sessionCookies: this.safeDecrypt(s.sessionCookies) || undefined,
-      userAgent: s.userAgent || undefined,
-      loginUrl: s.loginUrl || undefined,
-      loginUsernameField: s.loginUsernameField || undefined,
-      loginPasswordField: s.loginPasswordField || undefined,
-      loginUsername: s.loginUsername || undefined,
-      exportMappings: s.exportMappings as any || undefined,
-      verifiedFields: s.verifiedFields || undefined,
-      lastVerifiedAt: s.lastVerifiedAt || undefined,
-      createdAt: s.createdAt!,
-      updatedAt: s.updatedAt!,
-    }));
   }
 
   async getSupplier(id: string): Promise<Supplier | null> {
-    // Use Helium DB with Drizzle instead of Supabase to avoid RLS issues
-    const [supplier] = await heliumDb
-      .select()
-      .from(suppliersTable)
-      .where(eq(suppliersTable.id, id))
-      .limit(1);
+    // PRIORITY: Try Supabase first (works even if Helium DB is down)
+    let supplier: any = null;
+    
+    if (supabaseAdmin) {
+      try {
+        // Try with all columns first, fallback to minimal if some don't exist
+        let supplierQuery = supabaseAdmin
+          .from('suppliers')
+          .select('id, user_id, name, url_pattern, description, selectors, product_link_selector, session_cookies, user_agent, created_at, updated_at')
+          .eq('id', id)
+          .single();
+        
+        const { data: supplierFromSupabase, error: supabaseError } = await supplierQuery;
+        
+        if (!supabaseError && supplierFromSupabase) {
+          supplier = supplierFromSupabase;
+          console.log('[getSupplier] Found supplier in Supabase:', supplier.name);
+        } else if (supabaseError) {
+          console.error('[getSupplier] Error getting supplier from Supabase:', supabaseError.message);
+          // If column error, try with minimal columns
+          if (supabaseError.code === '42703' || supabaseError.message.includes('does not exist')) {
+            const { data: minimalSupplier, error: minimalError } = await supabaseAdmin
+              .from('suppliers')
+              .select('id, user_id, name, url_pattern, description, selectors, created_at, updated_at')
+              .eq('id', id)
+              .single();
+            if (!minimalError && minimalSupplier) {
+              supplier = minimalSupplier;
+              console.log('[getSupplier] Found supplier with minimal columns');
+            }
+          }
+        }
+      } catch (supabaseError: any) {
+        console.error('[getSupplier] Exception getting supplier from Supabase:', supabaseError.message);
+      }
+    }
+    
+    // FALLBACK: Try Helium DB if Supabase lookup failed
+    if (!supplier) {
+      try {
+        const [supplierFromDb] = await heliumDb
+          .select()
+          .from(suppliersTable)
+          .where(eq(suppliersTable.id, id))
+          .limit(1);
+        
+        if (supplierFromDb) {
+          supplier = supplierFromDb;
+          console.log('[getSupplier] Found supplier in Helium DB:', supplier.name);
+        }
+      } catch (dbError: any) {
+        console.error('[getSupplier] Error getting supplier from Helium DB:', dbError.message);
+        return null;
+      }
+    }
 
     if (!supplier) return null;
 
     return {
       id: supplier.id,
       name: supplier.name,
-      supplNr: supplier.supplNr || undefined,
-      urlPattern: supplier.urlPattern || undefined,
+      supplNr: supplier.suppl_nr ?? supplier.supplNr ?? undefined,
+      urlPattern: supplier.url_pattern || supplier.urlPattern || undefined,
       description: supplier.description || undefined,
       selectors: supplier.selectors as any,
-      productLinkSelector: supplier.productLinkSelector || undefined,
-      sessionCookies: this.safeDecrypt(supplier.sessionCookies) || undefined,
-      userAgent: supplier.userAgent || undefined,
-      loginUrl: supplier.loginUrl || undefined,
-      loginUsernameField: supplier.loginUsernameField || undefined,
-      loginPasswordField: supplier.loginPasswordField || undefined,
-      loginUsername: supplier.loginUsername || undefined,
-      loginPassword: this.safeDecrypt(supplier.loginPassword) || undefined,
-      verifiedFields: supplier.verifiedFields || undefined,
-      lastVerifiedAt: supplier.lastVerifiedAt || undefined,
-      createdAt: supplier.createdAt!,
-      updatedAt: supplier.updatedAt!,
+      productLinkSelector: supplier.product_link_selector || supplier.productLinkSelector || undefined,
+      sessionCookies: this.safeDecrypt(supplier.session_cookies || supplier.sessionCookies) || undefined,
+      userAgent: supplier.user_agent || supplier.userAgent || undefined,
+      loginUrl: supplier.login_url || supplier.loginUrl || undefined,
+      loginUsernameField: supplier.login_username_field || supplier.loginUsernameField || undefined,
+      loginPasswordField: supplier.login_password_field || supplier.loginPasswordField || undefined,
+      loginUsername: supplier.login_username || supplier.loginUsername || undefined,
+      loginPassword: this.safeDecrypt(supplier.login_password || supplier.loginPassword) || undefined,
+      verifiedFields: supplier.verified_fields || supplier.verifiedFields || undefined,
+      lastVerifiedAt: supplier.last_verified_at || supplier.lastVerifiedAt || undefined,
+      createdAt: supplier.created_at || supplier.createdAt!,
+      updatedAt: supplier.updated_at || supplier.updatedAt!,
     };
   }
 
   async updateSupplier(id: string, data: UpdateSupplier): Promise<Supplier | null> {
-    const updateData: any = { updatedAt: new Date() };
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.supplNr !== undefined) updateData.supplNr = data.supplNr;
-    if (data.urlPattern !== undefined) updateData.urlPattern = data.urlPattern;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.selectors !== undefined) updateData.selectors = data.selectors;
-    if (data.productLinkSelector !== undefined) updateData.productLinkSelector = data.productLinkSelector;
-    if (data.sessionCookies !== undefined) updateData.sessionCookies = data.sessionCookies ? encryptionService.encrypt(data.sessionCookies) : null;
-    if (data.userAgent !== undefined) updateData.userAgent = data.userAgent;
-    if (data.loginUrl !== undefined) updateData.loginUrl = data.loginUrl;
-    if (data.loginUsernameField !== undefined) updateData.loginUsernameField = data.loginUsernameField;
-    if (data.loginPasswordField !== undefined) updateData.loginPasswordField = data.loginPasswordField;
-    if (data.loginUsername !== undefined) updateData.loginUsername = data.loginUsername;
-    if (data.verifiedFields !== undefined) updateData.verifiedFields = data.verifiedFields || null;
-    if (data.lastVerifiedAt !== undefined) updateData.lastVerifiedAt = data.lastVerifiedAt;
-    
-    // SECURITY: Encrypt password before storing (or clear if null)
-    if (data.loginPassword !== undefined) {
-      updateData.loginPassword = data.loginPassword ? encryptionService.encrypt(data.loginPassword) : null;
+    // PRIORITY: Try Supabase first (works even if Helium DB is down)
+    let updatedSupplier: any = null;
+
+    if (supabaseAdmin) {
+      try {
+        const supabaseUpdateData: any = {
+          updated_at: new Date().toISOString(),
+        };
+        
+        if (data.name !== undefined) supabaseUpdateData.name = data.name;
+        if (data.supplNr !== undefined) supabaseUpdateData.suppl_nr = data.supplNr; // Can be string or null
+        if (data.urlPattern !== undefined) supabaseUpdateData.url_pattern = data.urlPattern; // Can be string or null
+        if (data.description !== undefined) supabaseUpdateData.description = data.description; // Can be string or null
+        if (data.selectors !== undefined) supabaseUpdateData.selectors = data.selectors;
+        if (data.productLinkSelector !== undefined) supabaseUpdateData.product_link_selector = data.productLinkSelector;
+        if (data.sessionCookies !== undefined) supabaseUpdateData.session_cookies = data.sessionCookies ? encryptionService.encrypt(data.sessionCookies) : null;
+        if (data.userAgent !== undefined) supabaseUpdateData.user_agent = data.userAgent;
+        if (data.loginUrl !== undefined) supabaseUpdateData.login_url = data.loginUrl;
+        if (data.loginUsernameField !== undefined) supabaseUpdateData.login_username_field = data.loginUsernameField;
+        if (data.loginPasswordField !== undefined) supabaseUpdateData.login_password_field = data.loginPasswordField;
+        if (data.loginUsername !== undefined) supabaseUpdateData.login_username = data.loginUsername;
+        if (data.verifiedFields !== undefined) supabaseUpdateData.verified_fields = data.verifiedFields || null;
+        if (data.lastVerifiedAt !== undefined) supabaseUpdateData.last_verified_at = data.lastVerifiedAt;
+        
+        // SECURITY: Encrypt password before storing (or clear if null)
+        if (data.loginPassword !== undefined) {
+          supabaseUpdateData.login_password = data.loginPassword ? encryptionService.encrypt(data.loginPassword) : null;
+        }
+
+        const { data: supplierFromSupabase, error: supabaseError } = await supabaseAdmin
+          .from('suppliers')
+          .update(supabaseUpdateData)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (!supabaseError && supplierFromSupabase) {
+          updatedSupplier = supplierFromSupabase;
+          console.log('[updateSupplier] Updated supplier in Supabase:', updatedSupplier.id);
+        } else {
+          console.error('[updateSupplier] Error updating supplier in Supabase:', supabaseError?.message);
+          console.error('[updateSupplier] Error details:', JSON.stringify(supabaseError, null, 2));
+          throw new Error(`Fehler beim Aktualisieren in Supabase: ${supabaseError?.message || 'Unbekannter Fehler'}`);
+        }
+      } catch (supabaseError: any) {
+        console.error('[updateSupplier] Exception updating supplier in Supabase:', supabaseError.message);
+        throw supabaseError;
+      }
     }
 
-    // CRITICAL: Use Helium DB with Drizzle (same as reads!)
-    const [updatedSupplier] = await heliumDb
-      .update(suppliersTable)
-      .set(updateData)
-      .where(eq(suppliersTable.id, id))
-      .returning();
+    // FALLBACK: Try Helium DB only if Supabase is not available (not if it failed)
+    if (!updatedSupplier && !supabaseAdmin) {
+      try {
+        const updateData: any = { updatedAt: new Date() };
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.supplNr !== undefined) updateData.supplNr = data.supplNr;
+        if (data.urlPattern !== undefined) updateData.urlPattern = data.urlPattern;
+        if (data.description !== undefined) updateData.description = data.description;
+        if (data.selectors !== undefined) updateData.selectors = data.selectors;
+        if (data.productLinkSelector !== undefined) updateData.productLinkSelector = data.productLinkSelector;
+        if (data.sessionCookies !== undefined) updateData.sessionCookies = data.sessionCookies ? encryptionService.encrypt(data.sessionCookies) : null;
+        if (data.userAgent !== undefined) updateData.userAgent = data.userAgent;
+        if (data.loginUrl !== undefined) updateData.loginUrl = data.loginUrl;
+        if (data.loginUsernameField !== undefined) updateData.loginUsernameField = data.loginUsernameField;
+        if (data.loginPasswordField !== undefined) updateData.loginPasswordField = data.loginPasswordField;
+        if (data.loginUsername !== undefined) updateData.loginUsername = data.loginUsername;
+        if (data.verifiedFields !== undefined) updateData.verifiedFields = data.verifiedFields || null;
+        if (data.lastVerifiedAt !== undefined) updateData.lastVerifiedAt = data.lastVerifiedAt;
+        
+        // SECURITY: Encrypt password before storing (or clear if null)
+        if (data.loginPassword !== undefined) {
+          updateData.loginPassword = data.loginPassword ? encryptionService.encrypt(data.loginPassword) : null;
+        }
 
-    if (!updatedSupplier) return null;
+        const [supplierFromHelium] = await heliumDb
+          .update(suppliersTable)
+          .set(updateData)
+          .where(eq(suppliersTable.id, id))
+          .returning();
 
+        if (supplierFromHelium) {
+          updatedSupplier = supplierFromHelium;
+          console.log('[updateSupplier] Updated supplier in Helium DB:', updatedSupplier.id);
+        }
+      } catch (dbError: any) {
+        console.error('[updateSupplier] Error updating supplier in Helium DB:', dbError.message);
+        throw dbError;
+      }
+    }
+
+    if (!updatedSupplier) throw new Error('Failed to update supplier');
+
+    // Map the result to the Supplier format (handle both Supabase and Helium DB formats)
     return {
       id: updatedSupplier.id,
+      userId: updatedSupplier.user_id || updatedSupplier.userId,
+      tenantId: updatedSupplier.tenant_id || updatedSupplier.tenantId || undefined,
       name: updatedSupplier.name,
-      supplNr: updatedSupplier.supplNr || undefined,
-      urlPattern: updatedSupplier.urlPattern || undefined,
-      description: updatedSupplier.description || undefined,
+      supplNr: updatedSupplier.suppl_nr !== null && updatedSupplier.suppl_nr !== undefined 
+        ? updatedSupplier.suppl_nr 
+        : (updatedSupplier.supplNr !== null && updatedSupplier.supplNr !== undefined 
+          ? updatedSupplier.supplNr 
+          : undefined),
+      urlPattern: updatedSupplier.url_pattern ?? updatedSupplier.urlPattern ?? undefined,
+      description: updatedSupplier.description ?? undefined,
       selectors: updatedSupplier.selectors as any,
-      productLinkSelector: updatedSupplier.productLinkSelector || undefined,
-      sessionCookies: updatedSupplier.sessionCookies || undefined,
-      userAgent: updatedSupplier.userAgent || undefined,
-      loginUrl: updatedSupplier.loginUrl || undefined,
-      loginUsernameField: updatedSupplier.loginUsernameField || undefined,
-      loginPasswordField: updatedSupplier.loginPasswordField || undefined,
-      loginUsername: updatedSupplier.loginUsername || undefined,
-      verifiedFields: updatedSupplier.verifiedFields || undefined,
-      lastVerifiedAt: updatedSupplier.lastVerifiedAt || undefined,
-      createdAt: updatedSupplier.createdAt!,
-      updatedAt: updatedSupplier.updatedAt!,
+      productLinkSelector: updatedSupplier.product_link_selector || updatedSupplier.productLinkSelector || undefined,
+      sessionCookies: this.safeDecrypt(updatedSupplier.session_cookies || updatedSupplier.sessionCookies) || undefined,
+      userAgent: updatedSupplier.user_agent || updatedSupplier.userAgent || undefined,
+      loginUrl: updatedSupplier.login_url || updatedSupplier.loginUrl || undefined,
+      loginUsernameField: updatedSupplier.login_username_field || updatedSupplier.loginUsernameField || undefined,
+      loginPasswordField: updatedSupplier.login_password_field || updatedSupplier.loginPasswordField || undefined,
+      loginUsername: updatedSupplier.login_username || updatedSupplier.loginUsername || undefined,
+      verifiedFields: updatedSupplier.verified_fields || updatedSupplier.verifiedFields || undefined,
+      lastVerifiedAt: updatedSupplier.last_verified_at || updatedSupplier.lastVerifiedAt || undefined,
+      createdAt: updatedSupplier.created_at || updatedSupplier.createdAt!,
+      updatedAt: updatedSupplier.updated_at || updatedSupplier.updatedAt!,
     };
   }
 
@@ -1220,28 +1518,80 @@ export class SupabaseStorage implements IStorage {
    * SECURITY: Only use this internally, never expose to API responses
    */
   async getSupplierWithCredentials(id: string): Promise<Supplier | null> {
-    // Use Helium DB (development environment) - suppliers are stored there
-    const suppliers = await heliumDb
-      .select()
-      .from(suppliersTable)
-      .where(eq(suppliersTable.id, id))
-      .limit(1);
-
-    const supplier = suppliers[0];
+    // PRIORITY: Try Supabase first (works even if Helium DB is down)
+    let supplier: any = null;
+    
+    if (supabaseAdmin) {
+      try {
+        const { data: supplierFromSupabase, error: supabaseError } = await supabaseAdmin
+          .from('suppliers')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (!supabaseError && supplierFromSupabase) {
+          supplier = supplierFromSupabase;
+          console.log('[getSupplierWithCredentials] Found supplier in Supabase:', supplier.name);
+        } else if (supabaseError) {
+          console.error('[getSupplierWithCredentials] Error getting supplier from Supabase:', supabaseError.message);
+        }
+      } catch (supabaseError: any) {
+        console.error('[getSupplierWithCredentials] Exception getting supplier from Supabase:', supabaseError.message);
+      }
+    }
+    
+    // FALLBACK: Try Helium DB if Supabase lookup failed
     if (!supplier) {
-      console.log(`[getSupplierWithCredentials] No supplier found in Helium for ID: ${id}`);
+      try {
+        const suppliers = await heliumDb
+          .select()
+          .from(suppliersTable)
+          .where(eq(suppliersTable.id, id))
+          .limit(1);
+        
+        supplier = suppliers[0];
+        if (supplier) {
+          console.log('[getSupplierWithCredentials] Found supplier in Helium DB:', supplier.name);
+        }
+      } catch (dbError: any) {
+        console.error('[getSupplierWithCredentials] Error getting supplier from Helium DB:', dbError.message);
+      }
+    }
+
+    if (!supplier) {
+      console.log(`[getSupplierWithCredentials] No supplier found for ID: ${id}`);
       return null;
     }
 
     // Decrypt password for internal use
     let decryptedPassword: string | undefined = undefined;
-    if (supplier.loginPassword) {
-      decryptedPassword = this.safeDecrypt(supplier.loginPassword) || undefined;
+    const passwordField = supplier.login_password || supplier.loginPassword;
+    if (passwordField) {
+      decryptedPassword = this.safeDecrypt(passwordField) || undefined;
     }
 
+    // Map supplier data to match expected format
     return {
-      ...supplier,
-      loginPassword: decryptedPassword
+      id: supplier.id,
+      userId: supplier.user_id || supplier.userId,
+      tenantId: supplier.tenant_id || supplier.tenantId || undefined,
+      name: supplier.name,
+      supplNr: supplier.suppl_nr ?? supplier.supplNr ?? undefined,
+      urlPattern: supplier.url_pattern || supplier.urlPattern || undefined,
+      description: supplier.description || undefined,
+      selectors: supplier.selectors as any,
+      productLinkSelector: supplier.product_link_selector || supplier.productLinkSelector || undefined,
+      sessionCookies: this.safeDecrypt(supplier.session_cookies || supplier.sessionCookies) || undefined,
+      userAgent: supplier.user_agent || supplier.userAgent || undefined,
+      loginUrl: supplier.login_url || supplier.loginUrl || undefined,
+      loginUsernameField: supplier.login_username_field || supplier.loginUsernameField || undefined,
+      loginPasswordField: supplier.login_password_field || supplier.loginPasswordField || undefined,
+      loginUsername: supplier.login_username || supplier.loginUsername || undefined,
+      loginPassword: decryptedPassword,
+      verifiedFields: supplier.verified_fields || supplier.verifiedFields || undefined,
+      lastVerifiedAt: supplier.last_verified_at || supplier.lastVerifiedAt || undefined,
+      createdAt: supplier.created_at || supplier.createdAt!,
+      updatedAt: supplier.updated_at || supplier.updatedAt!,
     };
   }
 

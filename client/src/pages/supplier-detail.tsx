@@ -135,7 +135,18 @@ export default function SupplierDetail() {
         </TabsContent>
 
         <TabsContent value="selectors">
-          <SupplierSelectorsTab supplier={supplier} onUpdate={() => loadSupplier(supplier.id)} />
+          <SupplierSelectorsTab 
+            supplier={supplier} 
+            onUpdate={(updatedSupplier) => {
+              // Update supplier state directly with the returned data
+              if (updatedSupplier) {
+                setSupplier(updatedSupplier);
+              } else {
+                // Fallback: reload if no supplier data provided
+                loadSupplier(supplier.id);
+              }
+            }} 
+          />
         </TabsContent>
 
         <TabsContent value="field-mapping">

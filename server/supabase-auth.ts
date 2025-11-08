@@ -8,19 +8,68 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
     throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
   }
 
+  // Try to get user with the token
   const { data: { user }, error } = await supabase.auth.getUser(accessToken);
   
-  if (error || !user) return null;
-
-  // CRITICAL: Use supabaseStorage which queries Helium DB (local), not Supabase remote DB!
-  const userData = await supabaseStorage.getUserById(user.id);
-
-  if (!userData) {
-    console.error(`[getSupabaseUser] No user data found in Helium DB for id: ${user.id}`);
+  // If token is invalid or expired, log the error but don't try to refresh on server
+  // Token refresh should happen on the client side
+  if (error || !user) {
+    console.log(`[getSupabaseUser] Token validation failed: ${error?.message || 'No user'}`);
+    console.log(`[getSupabaseUser] Token (first 20 chars): ${accessToken.substring(0, 20)}...`);
     return null;
   }
 
-  console.log(`[getSupabaseUser] User data from Helium DB:`, {
+  // PRIORITY: Try Supabase users table first (works even if Helium DB is down)
+  let userData: User | null = null;
+  
+  if (supabaseAdmin) {
+    try {
+      const { data: userFromSupabase, error: supabaseError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (!supabaseError && userFromSupabase) {
+        userData = {
+          id: userFromSupabase.id,
+          email: userFromSupabase.email,
+          username: userFromSupabase.username || undefined,
+          isAdmin: userFromSupabase.is_admin || false,
+          tenantId: userFromSupabase.tenant_id || undefined,
+          role: userFromSupabase.role || 'member',
+          subscriptionStatus: userFromSupabase.subscription_status || undefined,
+          planId: userFromSupabase.plan_id || undefined,
+          apiCallsUsed: userFromSupabase.api_calls_used || 0,
+          apiCallsLimit: userFromSupabase.api_calls_limit || 50,
+          createdAt: userFromSupabase.created_at,
+          updatedAt: userFromSupabase.updated_at,
+        };
+        console.log(`[getSupabaseUser] User found in Supabase users table`);
+      }
+    } catch (supabaseError: any) {
+      console.error(`[getSupabaseUser] Error getting user from Supabase:`, supabaseError.message);
+    }
+  }
+  
+  // FALLBACK: Try Helium DB if Supabase lookup failed
+  if (!userData) {
+    try {
+      userData = await supabaseStorage.getUserById(user.id);
+      if (userData) {
+        console.log(`[getSupabaseUser] User found in Helium DB`);
+      }
+    } catch (dbError: any) {
+      console.error(`[getSupabaseUser] Error getting user from Helium DB:`, dbError.message);
+    }
+  }
+
+  if (!userData) {
+    console.error(`[getSupabaseUser] No user data found for id: ${user.id}`);
+    return null;
+  }
+
+  console.log(`[getSupabaseUser] User data:`, {
     id: userData.id,
     email: userData.email,
     tenant_id: userData.tenantId,
@@ -31,7 +80,7 @@ export async function getSupabaseUser(accessToken: string): Promise<User | null>
   return userData;
 }
 
-export async function createAdminUser(email: string, password: string): Promise<void> {
+export async function createAdminUser(email: string, password: string, username?: string): Promise<void> {
   if (!supabaseAdmin) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
   }
@@ -59,7 +108,7 @@ export async function createAdminUser(email: string, password: string): Promise<
     .upsert({
       id: data.user.id,
       email: email,
-      username: 'Admin',
+      username: username || 'Admin',
       is_admin: true,
       role: 'admin',
       tenant_id: akkushopTenant?.id,
@@ -77,7 +126,7 @@ export async function createAdminUser(email: string, password: string): Promise<
     throw new Error(`Failed to create user record: ${insertError.message}`);
   }
 
-  console.log(`✅ Admin user created: ${email}`);
+  console.log(`✅ Admin user created: ${email}${username ? ` (Username: ${username})` : ''}`);
 }
 
 export function supabaseAuthMiddleware(req: Request, res: Response, next: NextFunction) {

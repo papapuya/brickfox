@@ -38,7 +38,6 @@ Eine moderne Web-Anwendung zur automatischen Generierung von Produktbeschreibung
    ```env
    # API Keys (erforderlich für KI-Funktionen)
    OPENAI_API_KEY=your_openai_api_key_here
-   FIRECRAWL_API_KEY=your_firecrawl_api_key_here
    
    # Server Konfiguration
    PORT=5000
@@ -71,10 +70,6 @@ Die Anwendung benötigt API Keys für folgende Services:
 - Erstellen Sie einen API Key
 - Fügen Sie ihn in die `.env` Datei ein
 
-### Firecrawl API Key
-- Registrieren Sie sich bei https://firecrawl.dev/
-- Erstellen Sie einen API Key
-- Fügen Sie ihn in die `.env` Datei ein
 
 ## 📖 Verwendung
 
@@ -106,6 +101,45 @@ npm run migrate      # Führt Datenbankmigrationen aus
 - `TECHNICAL-OVERVIEW.md` - Technische Übersicht
 - `TECHNICAL-FAQ.md` - Häufige Fragen
 - `DEPLOYMENT.md` - Deployment-Anweisungen
+
+## 🤖 AI-Produktdaten-Parser
+
+### Prompt-Regeln für Post-Parser
+
+Der strukturierte Produktdaten-Parser (`server/services/parseTechnicalData.ts`) verwendet folgende Prompt-Regeln:
+
+**System-Prompt:**
+```
+Du bist ein strukturierter Produktdaten-Parser. 
+
+Du erhältst Rohdaten aus einem Web-Scraper im JSON-Format.
+
+Analysiere die Felder "technicalDataTable", "autoExtractedDescription" und "rawHtml". 
+
+Wenn "technicalDataTable" leer ist, nutze stattdessen "rawHtml" oder "autoExtractedDescription".
+
+Erkenne alle technischen Angaben wie:
+- Spannung, Kapazität, Zellchemie, Maße, Gewicht, Artikelnummer, Verpackungseinheit usw.
+- Werte wie "1.2 V", "2850 mAh", "NiMH" etc.
+
+Erstelle daraus ein JSON mit diesem Format:
+{
+  "Spannung": "1.2 V",
+  "Kapazität": "2850 mAh",
+  "Zellchemie": "NiMH",
+  "Artikelnummer": "5030452",
+  "Gewicht": "n/a"
+}
+
+Wenn keine Daten erkannt werden, gib ein leeres JSON `{}` zurück. 
+Übersetze englische Begriffe ins Deutsche.
+Ignoriere Marketingtexte und Beschreibungen.
+```
+
+**Verwendung:**
+- API-Endpoint: `POST /api/parse-technical-data`
+- Input: `{ scrapedData: { technicalDataTable?, autoExtractedDescription?, rawHtml? } }`
+- Output: `{ structuredData: { Spannung?, Kapazität?, Zellchemie?, ... } }`
 
 ## 🐛 Support
 

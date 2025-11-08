@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,9 @@ export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Don't clear tokens on login page load - let AuthContext handle session restoration
+  // Only clear tokens if user explicitly logs out or if there's an authentication error
   
   // Load "Remember Me" preference from storage (default: true)
   const [rememberMe, setRememberMe] = useState(() => {
@@ -77,6 +80,7 @@ export default function Login() {
 
         if (error) {
           console.error('Failed to set Supabase session:', error);
+          console.error('Error details:', error);
         } else {
           console.log('✅ Supabase session set successfully');
           
@@ -85,7 +89,20 @@ export default function Login() {
           const otherStorage = rememberMe ? sessionStorage : localStorage;
           
           storage.setItem('supabase_token', data.session.access_token);
-          otherStorage.removeItem('supabase_token'); // Prevent token resurrection
+          // Also store refresh token for session renewal
+          if (data.session.refresh_token) {
+            storage.setItem('supabase_refresh_token', data.session.refresh_token);
+          }
+          otherStorage.removeItem('supabase_token');
+          otherStorage.removeItem('supabase_refresh_token');
+          
+          // Verify session was actually set
+          const { data: { session: verifySession } } = await supabase.auth.getSession();
+          if (!verifySession) {
+            console.error('⚠️ Session verification failed - session not persisted');
+          } else {
+            console.log('✅ Session verified and persisted');
+          }
         }
       }
       
@@ -141,8 +158,10 @@ export default function Login() {
               <Label htmlFor="email">E-Mail oder Benutzername</Label>
               <Input
                 id="email"
+                name="email"
                 type="text"
                 placeholder=""
+                autoComplete="username"
                 {...register('email')}
                 disabled={isLoading}
               />
@@ -156,8 +175,10 @@ export default function Login() {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   {...register('password')}
                   disabled={isLoading}
                   className="pr-10"

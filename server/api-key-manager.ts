@@ -2,7 +2,6 @@ import { encryptionService } from './services/encryption-service';
 
 interface SecureApiKeys {
   openai?: string;
-  firecrawl?: string;
 }
 
 class ApiKeyManager {
@@ -32,7 +31,6 @@ class ApiKeyManager {
   
   loadFromEnvironment(): void {
     const encryptedOpenAI = process.env.ENCRYPTED_OPENAI_API_KEY;
-    const encryptedFirecrawl = process.env.ENCRYPTED_FIRECRAWL_API_KEY;
     
     if (encryptedOpenAI) {
       try {
@@ -40,15 +38,6 @@ class ApiKeyManager {
         console.log('OpenAI API-Schlüssel aus verschlüsselter Umgebungsvariable geladen');
       } catch (error) {
         console.error('Fehler beim Laden des verschlüsselten OpenAI API-Schlüssels:', error);
-      }
-    }
-    
-    if (encryptedFirecrawl) {
-      try {
-        this.encryptedKeys.firecrawl = encryptedFirecrawl;
-        console.log('Firecrawl API-Schlüssel aus verschlüsselter Umgebungsvariable geladen');
-      } catch (error) {
-        console.error('Fehler beim Laden des verschlüsselten Firecrawl API-Schlüssels:', error);
       }
     }
   }
@@ -65,6 +54,3 @@ export function getSecureOpenAIKey(): string | null {
   return process.env.OPENAI_API_KEY || apiKeyManager.getApiKey('openai') || null;
 }
 
-export function getSecureFirecrawlKey(): string | null {
-  return apiKeyManager.getApiKey('firecrawl') || process.env.FIRECRAWL_API_KEY || null;
-}

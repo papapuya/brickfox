@@ -32,7 +32,26 @@ interface RestoreBackupOptions {
 }
 
 export class BackupService {
-  async createBackup(options: CreateBackupOptions) {
+  /**
+   * Create a backup (full or incremental)
+   */
+  async createBackup(options: CreateBackupOptions & { incremental?: boolean; lastBackupId?: string }) {
+    // Use incremental backup if requested and lastBackupId provided
+    if (options.incremental && options.lastBackupId) {
+      const { incrementalBackupService } = await import('./incremental-backup-service');
+      return incrementalBackupService.createIncrementalBackup({
+        tenantId: options.tenantId,
+        userId: options.userId,
+        lastBackupId: options.lastBackupId,
+        expiresInDays: options.expiresInDays,
+      });
+    }
+
+    // Otherwise, create full backup
+    return this.createFullBackup(options);
+  }
+
+  async createFullBackup(options: CreateBackupOptions) {
     const startTime = Date.now();
     const { tenantId, userId, backupType, expiresInDays = 30 } = options;
 
@@ -139,11 +158,12 @@ export class BackupService {
     }
   }
 
-  async restoreBackup(options: RestoreBackupOptions) {
-    const { backupId, tenantId, userId } = options;
+  async createFullBackup(options: CreateBackupOptions) {
+    const startTime = Date.now();
+    const { tenantId, userId, backupType, expiresInDays = 30 } = options;
 
     try {
-      console.log(`[Backup] Starting restore from backup ${backupId} for tenant ${tenantId}`);
+      console.log(`[Backup] Starting ${backupType} backup for tenant: ${tenantId || 'ALL'}`);
 
       const [backup] = await heliumDb
         .select()

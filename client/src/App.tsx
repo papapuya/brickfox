@@ -21,6 +21,7 @@ import AdminAuditLogs from "@/pages/admin-audit-logs";
 import CSVBulkDescription from "@/pages/csv-bulk-description";
 import URLScraper from "@/pages/url-scraper";
 import PDFAutoScraper from "@/pages/pdf-auto-scraper";
+import { PDFScraperRedirect } from "@/components/pdf-scraper-redirect";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
 import CredentialsPage from "@/pages/credentials";
@@ -86,6 +87,11 @@ function Router() {
       <Route path="/pdf-auto-scraper">
         <ProtectedRoute>
           <PDFAutoScraper />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/pdf-scraper">
+        <ProtectedRoute>
+          <PDFScraperRedirect />
         </ProtectedRoute>
       </Route>
       <Route path="/projects">

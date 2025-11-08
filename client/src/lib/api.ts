@@ -1,6 +1,52 @@
 export async function apiRequest(url: string, options: RequestInit = {}) {
+  // Import supabase to refresh token if needed
+  const { supabase } = await import('./supabase');
+  
   // Try both localStorage and sessionStorage for token (depends on "Remember Me" setting)
-  const token = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
+  let token = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
+  
+  // If we have a token, try to refresh the session to ensure it's valid
+  if (token) {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!sessionError && session && session.access_token) {
+        // Update token with fresh session token
+        token = session.access_token;
+        const storage = localStorage.getItem('supabase_token') ? localStorage : sessionStorage;
+        storage.setItem('supabase_token', token);
+        if (session.refresh_token) {
+          storage.setItem('supabase_refresh_token', session.refresh_token);
+        }
+        console.log('[apiRequest] Session refreshed, using fresh token');
+      } else if (sessionError) {
+        console.warn('[apiRequest] Session refresh failed:', sessionError.message);
+        // Try to refresh using refresh token
+        const refreshToken = localStorage.getItem('supabase_refresh_token') || sessionStorage.getItem('supabase_refresh_token');
+        if (refreshToken) {
+          try {
+            const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession({
+              refresh_token: refreshToken
+            });
+            if (!refreshError && newSession && newSession.access_token) {
+              token = newSession.access_token;
+              const storage = localStorage.getItem('supabase_token') ? localStorage : sessionStorage;
+              storage.setItem('supabase_token', token);
+              if (newSession.refresh_token) {
+                storage.setItem('supabase_refresh_token', newSession.refresh_token);
+              }
+              console.log('[apiRequest] Session refreshed using refresh token');
+            } else if (refreshError) {
+              console.error('[apiRequest] Refresh token failed:', refreshError.message);
+            }
+          } catch (refreshErr) {
+            console.error('[apiRequest] Error refreshing with refresh token:', refreshErr);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[apiRequest] Error refreshing session:', error);
+    }
+  }
   
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
@@ -21,11 +67,23 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
     headers,
   });
   
-  // Auto-logout on 401
+  // Auto-logout on 401 - nur wenn kein gültiges Token vorhanden ist
   if (response.status === 401) {
-    localStorage.removeItem('supabase_token');
-    sessionStorage.removeItem('supabase_token');
-    window.location.href = '/login';
+    const hasToken = !!(localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_refresh_token') ||
+                        sessionStorage.getItem('supabase_token') || localStorage.getItem('supabase_refresh_token'));
+    
+    if (!hasToken) {
+      // Kein Token vorhanden - wirklich nicht authentifiziert, umleiten
+      localStorage.removeItem('supabase_token');
+      sessionStorage.removeItem('supabase_token');
+      localStorage.removeItem('supabase_refresh_token');
+      sessionStorage.removeItem('supabase_refresh_token');
+      window.location.href = '/login';
+    } else {
+      // Token vorhanden aber 401 - Token könnte abgelaufen sein, aber nicht umleiten
+      // AuthContext wird die Session automatisch wiederherstellen
+      console.warn('[apiRequest] 401 received but token exists - session might be expired, will retry');
+    }
   }
   
   return response;

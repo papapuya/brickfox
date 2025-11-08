@@ -361,14 +361,29 @@ function getFieldValue(
         return calculated;
       }
       
-      // PRIORITY 2: Fallback auf vkPrice aus extractedData (nur wenn EK fehlt)
+      // PRIORITY 2: Fallback auf vkPrice direkt aus extractedData (nur wenn EK fehlt)
+      if (product.extractedData && product.extractedData.length > 0) {
+        const vkPriceItem = product.extractedData.find((item: any) => 
+          item.key === 'vkPrice' || item.key === 'vkprice'
+        );
+        if (vkPriceItem && vkPriceItem.value) {
+          let value: any = vkPriceItem.value;
+          if (fieldMeta.type === 'price') {
+            value = parsePrice(value);
+          }
+          debugLog(`[CALCULATED-FALLBACK] v_price[Eur] → Existing vkPrice from extractedData: ${value}`);
+          return value;
+        }
+      }
+      
+      // PRIORITY 3: Fallback auf Auto-Mapping by label (nur wenn direkter Zugriff fehlschlägt)
       const existingVkPrice = autoMapFieldByLabel(product, 'v_price[Eur]');
       if (existingVkPrice !== null && existingVkPrice !== undefined && existingVkPrice !== '') {
         let value: any = existingVkPrice;
         if (fieldMeta.type === 'price') {
           value = parsePrice(value);
         }
-        debugLog(`[CALCULATED-FALLBACK] v_price[Eur] → Existing vkPrice from extractedData: ${value}`);
+        debugLog(`[CALCULATED-FALLBACK-LABEL] v_price[Eur] → Existing vkPrice from auto-mapping: ${value}`);
         return value;
       }
     }
@@ -382,9 +397,21 @@ function getFieldValue(
     
     // If not found, try extractedData array (new format: [{key, value, type}])
     if (!value && product.extractedData && product.extractedData.length > 0) {
-      const extracted = product.extractedData.find((item: any) => item.key === config.field);
+      // Try exact match first
+      let extracted = product.extractedData.find((item: any) => item.key === config.field);
       if (extracted) {
         value = (extracted as any).value;
+      } else {
+        // SPECIAL CASE: For v_purchase_price, try multiple field names (ekPrice, ekprice, preis)
+        if (brickfoxField === 'v_purchase_price') {
+          extracted = product.extractedData.find((item: any) => 
+            item.key === 'ekPrice' || item.key === 'ekprice' || item.key === 'preis'
+          );
+          if (extracted) {
+            value = (extracted as any).value;
+            debugLog(`[SCRAPED] v_purchase_price → Found via ekPrice/ekprice/preis: ${value}`);
+          }
+        }
       }
     }
     

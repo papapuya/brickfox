@@ -1,54 +1,20 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import ws from 'ws';
-import * as schema from "@shared/schema";
+/**
+ * Database Module
+ * 
+ * NOTE: This module is kept for backward compatibility but is no longer used.
+ * All database operations now go through Supabase API via repositories.
+ * 
+ * The app uses Supabase API directly through repositories, which is more reliable
+ * and doesn't require a direct database connection.
+ */
 
-// Always use PostgreSQL (Supabase) - no more SQLite
-neonConfig.webSocketConstructor = ws;
+import { logger } from './utils/logger';
 
-let db: any;
+// Legacy exports for backward compatibility
+// These are no longer used - repositories use Supabase API directly
+let db: any = null;
 let pool: any = null;
 
-async function initializeDatabase() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is required');
-  }
-  
-  // Log connection info (mask password)
-  const dbUrlMasked = process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@');
-  console.log(`[Database] Connecting to: ${dbUrlMasked}`);
-  
-  // Detect environment
-  const isHelium = process.env.DATABASE_URL.includes('helium');
-  const isSupabase = process.env.DATABASE_URL.includes('supabase.co');
-  const dbType = isHelium ? 'Helium (Development)' : isSupabase ? 'Supabase (Production)' : 'PostgreSQL';
-  console.log(`[Database] Type: ${dbType}`);
-  
-  try {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    db = drizzle({ client: pool, schema });
-    
-    console.log(`✅ [Database] Connected successfully to ${dbType}`);
-  } catch (error: any) {
-    console.error(`❌ [Database] Connection failed to ${dbType}:`, error.message);
-    
-    // Detailed error logging
-    if (error.code === 'ENOTFOUND') {
-      console.error(`[Database] DNS resolution failed - host not found`);
-      console.error(`[Database] Hint: Check if hostname is reachable from Replit environment`);
-    } else if (error.code === 'ETIMEDOUT') {
-      console.error(`[Database] Connection timeout - check firewall/network`);
-      console.error(`[Database] Hint: Supabase port 5432 may be blocked, try port 6543 (pooler)`);
-    } else if (error.message?.includes('SSL') || error.message?.includes('ssl')) {
-      console.error(`[Database] SSL error - check sslmode parameter`);
-      console.error(`[Database] Hint: Add ?sslmode=require for Supabase or ?sslmode=disable for Helium`);
-    }
-    
-    throw error;
-  }
-}
-
-// Initialize database
-initializeDatabase();
+logger.info('[Database] Using Supabase API for all database operations (no direct DB connection needed)');
 
 export { db, pool };

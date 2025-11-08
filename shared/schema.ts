@@ -464,7 +464,7 @@ export type Supplier = z.infer<typeof supplierSchema>;
 
 export const createSupplierSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
-  supplNr: z.string().optional(),
+  supplNr: z.string().min(1, "Lieferantennummer ist erforderlich"),
   urlPattern: z.string().optional(),
   description: z.string().optional(),
   selectors: z.record(z.string(), z.string()).default({}),

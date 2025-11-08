@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pimpilot-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      # Supabase
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # OpenAI
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Stripe
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      # Pixi ERP
+      - PIXI_API_URL=${PIXI_API_URL}
+      - PIXI_AUTH_TOKEN=${PIXI_AUTH_TOKEN}
+      # Storage (S3/NFS)
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_REGION=${S3_REGION:-eu-central-1}
+      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
+      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
+      - NFS_MOUNT_POINT=${NFS_MOUNT_POINT}
+      # Scheduler
+      - ENABLE_SCHEDULED_BACKUPS=${ENABLE_SCHEDULED_BACKUPS:-true}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./attached_assets:/app/attached_assets
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    networks:
+      - pimpilot-network
+
+  # Optional: Local PostgreSQL (if not using Supabase)
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: pimpilot-db
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_USER=${DB_USER:-postgres}
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
+  #     - POSTGRES_DB=${DB_NAME:-pimpilot}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     - pimpilot-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
+
+networks:
+  pimpilot-network:
+    driver: bridge
+
+# volumes:
+#   postgres-data:
+

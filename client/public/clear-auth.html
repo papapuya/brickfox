@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Clear Auth Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .success {
+      color: green;
+      margin-top: 20px;
+      padding: 10px;
+      background: #d1fae5;
+      border-radius: 4px;
+    }
+    .info {
+      margin: 10px 0;
+      padding: 10px;
+      background: #eff6ff;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Clear Authentication Data</h1>
+    <p>This will clear all stored login tokens and session data.</p>
+    
+    <div class="info" id="currentData"></div>
+    
+    <button onclick="clearAuth()">Clear All Auth Data</button>
+    <button onclick="reload()">Reload Page</button>
+    
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function showCurrentData() {
+      const localStorage = window.localStorage;
+      const sessionStorage = window.sessionStorage;
+      
+      let data = '<strong>Current stored data:</strong><br>';
+      data += 'localStorage.supabase_token: ' + (localStorage.getItem('supabase_token') ? '✅ Present' : '❌ Empty') + '<br>';
+      data += 'sessionStorage.supabase_token: ' + (sessionStorage.getItem('supabase_token') ? '✅ Present' : '❌ Empty') + '<br>';
+      data += 'localStorage.rememberMe: ' + (localStorage.getItem('rememberMe') || 'Not set') + '<br>';
+      data += 'localStorage["sb-auth-token"]: ' + (localStorage.getItem('sb-auth-token') ? '✅ Present' : '❌ Empty') + '<br>';
+      data += 'sessionStorage["sb-auth-token"]: ' + (sessionStorage.getItem('sb-auth-token') ? '✅ Present' : '❌ Empty') + '<br>';
+      
+      document.getElementById('currentData').innerHTML = data;
+    }
+
+    function clearAuth() {
+      // Clear all auth-related data
+      localStorage.removeItem('supabase_token');
+      sessionStorage.removeItem('supabase_token');
+      localStorage.removeItem('sb-auth-token');
+      sessionStorage.removeItem('sb-auth-token');
+      localStorage.removeItem('rememberMe');
+      
+      // Also clear all Supabase-related keys
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('supabase')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      document.getElementById('result').innerHTML = 
+        '<div class="success">✅ All authentication data cleared!<br>You can now <a href="/login">go to login page</a>.</div>';
+      
+      showCurrentData();
+    }
+
+    function reload() {
+      window.location.reload();
+    }
+
+    // Show current data on load
+    showCurrentData();
+  </script>
+</body>
+</html>
+

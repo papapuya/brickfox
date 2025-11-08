@@ -21,7 +21,7 @@ class EmailService {
     const smtpFrom = process.env.SMTP_FROM;
 
     if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
-      console.warn('⚠️ SMTP credentials not configured. Email sending will be disabled.');
+      // SMTP credentials not configured - email sending disabled (silent)
       return;
     }
 

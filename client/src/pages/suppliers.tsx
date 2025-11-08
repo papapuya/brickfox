@@ -230,6 +230,15 @@ export default function Suppliers() {
       return;
     }
 
+    if (!formData.supplNr || !formData.supplNr.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine Lieferantennummer ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const activeSelectors: Record<string, string> = {};
@@ -241,7 +250,7 @@ export default function Suppliers() {
 
       const payload = {
         name: formData.name.trim(),
-        supplNr: formData.supplNr || undefined,
+        supplNr: formData.supplNr.trim(),
         urlPattern: formData.urlPattern || undefined,
         description: formData.description || undefined,
         productLinkSelector: formData.productLinkSelector || undefined,

@@ -7,9 +7,13 @@
 4. Kopiere den generierten API-Schlüssel
 
 ## Schritt 2: API-Schlüssel in der App konfigurieren
-1. Öffne die Datei `config/api-keys.js`
-2. Ersetze `'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'` mit deinem echten API-Schlüssel
-3. Speichere die Datei
+1. Erstelle eine `.env` Datei im Root-Verzeichnis (falls noch nicht vorhanden)
+2. Füge folgende Zeile hinzu:
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+3. Ersetze `your_openai_api_key_here` mit deinem echten API-Schlüssel
+4. Speichere die Datei
 
 ## Schritt 3: Server neu starten
 ```powershell

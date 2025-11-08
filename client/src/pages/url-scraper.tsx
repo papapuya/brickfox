@@ -77,8 +77,11 @@ interface GeneratedContent {
 
 export default function URLScraper() {
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, refetch } = useAuth();
   const [location, setLocation] = useLocation();
+  
+  // EINFACH: AuthContext übernimmt Session-Wiederherstellung automatisch
+  // Keine zusätzliche Logik nötig
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -202,16 +205,9 @@ export default function URLScraper() {
   const { data: suppliersData, isLoading: isSuppliersLoading } = useQuery<{ success: boolean; suppliers: any[] }>({
     queryKey: ['/api/suppliers'],
     queryFn: async () => {
-      const token = localStorage.getItem('supabase_token');
-      const response = await fetch('/api/suppliers', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch suppliers');
-      }
-      const data = await response.json();
+      // Use apiGet to ensure consistent token handling (checks both localStorage and sessionStorage)
+      const { apiGet } = await import('@/lib/api');
+      const data = await apiGet<{ success: boolean; suppliers: any[] }>('/api/suppliers');
       console.log('Loaded suppliers:', data.suppliers?.length, 'items:', data.suppliers?.map((s: any) => s.name));
       return data;
     },
@@ -678,21 +674,45 @@ export default function URLScraper() {
           }) as any;
 
           if (data && data.product) {
+            console.log("[SCRAPE OK]", productUrl, data.product?.productName || data.product?.articleNumber || 'Unknown');
             console.log('🔍 [FRONTEND] Received product from backend:', Object.keys(data.product));
-            console.log('🔍 [FRONTEND] Nitecore fields in response:', {
-              length: data.product.length,
-              led1: data.product.led1,
-              led2: data.product.led2,
-              maxLuminosity: data.product.maxLuminosity
+            console.log('🔍 [FRONTEND] Technical specs in response:', {
+              nominalspannung: (data.product as any).nominalspannung,
+              nominalkapazitaet: (data.product as any).nominalkapazitaet,
+              maxEntladestrom: (data.product as any).maxEntladestrom,
+              laenge: (data.product as any).laenge,
+              breite: (data.product as any).breite,
+              hoehe: (data.product as any).hoehe,
+              gewicht: (data.product as any).gewicht,
+              zellenchemie: (data.product as any).zellenchemie,
+              energie: (data.product as any).energie,
+              farbe: (data.product as any).farbe,
             });
             // WICHTIG: Explizit ALLE Felder übernehmen (Spread-Operator)
-            const fullProduct = { ...data.product };
+            // Ensure technical specifications are explicitly included
+            const fullProduct: ScrapedProduct = {
+              ...data.product,
+              // Explicitly include technical specifications to ensure they're not lost
+              nominalspannung: (data.product as any).nominalspannung || '',
+              nominalkapazitaet: (data.product as any).nominalkapazitaet || '',
+              maxEntladestrom: (data.product as any).maxEntladestrom || '',
+              laenge: (data.product as any).laenge || (data.product as any).length || '',
+              breite: (data.product as any).breite || '',
+              hoehe: (data.product as any).hoehe || '',
+              gewicht: (data.product as any).gewicht || (data.product as any).weight || '',
+              zellenchemie: (data.product as any).zellenchemie || '',
+              energie: (data.product as any).energie || '',
+              farbe: (data.product as any).farbe || '',
+            };
+            
+            console.log("[DEBUG] Final product before push:", JSON.stringify(fullProduct, null, 2));
             products.push(fullProduct);
           } else {
-            console.error(`Fehler beim Scrapen von ${productUrl}`);
+            console.error("[SCRAPE FAIL]", productUrl, "NO_PRODUCT_DATA", "Response data missing product field");
             failedCount++;
           }
-        } catch (err) {
+        } catch (err: any) {
+          console.error("[SCRAPE FAIL]", productUrl, err?.response?.status || "NETWORK_ERROR", err?.response?.data || err?.message || "Unknown error");
           console.error(`Fehler beim Scrapen von ${productUrl}:`, err);
           failedCount++;
         }
@@ -816,8 +836,16 @@ export default function URLScraper() {
           break;
         }
 
+        // Normalize URL for consistent matching (remove trailing slashes, colons, trim whitespace)
+        const normalizeUrl = (url: string): string => {
+          return url.trim()
+            .replace(/\/+$/, '') // Remove trailing slashes
+            .replace(/:+$/, ''); // Remove trailing colons
+        };
+        
         const productUrl = urls[i];
-        const pdfMetadata = metadataMap[productUrl]; // Use URL as key for correct mapping
+        const normalizedUrl = normalizeUrl(productUrl);
+        const pdfMetadata = metadataMap[normalizedUrl] || metadataMap[productUrl]; // Try normalized first, then original
         
         setBatchProgress({ 
           current: i + 1, 
@@ -826,6 +854,10 @@ export default function URLScraper() {
         });
 
         try {
+          console.log(`[PDF-FLOW] Scraping URL ${i + 1}/${urls.length}: ${productUrl}`);
+          console.log(`[PDF-FLOW] Using selectors:`, activeSelectors);
+          console.log(`[PDF-FLOW] Supplier ID:`, detectedSupplierId);
+          
           const data = await apiPost('/api/scrape-product', {
             url: productUrl,
             selectors: Object.keys(activeSelectors).length > 0 ? activeSelectors : undefined,
@@ -835,26 +867,81 @@ export default function URLScraper() {
           }) as any;
 
           if (data && data.product) {
-            console.log('🔍 [PDF-FLOW] Received product from backend:', Object.keys(data.product));
-            console.log('🔍 [PDF-FLOW] Nitecore fields in response:', {
-              length: data.product.length,
-              led1: data.product.led1,
-              led2: data.product.led2,
-              maxLuminosity: data.product.maxLuminosity
+            console.log("[SCRAPE OK]", productUrl, data.product?.productName || data.product?.articleNumber || 'Unknown');
+            console.log(`[PDF-FLOW] API Response for ${productUrl}:`, data);
+            console.log('✅ [PDF-FLOW] Received product from backend:', Object.keys(data.product));
+            console.log('✅ [PDF-FLOW] Product data:', {
+              articleNumber: data.product.articleNumber,
+              productName: data.product.productName,
+              price: data.product.price
             });
             
             // Merge PDF data with scraped data (only if metadata exists for this URL)
+            // IMPORTANT: Always include the URL so products can be displayed in the table
+            
+            // Check if supplier is ANSMANN for article number formatting
+            const isANSMANN = detectedSupplierId && suppliersData?.suppliers?.find((s: any) => s.id === detectedSupplierId)?.name?.toLowerCase().includes('ansmann');
+            
+            // Format article number from PDF for ANSMANN
+            let formattedArticleNumber = '';
+            if (pdfMetadata?.articleNumber || pdfMetadata?.manufacturerArticleNumber) {
+              const pdfArticleNumber = pdfMetadata.articleNumber || pdfMetadata.manufacturerArticleNumber;
+              if (isANSMANN && pdfArticleNumber) {
+                // ANSMANN: ANS + manufacturer number (remove hyphens)
+                const cleanNumber = pdfArticleNumber.replace(/-/g, '');
+                formattedArticleNumber = 'ANS' + cleanNumber;
+              } else {
+                formattedArticleNumber = pdfArticleNumber;
+              }
+            }
+            
+            // Extract technical specifications from scraper response
+            // These might be nested in data.product or directly accessible
+            const techSpecs = {
+              nominalspannung: (data.product as any).nominalspannung || '',
+              nominalkapazitaet: (data.product as any).nominalkapazitaet || '',
+              maxEntladestrom: (data.product as any).maxEntladestrom || '',
+              laenge: (data.product as any).laenge || (data.product as any).length || '',
+              breite: (data.product as any).breite || '',
+              hoehe: (data.product as any).hoehe || '',
+              gewicht: (data.product as any).gewicht || (data.product as any).weight || '',
+              zellenchemie: (data.product as any).zellenchemie || '',
+              energie: (data.product as any).energie || '',
+              farbe: (data.product as any).farbe || '',
+            };
+            
+            console.log('🔍 [PDF-FLOW] Technical specs from scraper:', techSpecs);
+            
             let mergedProduct = pdfMetadata ? {
               ...data.product,
+              // CRITICAL: Include URL so product can be displayed
+              url: productUrl,
+              // Use PDF article number if scraper doesn't have one, or use formatted version
+              // Check for empty strings too, not just falsy values
+              articleNumber: (data.product.articleNumber && data.product.articleNumber.trim()) || formattedArticleNumber || '',
+              // Use PDF product name if scraper doesn't have one
+              productName: (data.product.productName && data.product.productName.trim()) || pdfMetadata.productName || '',
               // Add EK price from PDF
               ekPrice: pdfMetadata.ekPrice,
+              // Add EAN from PDF if not already in scraped data
+              ean: data.product.ean || pdfMetadata.eanCode || '',
               // Add additional PDF metadata
               pdfArticleNumber: pdfMetadata.articleNumber,
               pdfEanCode: pdfMetadata.eanCode,
               pdfProductName: pdfMetadata.productName,
               // Preserve manufacturer article number from PDF if available
               manufacturerArticleNumber: pdfMetadata.manufacturerArticleNumber || data.product.manufacturerArticleNumber,
-            } : data.product;
+              // Preserve all technical specifications from scraper (explicitly set to ensure they're included)
+              ...techSpecs,
+            } : {
+              ...data.product,
+              // CRITICAL: Include URL even if no PDF metadata
+              url: productUrl,
+              // Ensure EAN is included
+              ean: data.product.ean || '',
+              // Ensure all technical specifications are included (explicitly set to ensure they're included)
+              ...techSpecs,
+            };
             
             // Calculate VK if EK exists: (EK × 2) + 19% = EK × 2.38, rounded to ,95
             if (mergedProduct.ekPrice) {
@@ -865,21 +952,36 @@ export default function URLScraper() {
               }
             }
             
-            console.log('🔍 [PDF-FLOW] Merged product fields:', Object.keys(mergedProduct));
-            console.log('🔍 [PDF-FLOW] Nitecore fields in merged product:', {
-              length: mergedProduct.length,
-              led1: mergedProduct.led1,
-              led2: mergedProduct.led2,
-              maxLuminosity: mergedProduct.maxLuminosity
+            console.log('✅ [PDF-FLOW] Merged product:', {
+              url: mergedProduct.url,
+              articleNumber: mergedProduct.articleNumber,
+              productName: mergedProduct.productName,
+              ekPrice: mergedProduct.ekPrice,
+              hasUrl: !!mergedProduct.url
             });
             
+            // Ensure URL is set (critical for table display)
+            if (!mergedProduct.url) {
+              console.warn('⚠️ [PDF-FLOW] Product missing URL, adding it:', productUrl);
+              mergedProduct.url = productUrl;
+            }
+            
+            console.log("[DEBUG] Final product before push:", JSON.stringify(mergedProduct, null, 2));
             products.push(mergedProduct);
+            console.log(`✅ [PDF-FLOW] Added product to array. Total products: ${products.length}`);
           } else {
-            console.error(`Fehler beim Scrapen von ${productUrl}`);
+            console.error("[SCRAPE FAIL]", productUrl, "NO_PRODUCT_DATA", "Response data missing product field");
+            console.error(`❌ [PDF-FLOW] No product data in response for ${productUrl}`);
+            console.error(`❌ [PDF-FLOW] Response was:`, data);
             failedCount++;
           }
-        } catch (err) {
-          console.error(`Fehler beim Scrapen von ${productUrl}:`, err);
+        } catch (err: any) {
+          console.error("[SCRAPE FAIL]", productUrl, err?.response?.status || "NETWORK_ERROR", err?.response?.data || err?.message || "Unknown error");
+          console.error(`❌ [PDF-FLOW] Error scraping ${productUrl}:`, err);
+          if (err instanceof Error) {
+            console.error(`❌ [PDF-FLOW] Error message:`, err.message);
+            console.error(`❌ [PDF-FLOW] Error stack:`, err.stack);
+          }
           failedCount++;
         }
 
@@ -894,7 +996,11 @@ export default function URLScraper() {
         });
       }
 
+      console.log(`[PDF-FLOW] Scraping completed: ${products.length} products scraped, ${failedCount} failed`);
+      console.log(`[PDF-FLOW] Products array:`, products);
+      
       setScrapedProducts(products);
+      setIsLoading(false);
       
       // Save scraped products back to PDF-Auto-Scraper sessionStorage
       // Create URL→Product map for easy merging in PDF-Auto-Scraper
@@ -929,6 +1035,10 @@ export default function URLScraper() {
           description: `${products.length} von ${urls.length} Produkten erfolgreich gescraped (inkl. EK-Preise aus PDF)`,
         });
       }
+      
+      // Log final state
+      console.log(`[PDF-FLOW] Final scrapedProducts state length:`, products.length);
+      console.log(`[PDF-FLOW] Final scrapedProducts:`, products);
     } catch (error) {
       console.error('PDF scraping error:', error);
       toast({
@@ -1812,10 +1922,19 @@ export default function URLScraper() {
             const fieldMap: { [key: string]: string } = {
               'manufacturer': 'hersteller',
               'price': 'preis',
-              'weight': 'gewicht'
+              'weight': 'gewicht',
+              'category': 'kategorie',  // Kategorie - auch als kategorie speichern für Mapping
+              'ekPrice': 'ekprice',  // Einkaufspreis - auch als ekprice speichern für Mapping
+              'vkPrice': 'vkprice'    // Verkaufspreis - auch als vkprice speichern für Mapping
             };
             const mappedKey = fieldMap[key] || key;
             extractedDataArray.push({ key: mappedKey, value: String(value), type: 'text' as const });
+            
+            // CRITICAL: Für ekPrice/vkPrice auch als "preis" speichern (für v_purchase_price Mapping)
+            // ekPrice wird als "preis" gespeichert (wird als EK-Preis verwendet)
+            if (key === 'ekPrice') {
+              extractedDataArray.push({ key: 'preis', value: String(value), type: 'text' as const });
+            }
           }
         });
         

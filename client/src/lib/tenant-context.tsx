@@ -29,6 +29,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
 
+  // Debug-Log beim Mount (wird später entfernt, sobald Auth-Flow funktioniert)
+  useEffect(() => {
+    console.log('[TenantContext] Mount - Auth State:', {
+      isAuthenticated,
+      userId: user?.id,
+      userEmail: user?.email,
+      hasToken: !!(localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token')),
+    });
+  }, []);
+
   // Only true system admins can see tenant switcher (not regular tenant admins)
   const isSuperAdmin = user?.email === 'sarahzerrer@icloud.com';
   
@@ -38,7 +48,29 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       if (!isSuperAdmin) return { tenants: [] };
       
-      const token = localStorage.getItem('supabase_token');
+      // Get token from both storages and refresh if needed
+      const { supabase } = await import('./supabase');
+      let token = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
+      
+      // Try to refresh session to ensure token is valid
+      if (token) {
+        try {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (!sessionError && session && session.access_token) {
+            token = session.access_token;
+            const storage = localStorage.getItem('supabase_token') ? localStorage : sessionStorage;
+            storage.setItem('supabase_token', token);
+            if (session.refresh_token) {
+              storage.setItem('supabase_refresh_token', session.refresh_token);
+            }
+          }
+        } catch (error) {
+          console.error('[TenantContext] Error refreshing session:', error);
+        }
+      }
+      
+      if (!token) return { tenants: [] };
+      
       const res = await fetch('/api/admin/tenants', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -57,7 +89,29 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       if (isSuperAdmin) return { tenant: null }; // System admins use tenant switcher
       
-      const token = localStorage.getItem('supabase_token');
+      // Get token from both storages and refresh if needed
+      const { supabase } = await import('./supabase');
+      let token = localStorage.getItem('supabase_token') || sessionStorage.getItem('supabase_token');
+      
+      // Try to refresh session to ensure token is valid
+      if (token) {
+        try {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (!sessionError && session && session.access_token) {
+            token = session.access_token;
+            const storage = localStorage.getItem('supabase_token') ? localStorage : sessionStorage;
+            storage.setItem('supabase_token', token);
+            if (session.refresh_token) {
+              storage.setItem('supabase_refresh_token', session.refresh_token);
+            }
+          }
+        } catch (error) {
+          console.error('[TenantContext] Error refreshing session:', error);
+        }
+      }
+      
+      if (!token) return { tenant: null };
+      
       const res = await fetch('/api/user/tenant', {
         headers: {
           'Authorization': `Bearer ${token}`,

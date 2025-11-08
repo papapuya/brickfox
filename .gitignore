@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.env.local
+.env.*.local
 local.db
 local.db-shm
 local.db-wal
@@ -14,3 +16,20 @@ local.db-wal
 migrations/
 attached_assets/
 uploads/
+
+# Credentials & Secrets
+credentials.json
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# Environment-specific
+.env.production
+.env.development
+.env.test
+
+# Replit configuration (may contain secrets)
+.replit

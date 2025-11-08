@@ -1,0 +1,50 @@
+import { createAdminUser } from './supabase-auth';
+import readline from 'readline';
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+function question(query: string): Promise<string> {
+  return new Promise(resolve => rl.question(query, resolve));
+}
+
+async function main() {
+  try {
+    console.log('=== Admin User Creator ===\n');
+    
+    const email = await question('Email: ');
+    if (!email || !email.includes('@')) {
+      console.error('❌ Invalid email address');
+      process.exit(1);
+    }
+    
+    const password = await question('Password: ');
+    if (!password || password.length < 6) {
+      console.error('❌ Password must be at least 6 characters');
+      process.exit(1);
+    }
+    
+    const username = await question('Username (optional, press Enter for "Admin"): ');
+    const finalUsername = username.trim() || 'Admin';
+    
+    console.log('\nCreating admin user...');
+    await createAdminUser(email, password, finalUsername);
+    console.log('✅ Admin user created successfully!');
+    console.log(`Email: ${email}`);
+    console.log(`Username: ${finalUsername}`);
+    console.log(`\n💡 You can now login with either:`);
+    console.log(`   - Email: ${email}`);
+    console.log(`   - Username: ${finalUsername}`);
+    
+  } catch (error: any) {
+    console.error('❌ Error creating admin user:', error.message);
+    process.exit(1);
+  } finally {
+    rl.close();
+  }
+}
+
+main();
+

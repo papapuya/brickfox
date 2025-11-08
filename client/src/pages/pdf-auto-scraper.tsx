@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Loader2, ExternalLink, ArrowRight, Mail, Database } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/lib/auth-context';
 
 interface PDFProduct {
   productName: string;
@@ -404,7 +405,10 @@ Vielen Dank im Voraus!`);
     extractMutation.mutate(selectedFile);
   };
 
-  const handleScrapeWithURLScraper = () => {
+  const handleScrapeWithURLScraper = async () => {
+    console.log('[handleScrapeWithURLScraper] Button clicked');
+    console.log('[handleScrapeWithURLScraper] Extracted products:', extractedProducts.length);
+    
     if (extractedProducts.length === 0) {
       toast({
         title: 'Keine Produkte',
@@ -416,6 +420,7 @@ Vielen Dank im Voraus!`);
 
     // Filter products with URLs and create URL→metadata map
     const productsWithUrls = extractedProducts.filter(p => p.url);
+    console.log('[handleScrapeWithURLScraper] Products with URLs:', productsWithUrls.length);
     
     if (productsWithUrls.length === 0) {
       toast({
@@ -426,22 +431,36 @@ Vielen Dank im Voraus!`);
       return;
     }
 
+    // Normalize URLs for consistent matching (remove trailing slashes, colons, trim whitespace)
+    const normalizeUrl = (url: string | null | undefined): string | null => {
+      if (!url) return null;
+      return url.trim()
+        .replace(/\/+$/, '') // Remove trailing slashes
+        .replace(/:+$/, ''); // Remove trailing colons
+    };
+
     // Create map: URL → Product metadata (for correct merging in URL-Scraper)
     const urlToMetadata: Record<string, any> = {};
     productsWithUrls.forEach(product => {
       if (product.url) {
-        urlToMetadata[product.url] = {
-          ekPrice: product.ekPrice,
-          articleNumber: product.articleNumber,
-          manufacturerArticleNumber: product.manufacturerArticleNumber,
-          eanCode: product.eanCode,
-          productName: product.productName,
-        };
+        const normalizedUrl = normalizeUrl(product.url);
+        if (normalizedUrl) {
+          urlToMetadata[normalizedUrl] = {
+            ekPrice: product.ekPrice,
+            articleNumber: product.articleNumber,
+            manufacturerArticleNumber: product.manufacturerArticleNumber,
+            eanCode: product.eanCode,
+            productName: product.productName,
+          };
+        }
       }
     });
     
-    // Store URLs and metadata map in sessionStorage
-    const urls = productsWithUrls.map(p => p.url).join('\n');
+    // Store URLs and metadata map in sessionStorage (normalize URLs before storing)
+    const urls = productsWithUrls
+      .map(p => normalizeUrl(p.url))
+      .filter((url): url is string => url !== null)
+      .join('\n');
     sessionStorage.setItem('pdf_extracted_urls', urls);
     sessionStorage.setItem('pdf_url_metadata_map', JSON.stringify(urlToMetadata));
     
@@ -453,7 +472,27 @@ Vielen Dank im Voraus!`);
     // Store selected supplier ID for PDF-Auto-Scraper (to restore when returning)
     sessionStorage.setItem('pdf_auto_scraper_selected_supplier', selectedSupplierId);
     
-    setLocation('/url-scraper?from=pdf-auto-scraper');
+    console.log('[handleScrapeWithURLScraper] Stored', urls.split('\n').length, 'URLs in sessionStorage');
+    
+    // Ensure Supabase session is saved before navigation
+    const { supabase } = await import('@/lib/supabase');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      // Save session tokens explicitly before navigation
+      const storage = localStorage.getItem('rememberMe') === 'false' ? sessionStorage : localStorage;
+      storage.setItem('supabase_token', session.access_token);
+      if (session.refresh_token) {
+        storage.setItem('supabase_refresh_token', session.refresh_token);
+      }
+      console.log('[handleScrapeWithURLScraper] Session tokens saved before navigation');
+    }
+    
+    console.log('[handleScrapeWithURLScraper] Navigating to URL-Scraper with full reload...');
+    // Small delay to ensure tokens are saved
+    setTimeout(() => {
+      window.location.href = '/url-scraper?from=pdf-auto-scraper';
+    }, 100);
   };
 
   const handleBrickfoxAutoMapping = async () => {

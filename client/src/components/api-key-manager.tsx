@@ -9,13 +9,12 @@ import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react';
 
 interface ApiKeyStatus {
   openai: string | null;
-  firecrawl: string | null;
 }
 
 export default function ApiKeyManager() {
-  const [apiKeys, setApiKeys] = useState<ApiKeyStatus>({ openai: null, firecrawl: null });
+  const [apiKeys, setApiKeys] = useState<ApiKeyStatus>({ openai: null });
   const [newApiKey, setNewApiKey] = useState('');
-  const [selectedService, setSelectedService] = useState<'openai' | 'firecrawl'>('openai');
+  const [selectedService, setSelectedService] = useState<'openai'>('openai');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -104,7 +103,7 @@ export default function ApiKeyManager() {
           title: "Erfolgreich",
           description: "Alle API-Schlüssel wurden gelöscht",
         });
-        setApiKeys({ openai: null, firecrawl: null });
+        setApiKeys({ openai: null });
       } else {
         const error = await response.json();
         toast({
@@ -141,7 +140,7 @@ export default function ApiKeyManager() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Aktueller Status</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="p-3 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   {apiKeys.openai ? <Unlock className="w-4 h-4 text-green-500" /> : <Lock className="w-4 h-4 text-red-500" />}
@@ -149,16 +148,6 @@ export default function ApiKeyManager() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {apiKeys.openai || 'Nicht gesetzt'}
-                </p>
-              </div>
-              
-              <div className="p-3 border rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  {apiKeys.firecrawl ? <Unlock className="w-4 h-4 text-green-500" /> : <Lock className="w-4 h-4 text-red-500" />}
-                  <span className="font-medium">Firecrawl</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {apiKeys.firecrawl || 'Nicht gesetzt'}
                 </p>
               </div>
             </div>
@@ -170,16 +159,10 @@ export default function ApiKeyManager() {
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="service">Service auswählen</Label>
-                <select
-                  id="service"
-                  value={selectedService}
-                  onChange={(e) => setSelectedService(e.target.value as 'openai' | 'firecrawl')}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="openai">OpenAI</option>
-                  <option value="firecrawl">Firecrawl</option>
-                </select>
+                <Label htmlFor="service">Service</Label>
+                <div className="p-2 border rounded-md bg-muted">
+                  OpenAI
+                </div>
               </div>
               
               <div>

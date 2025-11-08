@@ -266,6 +266,26 @@ export class PermissionService {
         { resource: 'projects', action: 'create', scope: 'own' },
         { resource: 'suppliers', action: 'read', scope: 'all' },
       ],
+      controller: [
+        { resource: 'products', action: 'read', scope: 'all' },
+        { resource: 'products', action: 'create', scope: 'all' },
+        { resource: 'products', action: 'update', scope: 'all' },
+        { resource: 'products', action: 'export', scope: 'all' },
+        { resource: 'projects', action: 'read', scope: 'all' },
+        { resource: 'projects', action: 'create', scope: 'all' },
+        { resource: 'projects', action: 'update', scope: 'all' },
+        { resource: 'suppliers', action: 'read', scope: 'all' },
+        { resource: 'suppliers', action: 'create', scope: 'all' },
+        { resource: 'suppliers', action: 'update', scope: 'all' },
+        { resource: 'backups', action: 'read', scope: 'all' },
+        { resource: 'backups', action: 'create', scope: 'all' },
+      ],
+      practicant: [
+        { resource: 'products', action: 'read', scope: 'own' },
+        { resource: 'products', action: 'create', scope: 'own' },
+        { resource: 'projects', action: 'read', scope: 'own' },
+        { resource: 'suppliers', action: 'read', scope: 'all' },
+      ],
     };
 
     return rolePermissions[role] || rolePermissions.member;

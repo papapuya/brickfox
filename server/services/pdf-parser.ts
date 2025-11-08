@@ -1,7 +1,53 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 
-const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+const DEBUG_MODE = process.env.DEBUG_MODE === 'true' || false; // Set to true for detailed logging
+
+/**
+ * Validate EAN-13 or EAN-8 checksum using GS1 Modulo-10 algorithm
+ * Returns true if valid, false otherwise
+ * 
+ * GS1 Modulo-10 Algorithm:
+ * - EAN-13: Multiply positions 1,3,5,7,9,11 by 1, positions 2,4,6,8,10,12 by 3 (from left to right)
+ * - EAN-8: Multiply positions 1,3,5,7 by 3, positions 2,4,6 by 1 (from left to right)
+ * - Sum all products, calculate (10 - (sum % 10)) % 10, compare with check digit (last digit)
+ */
+function validateEANChecksum(ean: string): boolean {
+  // Remove all non-digit characters
+  const digits = ean.replace(/\D/g, '');
+  
+  // Must be EAN-13 (13 digits) or EAN-8 (8 digits)
+  if (digits.length !== 13 && digits.length !== 8) {
+    return false;
+  }
+  
+  // Calculate checksum using GS1 Modulo-10 algorithm
+  let sum = 0;
+  const isEAN13 = digits.length === 13;
+  
+  // Process all digits except the last one (check digit)
+  for (let i = 0; i < digits.length - 1; i++) {
+    const digit = parseInt(digits[i], 10);
+    const position = i + 1; // 1-indexed position from left
+    
+    // Determine multiplier based on position
+    let multiplier: number;
+    if (isEAN13) {
+      // EAN-13: odd positions (1,3,5,7,9,11) multiply by 1, even positions (2,4,6,8,10,12) multiply by 3
+      multiplier = position % 2 === 1 ? 1 : 3;
+    } else {
+      // EAN-8: odd positions (1,3,5,7) multiply by 3, even positions (2,4,6) multiply by 1
+      multiplier = position % 2 === 1 ? 3 : 1;
+    }
+    
+    sum += digit * multiplier;
+  }
+  
+  const checkDigit = parseInt(digits[digits.length - 1], 10);
+  const calculatedCheckDigit = (10 - (sum % 10)) % 10;
+  
+  return checkDigit === calculatedCheckDigit;
+}
 
 interface PDFProduct {
   productName: string;
@@ -60,8 +106,9 @@ export class PDFParserService {
 
         console.log(`📄 Page ${pageNum}: Found ${links.length} products with URLs`);
 
-        // Track processed Y positions to avoid duplicate parsing
-        const processedYPositions = new Set<number>();
+        // Track processed Y position ranges to avoid duplicate parsing
+        // Store as JSON strings to track min/max ranges
+        const processedYPositions = new Set<string>();
 
         // 1. PRODUCTS WITH URL
         links.forEach((link) => {
@@ -77,20 +124,37 @@ export class PDFParserService {
           rowTextItems.sort((a, b) => a.transform[4] - b.transform[4]);
           const rowText = rowTextItems.map(item => item.str).join(' ');
 
+          // STRICT: First check if row looks like a product (artikel_nr AND bezeichnung AND netto_ek)
+          if (!this.looksLikeProductRow(rowText)) {
+            console.log(`⚠️ [With URL] Row does not look like product: ${rowText.substring(0, 100)}...`);
+            return; // Skip this row
+          }
+
           const product = this.parseProductRow(rowText, link.url);
+          // parseProductRow now returns null if criteria not met, so if product exists, it's valid
           if (product && this.isValidProduct(product)) {
             productsWithURL.push(product);
-            processedYPositions.add(Math.round(link.y));
+            // Store the exact Y position range that was processed (not just the link Y)
+            // This helps avoid marking nearby unrelated rows as processed
+            const processedYRange = {
+              min: rowYMin,
+              max: rowYMax,
+              center: Math.round(link.y)
+            };
+            processedYPositions.add(JSON.stringify(processedYRange));
+          } else {
+            console.log(`⚠️ [With URL] Skipped product (validation failed): ${link.url}`);
           }
         });
 
         // 2. PRODUCTS WITHOUT URL (pure table rows)
         // Group text items by Y position range to capture multi-line data
+        // Use a larger grouping window to capture multi-line product data
         const textByRow = new Map<number, TextItem[]>();
         
         textItems.forEach((item) => {
-          // Round to nearest 5 to group nearby Y positions
-          const y = Math.round(item.transform[5] / 5) * 5;
+          // Round to nearest 3 to group nearby Y positions (smaller step = better grouping)
+          const y = Math.round(item.transform[5] / 3) * 3;
           if (!textByRow.has(y)) {
             textByRow.set(y, []);
           }
@@ -99,9 +163,21 @@ export class PDFParserService {
 
         // Process rows that weren't already processed (no URL)
         textByRow.forEach((items, y) => {
-          // Check if this Y position is close to any processed position
-          const isProcessed = Array.from(processedYPositions).some(processedY => {
-            return Math.abs(y - processedY) < 15;
+          // Check if this Y position is within any processed range
+          // Only skip if Y is within the actual processed range (not just close to it)
+          const isProcessed = Array.from(processedYPositions).some(processedYStr => {
+            try {
+              const processedYRange = JSON.parse(processedYStr);
+              // Check if Y is within the processed range (with small buffer)
+              return y >= processedYRange.min - 5 && y <= processedYRange.max + 5;
+            } catch {
+              // Fallback for old format (single number)
+              const processedY = parseFloat(processedYStr);
+              if (!isNaN(processedY)) {
+                return Math.abs(y - processedY) < 12; // Smaller tolerance for old format
+              }
+              return false;
+            }
           });
           
           if (!isProcessed) {
@@ -111,9 +187,20 @@ export class PDFParserService {
             // Only parse rows that look like product data
             if (this.looksLikeProductRow(rowText)) {
               const product = this.parseProductRow(rowText, null);
-              if (product && product.articleNumber && product.eanCode) {
+              // parseProductRow now returns null if criteria not met (artikel_nr, bezeichnung, netto_ek)
+              // So if product exists, it's already validated
+              if (product) {
                 productsWithoutURL.push(product);
+                console.log(`📦 [Without URL] Added product: ${product.manufacturerArticleNumber || 'N/A'} / ${product.productName.substring(0, 50)}`);
+              } else {
+                // Log rows that look like products but couldn't be parsed
+                console.log(`⚠️ [Without URL] parseProductRow returned null (validation failed): ${rowText.substring(0, 100)}`);
               }
+            }
+          } else {
+            // Debug: Log when a row is skipped because it's in a processed range
+            if (DEBUG_MODE) {
+              console.log(`⏭️ [Without URL] Skipped row at Y=${y} (within processed range)`);
             }
           }
         });
@@ -121,10 +208,30 @@ export class PDFParserService {
 
       // Remove duplicates
       const uniqueWithURL = this.removeDuplicates(productsWithURL, true);
-      const uniqueWithoutURL = this.removeDuplicates(productsWithoutURL, false);
+      let uniqueWithoutURL = this.removeDuplicates(productsWithoutURL, false);
+
+      // CRITICAL: Remove products from "withoutURL" that already exist in "withURL"
+      // (same article number or EAN)
+      uniqueWithoutURL = uniqueWithoutURL.filter(productWithoutURL => {
+        const existsInWithURL = uniqueWithURL.some(productWithURL => 
+          // Match by article number (if both have it)
+          (productWithURL.articleNumber && productWithoutURL.articleNumber && 
+           productWithURL.articleNumber === productWithoutURL.articleNumber) ||
+          // Match by EAN (if both have it)
+          (productWithURL.eanCode && productWithoutURL.eanCode && 
+           productWithURL.eanCode === productWithoutURL.eanCode)
+        );
+        
+        if (existsInWithURL) {
+          console.log(`⚠️ Removing duplicate from "withoutURL" (already in "withURL"): ${productWithoutURL.articleNumber || productWithoutURL.eanCode || 'unknown'}`);
+        }
+        
+        return !existsInWithURL;
+      });
 
       console.log(`✅ Products WITH URL: ${uniqueWithURL.length}`);
       console.log(`✅ Products WITHOUT URL: ${uniqueWithoutURL.length}`);
+      console.log(`✅ Total unique products: ${uniqueWithURL.length + uniqueWithoutURL.length}`);
 
       return {
         withURL: uniqueWithURL,
@@ -139,16 +246,61 @@ export class PDFParserService {
 
   /**
    * Check if a text row looks like product data
+   * STRICT RULES:
+   * 1. Must have artikel_nr AND bezeichnung AND netto_ek (not empty, not "-")
+   * 2. Exclude contact info (Tel, Telefon, Mobil, +, @, http) BEFORE EAN search
+   * 3. Only rows with formatted Euro amount (e.g., "12,85 €")
    */
   private looksLikeProductRow(rowText: string): boolean {
-    // Must have article number pattern
-    const hasArticle = /\b\d{4}-\d{4}(?:-\d{2})?\b/.test(rowText) || /\b\d{8,10}\b/.test(rowText);
-    // Must have EAN pattern
-    const hasEAN = /\b\d{13}\b/.test(rowText);
-    // Should have price pattern
-    const hasPrice = /\d+[,\.]\d{2}/.test(rowText);
+    // 1. Check for table boundaries - stop at "AGB", "Zahlungsziel", "Ansprechpartner", etc.
+    const stopKeywords = /\b(agb|allgemeine geschäftsbedingungen|zahlungsziel|ansprechpartner|impressum|datenschutz|widerruf|versand|zahlung|lieferbedingungen)\b/i;
+    if (stopKeywords.test(rowText)) {
+      return false; // Stop parsing at table boundaries
+    }
     
-    return hasArticle && hasEAN && hasPrice;
+    // 2. Exclude rows with contact info patterns (BEFORE EAN search)
+    // Telefon, Tel, Mobil, +, @, http (but allow product URLs like pim.ansmann.de)
+    const hasContactInfo = 
+      /\b(tel|telefon|mobil|handy|fax)\b/i.test(rowText) || // Tel, Telefon, Mobil
+      /\+\d/.test(rowText) || // Phone number with +
+      /[^\s]+@[^\s]+/.test(rowText) || // Email
+      (/\bhttp[s]?:\/\//i.test(rowText) && !/pim\./i.test(rowText)); // URLs (but allow product URLs)
+    
+    if (hasContactInfo) {
+      return false;
+    }
+    
+    // 3. Must have article number pattern (XXXX-XXXX-XX or 8-10 digits)
+    const hasArticle = /\b\d{4}-\d{4}(?:-\d{2})?\b/.test(rowText) || /\b\d{8,10}\b/.test(rowText);
+    
+    // 4. Must have bezeichnung (product name) - at least 3 characters of meaningful text
+    // More lenient: allow shorter product names (like in Replit)
+    const hasBezeichnung = rowText.length > 15 && // Minimum length (reduced from 20)
+                           /[a-zA-Z]{3,}/.test(rowText); // At least 3 consecutive letters (reduced from 5)
+    
+    // 5. Must have formatted Euro amount (netto_ek) - e.g., "12,85 €" or "12.85 €"
+    // Must NOT be empty or just "-"
+    // Must have at least one price that looks valid (not just "-")
+    const pricePattern = /\d+[,\.]\d{2}\s*€?/; // More flexible: € is optional
+    const priceMatches = rowText.match(/(\d+[,\.]\d{2})\s*€?/g);
+    const hasNettoEK = pricePattern.test(rowText) && 
+                      priceMatches && 
+                      priceMatches.length > 0 &&
+                      priceMatches.some(p => {
+                        const cleaned = p.replace(/€/g, '').trim();
+                        return cleaned && cleaned !== '-' && cleaned.length > 0;
+                      });
+    
+    // STRICT: Must have ALL THREE: artikel_nr AND bezeichnung AND netto_ek
+    const isValid = hasArticle && hasBezeichnung && hasNettoEK;
+    
+    // Log only rejections to reduce noise (temporarily for debugging)
+    if (!isValid && DEBUG_MODE) {
+      console.log(`[looksLikeProductRow] ❌ REJECTED: hasArticle=${hasArticle}, hasBezeichnung=${hasBezeichnung}, hasNettoEK=${hasNettoEK}`);
+      console.log(`[looksLikeProductRow] Row text: ${rowText.substring(0, 200)}...`);
+    }
+    
+    return isValid;
   }
 
   /**
@@ -156,12 +308,64 @@ export class PDFParserService {
    */
   private removeDuplicates(products: PDFProduct[], byURL: boolean): PDFProduct[] {
     return products.reduce((acc, product) => {
+      // Skip products without manufacturer article number (invalid products)
+      if (!product.manufacturerArticleNumber || product.manufacturerArticleNumber.trim().length === 0) {
+        console.log(`⚠️ Skipping product without manufacturer article number: ${product.productName?.substring(0, 50)}`);
+        return acc;
+      }
+      
+      // Skip if article number looks like a phone number
+      const looksLikePhoneNumber = 
+        /^\d{8}$/.test(product.manufacturerArticleNumber) && /^[67]\d{7}$/.test(product.manufacturerArticleNumber) ||
+        /^\d{10,13}$/.test(product.manufacturerArticleNumber) && /^[67]/.test(product.manufacturerArticleNumber);
+      
+      if (looksLikePhoneNumber) {
+        console.log(`⚠️ Skipping product (article number looks like phone number): ${product.manufacturerArticleNumber}`);
+        return acc;
+      }
+      
+      // Skip products without valid product name
+      if (!product.productName || product.productName === 'Unknown Product' || product.productName.trim().length <= 3) {
+        console.log(`⚠️ Skipping product without valid name: ${product.manufacturerArticleNumber || 'unknown'}`);
+        return acc;
+      }
+      
+      // Skip products without price
+      if (!product.ekPrice || product.ekPrice.trim().length === 0) {
+        console.log(`⚠️ Skipping product without price: ${product.manufacturerArticleNumber || 'unknown'}`);
+        return acc;
+      }
+      
       const exists = byURL
-        ? acc.find(p => p.url === product.url)
-        : acc.find(p => p.articleNumber === product.articleNumber || p.eanCode === product.eanCode);
+        ? acc.find(p => p.url === product.url && p.url !== null)
+        : acc.find(p => 
+            // Match by manufacturer article number (primary key for duplicates)
+            (p.manufacturerArticleNumber && product.manufacturerArticleNumber && 
+             p.manufacturerArticleNumber === product.manufacturerArticleNumber) ||
+            // Fallback: Match by article number (if both have it)
+            (p.articleNumber && product.articleNumber && p.articleNumber === product.articleNumber)
+          );
       
       if (!exists) {
         acc.push(product);
+      } else {
+        // Duplicate found: prefer the one with valid EAN
+        const existingIndex = acc.findIndex(p => 
+          (p.manufacturerArticleNumber && product.manufacturerArticleNumber && 
+           p.manufacturerArticleNumber === product.manufacturerArticleNumber) ||
+          (p.articleNumber && product.articleNumber && p.articleNumber === product.articleNumber)
+        );
+        
+        if (existingIndex >= 0) {
+          const existing = acc[existingIndex];
+          // If new product has valid EAN and existing doesn't, replace it
+          if (product.eanCode && !existing.eanCode) {
+            console.log(`⚠️ Replacing duplicate (new has EAN): ${product.manufacturerArticleNumber || product.articleNumber || 'unknown'}`);
+            acc[existingIndex] = product;
+          } else {
+            console.log(`⚠️ Skipping duplicate product: ${product.manufacturerArticleNumber || product.articleNumber || 'unknown'}`);
+          }
+        }
       }
       
       return acc;
@@ -289,10 +493,45 @@ export class PDFParserService {
       const articleMatch = rowText.match(/\b\d{4}-\d{4}(?:-\d{2})?\b/) || 
                           rowText.match(/\b\d{8,10}\b/);
       
-      // EAN Patterns:
-      // - 13 digits (standard EAN-13)
-      // - Can be anywhere in the text
-      const eanMatch = rowText.match(/\b\d{13}\b/);
+      // EAN Patterns: Only pure numeric EAN-8 or EAN-13
+      // Regex equivalent: (?<!\+)(?<!\d)(\d{8}|\d{13})(?!\d)
+      // JavaScript doesn't support lookbehind in all environments, so we check manually
+      const eanMatch = (() => {
+        // Find all potential EAN-8 or EAN-13 numbers
+        const eanPattern = /\b(\d{8}|\d{13})\b/g;
+        const allMatches = rowText.matchAll(eanPattern);
+        if (!allMatches) return null;
+        
+        // Validate each match with checksum and context
+        for (const match of allMatches) {
+          const eanValue = match[0];
+          const matchIndex = match.index!;
+          
+          // Check context: NOT preceded by + or digit, NOT followed by digit
+          const charBefore = matchIndex > 0 ? rowText[matchIndex - 1] : '';
+          const charAfter = matchIndex + eanValue.length < rowText.length ? rowText[matchIndex + eanValue.length] : '';
+          
+          // Skip if preceded by + or digit
+          if (charBefore === '+' || /\d/.test(charBefore)) {
+            continue;
+          }
+          
+          // Skip if followed by digit
+          if (/\d/.test(charAfter)) {
+            continue;
+          }
+          
+          // Validate checksum - if invalid, try next match
+          if (validateEANChecksum(eanValue)) {
+            return eanValue; // Return first valid EAN
+          } else {
+            console.log(`  ⚠️ EAN failed checksum: ${eanValue}`);
+          }
+        }
+        
+        // No valid EAN found
+        return null;
+      })();
       
       // Price Patterns (FLEXIBLE):
       // - XX,XX € or XX.XX €
@@ -310,33 +549,79 @@ export class PDFParserService {
       }
 
       // Process Article Number: Keep original format with hyphens (2447-3049-60)
+      // STRICT: Must have artikel_nr
       if (articleMatch) {
         const originalNumber = articleMatch[0].trim();  // Keep hyphens intact!
+        
+        // FILTER: Skip if it looks like a phone number
+        // Phone numbers: 8-14 digits starting with 6, 7, or country codes (49, 0049, +49)
+        const looksLikePhoneNumber = 
+          /^\d{8}$/.test(originalNumber) && /^[67]\d{7}$/.test(originalNumber) || // 8 digits starting with 6 or 7
+          /^\d{10,14}$/.test(originalNumber) && /^[67]/.test(originalNumber) || // 10-14 digits starting with 6 or 7
+          /^49\d{10,11}$/.test(originalNumber) || // German country code
+          /^0049\d{10,11}$/.test(originalNumber); // German country code with 00
+        
+        if (looksLikePhoneNumber) {
+          console.log(`  ⚠️ Skipping article number (looks like phone number): ${originalNumber}`);
+          return null; // Don't create product if article number is a phone number
+        }
+        
         product.articleNumber = originalNumber;  // Will be prefixed later in the route
         product.manufacturerArticleNumber = originalNumber;  // Keep original format for Pixi matching
         console.log(`  ✅ Article: ${product.articleNumber} (Manufacturer: ${product.manufacturerArticleNumber})`);
+      } else {
+        console.log(`  ⚠️ No article number found - rejecting product`);
+        return null; // Reject product without article number
       }
       
-      // Process EAN Code
+      // Process EAN Code with strict validation (GS1 Modulo-10 checksum)
+      // EAN is optional, but if present must be valid
       if (eanMatch) {
-        product.eanCode = eanMatch[0];
-        console.log(`  ✅ EAN: ${product.eanCode}`);
+        const rawEAN = eanMatch.replace(/\D/g, ''); // Remove all non-digits (should already be clean)
+        // Validate EAN checksum (EAN-13 or EAN-8)
+        if (validateEANChecksum(rawEAN)) {
+          product.eanCode = rawEAN;
+          console.log(`  ✅ EAN (valid checksum): ${product.eanCode}`);
+        } else {
+          console.log(`  ⚠️ EAN failed checksum validation: ${rawEAN}`);
+          product.eanCode = null; // Set to null if checksum invalid
+        }
+      } else {
+        product.eanCode = null; // No EAN found
       }
       
       // Process Prices (Netto-EK)
+      // STRICT: netto_ek must NOT be empty or "-"
       // PDF has 2 prices: Netto-EK (second-to-last) and UE/VP (last)
       // We need Netto-EK, NOT UE/VP!
       if (priceMatches && priceMatches.length >= 1) {
-        // Clean prices: remove € and whitespace
-        const cleanedPrices = priceMatches.map(p => p.replace(/€/g, '').trim());
+        // Clean prices: remove € and whitespace, filter out "-" and empty values
+        const cleanedPrices = priceMatches
+          .map(p => p.replace(/€/g, '').trim())
+          .filter(p => p && p !== '-' && p.trim().length > 0);
+        
+        if (cleanedPrices.length === 0) {
+          console.log(`  ⚠️ No valid prices found - rejecting product`);
+          return null; // Reject product without valid price
+        }
         
         // If there are 2+ prices, take the second-to-last (Netto-EK)
         // If there's only 1 price, take it as fallback
-        product.ekPrice = cleanedPrices.length >= 2 
+        const nettoEK = cleanedPrices.length >= 2 
           ? cleanedPrices[cleanedPrices.length - 2]  // Netto-EK (not UE/VP!)
           : cleanedPrices[cleanedPrices.length - 1]; // Fallback for single price
         
-        console.log(`  ✅ Netto-EK: ${product.ekPrice || 'N/A'} (aus ${cleanedPrices.length} Preisen)`);
+        // Validate: netto_ek must NOT be empty or "-"
+        if (!nettoEK || nettoEK === '-' || nettoEK.trim().length === 0) {
+          console.log(`  ⚠️ Invalid netto_ek: "${nettoEK}" - rejecting product`);
+          return null; // Reject product with invalid price
+        }
+        
+        product.ekPrice = nettoEK;
+        console.log(`  ✅ Netto-EK: ${product.ekPrice} (aus ${cleanedPrices.length} Preisen)`);
+      } else {
+        console.log(`  ⚠️ No price found - rejecting product`);
+        return null; // Reject product without price
       }
 
       // Extract Marke (first word is often the brand)
@@ -381,6 +666,7 @@ export class PDFParserService {
         .trim();
       
       // Extract the first meaningful text block as Bezeichnung (product name)
+      // STRICT: Must have bezeichnung (product name)
       // This should be the product description after removing all structured data
       const bezeichnungMatch = cleanedText.match(/^([^€\d]{5,}?)(?:\s{2,}|$)/);
       if (bezeichnungMatch) {
@@ -389,8 +675,16 @@ export class PDFParserService {
         // Fallback: Use cleaned text if it's meaningful
         product.productName = cleanedText.substring(0, 100).trim();
       } else {
-        // Last resort: Use "Unknown Product"
-        product.productName = 'Unknown Product';
+        // No valid bezeichnung found
+        console.log(`  ⚠️ No valid bezeichnung found - rejecting product`);
+        return null; // Reject product without bezeichnung
+      }
+      
+      // Validate: bezeichnung must be meaningful (at least 3 characters, not just numbers/symbols)
+      // More lenient: allow shorter product names (like in Replit)
+      if (!product.productName || product.productName.length < 3 || !/[a-zA-Z]{2,}/.test(product.productName)) {
+        console.log(`  ⚠️ Invalid bezeichnung: "${product.productName}" - rejecting product`);
+        return null; // Reject product with invalid bezeichnung
       }
       
       console.log(`  ✅ Bezeichnung (Produktname): ${product.productName}`);

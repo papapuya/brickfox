@@ -102,15 +102,15 @@ A:
 ### **Q: Welche externen APIs werden verwendet?**
 A:
 - **OpenAI API**: GPT-4o für Textgenerierung
-- **Firecrawl API**: Web-Scraping
+- **Eigener Scraper**: Direkter Fetch mit Cheerio (keine externe API)
 - **Tesseract.js**: Lokale OCR (kein API)
 
 ### **Q: Wie funktioniert das Web-Scraping?**
 A:
-1. **Primary**: Firecrawl API (professionell)
-2. **Fallback**: Direkter Fetch mit User-Agent
-3. **Fallback**: Googlebot User-Agent
-4. **Error Handling**: Detaillierte Fehlermeldungen
+1. **Primary**: Eigener Scraper mit direkter Fetch-API und Cheerio
+2. **Custom Headers**: User-Agent, Accept, Accept-Language
+3. **Session Cookies**: Unterstützung für authentifizierte Sessions
+4. **Error Handling**: Detaillierte Fehlermeldungen und Timeout-Handling
 
 ### **Q: Welche Ports werden verwendet?**
 A:
