@@ -7,12 +7,6 @@ RUN apk add --no-cache python3 make g++
 # Set working directory
 WORKDIR /app
 
-# Render.com makes environment variables available during build
-# We don't need ARG - they're already in the environment
-# Just ensure they're available for the build process
-ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
-
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
