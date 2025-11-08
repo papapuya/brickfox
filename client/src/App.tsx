@@ -36,6 +36,8 @@ import Success from "@/pages/success";
 import Account from "@/pages/account";
 import NotFound from "@/pages/not-found";
 import FieldMappingDemo from "@/pages/field-mapping-demo";
+import ProductCreator from "@/pages/product-creator";
+import { ConfigError } from "@/components/config-error";
 
 function Router() {
   return (
@@ -134,6 +136,16 @@ function Router() {
           <FieldMappingDemo />
         </ProtectedRoute>
       </Route>
+      <Route path="/product-creator">
+        <ProtectedRoute>
+          <ProductCreator />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/creator">
+        <ProtectedRoute>
+          <ProductCreator />
+        </ProtectedRoute>
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
@@ -187,6 +199,11 @@ function AppContent() {
 }
 
 function App() {
+  // Check for Supabase configuration error
+  if ((window as any).__SUPABASE_CONFIG_ERROR__) {
+    return <ConfigError />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
