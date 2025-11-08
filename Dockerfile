@@ -66,5 +66,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start application
+ENV NODE_ENV=production
 CMD ["node", "dist/index.js"]
 
